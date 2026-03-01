@@ -76,7 +76,6 @@ class _VaniAppState extends State<VaniApp> {
           secondary: Color(0xFF9D8FFF),
           surface: surfaceCard,
           onSurface: Color(0xFFEAE8FF),
-          background: deepBg,
         ),
         useMaterial3: true,
       ),

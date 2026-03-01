@@ -598,15 +598,18 @@ class _GridPainter extends CustomPainter {
           : const Color(0xFFE4E4F0).withOpacity(0.7)
       ..strokeWidth = 0.5;
     const step = 48.0;
-    for (double x = 0; x < size.width; x += step)
+    for (double x = 0; x < size.width; x += step) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    for (double y = 0; y < size.height; y += step)
+    }
+    for (double y = 0; y < size.height; y += step) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
     final dp = Paint()
       ..color = kViolet.withOpacity(isDark ? 0.12 : 0.07);
     for (double x = 0; x < size.width; x += step)
-      for (double y = 0; y < size.height; y += step)
+      for (double y = 0; y < size.height; y += step) {
         canvas.drawCircle(Offset(x, y), 1.2, dp);
+      }
   }
   @override bool shouldRepaint(_) => false;
 }

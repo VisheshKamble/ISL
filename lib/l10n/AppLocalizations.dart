@@ -30,7 +30,7 @@ class AppLocalizations {
       'nav_language': 'Language',
 
       // ── Badge
-      'badge': 'Vani Vision — 16k Dataset Trained',
+      'badge': 'Vani Vision — 18k+ Dataset Trained',
 
       // ── Hero
       'hero_title_1': 'Translate ',
@@ -235,7 +235,7 @@ class AppLocalizations {
       'bridge_t4_year': '2023',
       'bridge_t4_event':
           'Cambridge University calls for ISL as official language — Global academic pressure mounts',
-      'bridge_t5_year': '2025',
+      'bridge_t5_year': '2026',
       'bridge_t5_event':
           'Vani AI — Real-time on-device ISL translation available to every smartphone user in India',
 
@@ -519,7 +519,7 @@ class AppLocalizations {
       'edu_t5_year': '2020',
       'edu_t5_event':
           'NEP 2020 — Recommends ISL teaching nationwide; recognises DHH children\'s right to sign-based education',
-      'edu_t6_year': '2025',
+      'edu_t6_year': '2026',
       'edu_t6_event':
           'Vani v1.0 — First accessible AI-powered ISL learning feedback tool available to every Indian smartphone user',
     },
@@ -722,7 +722,7 @@ class AppLocalizations {
       'bridge_t3_event': 'ISLRTC ने ISL शब्दकोश प्रकाशित किया — मानकीकरण के लिए औपचारिक शब्दावली बनाई',
       'bridge_t4_year': '2023',
       'bridge_t4_event': 'कैम्ब्रिज विश्वविद्यालय ने ISL को आधिकारिक भाषा बनाने की मांग की',
-      'bridge_t5_year': '2025',
+      'bridge_t5_year': '2026',
       'bridge_t5_event': 'वाणी AI — भारत के हर स्मार्टफोन उपयोगकर्ता के लिए रियल-टाइम ISL अनुवाद उपलब्ध',
 
       // ── INCLUSIVITY
@@ -978,7 +978,7 @@ class AppLocalizations {
       'edu_t4_event': 'ISLRTC की स्थापना — ISL शिक्षकों को प्रशिक्षित करने की 5 वर्षीय योजना',
       'edu_t5_year': '2020',
       'edu_t5_event': 'NEP 2020 — देशभर में ISL शिक्षण की सिफारिश; DHH बच्चों के अधिकार की मान्यता',
-      'edu_t6_year': '2025',
+      'edu_t6_year': '2026',
       'edu_t6_event': 'वाणी v1.0 — भारत के हर स्मार्टफोन उपयोगकर्ता के लिए AI-संचालित ISL लर्निंग टूल',
     },
 
@@ -1180,7 +1180,7 @@ class AppLocalizations {
       'bridge_t3_event': 'ISLRTC ने ISL शब्दकोश प्रकाशित केला — मानकीकरणासाठी औपचारिक शब्दसंग्रह',
       'bridge_t4_year': '2023',
       'bridge_t4_event': 'केंब्रिज विद्यापीठाने ISL ला अधिकृत भाषा करण्याची मागणी केली',
-      'bridge_t5_year': '2025',
+      'bridge_t5_year': '2026',
       'bridge_t5_event': 'वाणी AI — भारतातील प्रत्येक स्मार्टफोन वापरकर्त्यासाठी रिअल-टाइम ISL भाषांतर',
 
       // ── INCLUSIVITY

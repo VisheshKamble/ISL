@@ -130,9 +130,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   onLaunch: () => Navigator.push(
                                     context,
                                     PageRouteBuilder(
-                                      pageBuilder: (_, a, __) => TranslateScreen(
+                                      pageBuilder: (_, a, _) => TranslateScreen(
                                           toggleTheme: widget.toggleTheme, setLocale: widget.setLocale),
-                                      transitionsBuilder: (_, anim, __, child) =>
+                                      transitionsBuilder: (_, anim, _, child) =>
                                           FadeTransition(opacity: anim, child: child),
                                       transitionDuration: const Duration(milliseconds: 400),
                                     ),
@@ -192,14 +192,17 @@ class _GridPainter extends CustomPainter {
       ..color = isDark ? const Color(0xFF1A1A2E).withOpacity(0.6) : const Color(0xFFE8E8F0).withOpacity(0.8)
       ..strokeWidth = 0.5;
     const step = 48.0;
-    for (double x = 0; x < size.width; x += step)
+    for (double x = 0; x < size.width; x += step) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
-    for (double y = 0; y < size.height; y += step)
+    }
+    for (double y = 0; y < size.height; y += step) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
     final dp = Paint()..color = _kViolet.withOpacity(isDark ? 0.12 : 0.08);
     for (double x = 0; x < size.width; x += step)
-      for (double y = 0; y < size.height; y += step)
+      for (double y = 0; y < size.height; y += step) {
         canvas.drawCircle(Offset(x, y), 1.2, dp);
+      }
   }
   @override bool shouldRepaint(_) => false;
 }
@@ -232,7 +235,7 @@ class _StatusChip extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return AnimatedBuilder(
       animation: pulse,
-      builder: (_, __) => Container(
+      builder: (_, _) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
           color: isDark ? _kSurfaceUp : Colors.white,
@@ -447,7 +450,7 @@ class _StatCellState extends State<_StatCell> with SingleTickerProviderStateMixi
     padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 32),
     child: AnimatedBuilder(
       animation: _anim,
-      builder: (_, __) => Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      builder: (_, _) => Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         RichText(text: TextSpan(children: [
           TextSpan(text: _fmt(_anim.value.toInt()), style: TextStyle(
             fontSize: 44, fontWeight: FontWeight.w900, color: widget.color,
@@ -556,8 +559,8 @@ class _ObjCardState extends State<_ObjCard> {
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: () => Navigator.push(context, PageRouteBuilder(
-          pageBuilder: (_, a, __) => widget.page,
-          transitionsBuilder: (_, anim, __, child) => FadeTransition(
+          pageBuilder: (_, a, _) => widget.page,
+          transitionsBuilder: (_, anim, _, child) => FadeTransition(
             opacity: anim,
             child: SlideTransition(
               position: Tween<Offset>(begin: const Offset(0, 0.03), end: Offset.zero)
