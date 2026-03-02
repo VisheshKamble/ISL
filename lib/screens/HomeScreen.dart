@@ -710,9 +710,8 @@ class _VisionCard extends StatelessWidget {
   );
 }
 
-// ─────────────────────────────────────────────
 //  FOOTER
-// ─────────────────────────────────────────────
+
 class _Footer extends StatelessWidget {
   final bool isDark;
   const _Footer({required this.isDark});
