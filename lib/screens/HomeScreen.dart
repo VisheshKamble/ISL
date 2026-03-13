@@ -11,9 +11,9 @@ import 'objectives/PrivacyPage.dart';
 import 'objectives/OfflinePage.dart';
 import 'objectives/EducationPage.dart';
 
-// ─────────────────────────────────────────────
+
 //  DESIGN TOKENS
-// ─────────────────────────────────────────────
+
 const _kViolet      = Color(0xFF7C3AED);
 const _kVioletLight = Color(0xFFA78BFA);
 const _kObsidian    = Color(0xFF050508);
@@ -173,9 +173,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   }
 }
 
-// ─────────────────────────────────────────────
+
 //  GRID TEXTURE
-// ─────────────────────────────────────────────
+
 class _GridTexture extends StatelessWidget {
   final bool isDark;
   const _GridTexture({required this.isDark});
@@ -207,9 +207,9 @@ class _GridPainter extends CustomPainter {
   @override bool shouldRepaint(_) => false;
 }
 
-// ─────────────────────────────────────────────
+
 //  AMBIENT GLOW
-// ─────────────────────────────────────────────
+
 class _AmbientGlow extends StatelessWidget {
   final Color color;
   final double size;
@@ -222,9 +222,9 @@ class _AmbientGlow extends StatelessWidget {
   );
 }
 
-// ─────────────────────────────────────────────
+
 //  STATUS CHIP
-// ─────────────────────────────────────────────
+
 class _StatusChip extends StatelessWidget {
   final AppLocalizations l;
   final Animation<double> pulse;
@@ -262,9 +262,9 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
+
 //  HERO TEXT
-// ─────────────────────────────────────────────
+
 class _HeroText extends StatelessWidget {
   final bool isDesktop, isTablet;
   final AppLocalizations l;
@@ -312,9 +312,9 @@ class _HeroSub extends StatelessWidget {
   );
 }
 
-// ─────────────────────────────────────────────
+
 //  CTA ROW
-// ─────────────────────────────────────────────
+
 class _CTARow extends StatelessWidget {
   final AppLocalizations l;
   final VoidCallback onLaunch;
@@ -368,9 +368,9 @@ class _LaunchButtonState extends State<_LaunchButton> {
   );
 }
 
-// ─────────────────────────────────────────────
+
 //  DIVIDER
-// ─────────────────────────────────────────────
+
 class _DividerLine extends StatelessWidget {
   final bool isDark;
   const _DividerLine({required this.isDark});
@@ -385,9 +385,9 @@ class _DividerLine extends StatelessWidget {
   );
 }
 
-// ─────────────────────────────────────────────
+
 //  STATS
-// ─────────────────────────────────────────────
+
 class _StatsSection extends StatelessWidget {
   final bool isDesktop, isVisible;
   final AppLocalizations l;
@@ -468,9 +468,9 @@ class _StatCellState extends State<_StatCell> with SingleTickerProviderStateMixi
   );
 }
 
-// ─────────────────────────────────────────────
+
 //  SECTION LABEL
-// ─────────────────────────────────────────────
+
 class _SectionLabel extends StatelessWidget {
   final String text, sub;
   final bool isDark;
@@ -493,9 +493,9 @@ class _SectionLabel extends StatelessWidget {
   ]);
 }
 
-// ─────────────────────────────────────────────
+
 //  OBJECTIVES GRID — WITH NAVIGATION
-// ─────────────────────────────────────────────
+
 class _ObjectivesGrid extends StatelessWidget {
   final bool isDesktop, isTablet;
   final AppLocalizations l;
