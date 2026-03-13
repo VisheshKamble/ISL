@@ -1,6 +1,10 @@
-//lib/components/GlobalNavbar.dart
+// lib/components/GlobalNavbar.dart
+// ─────────────────────────────────────────────────────────────────
+//  UPDATED: Added "SIGNS" nav link → navigates to SignsPage
+// ─────────────────────────────────────────────────────────────────
 import 'package:flutter/material.dart';
 import '../screens/TranslateScreen.dart';
+import '../screens/SignsPage.dart';          // ← NEW
 import '../l10n/AppLocalizations.dart';
 
 class GlobalNavbar extends StatelessWidget {
@@ -17,10 +21,10 @@ class GlobalNavbar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = Theme.of(context).primaryColor;
-    final l = AppLocalizations.of(context);
-    final screenWidth = MediaQuery.of(context).size.width;
+    final isDark   = Theme.of(context).brightness == Brightness.dark;
+    final primary  = Theme.of(context).primaryColor;
+    final l        = AppLocalizations.of(context);
+    final screenWidth  = MediaQuery.of(context).size.width;
     final currentLocale = Localizations.localeOf(context);
 
     return Container(
@@ -50,7 +54,7 @@ class GlobalNavbar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Brand
+          // ── Brand ──────────────────────────────────
           GestureDetector(
             onTap: () =>
                 Navigator.of(context).popUntil((route) => route.isFirst),
@@ -87,15 +91,15 @@ class GlobalNavbar extends StatelessWidget {
             ),
           ),
 
-          // Nav + Actions
+          // ── Nav + Actions ───────────────────────────
           Row(
             children: [
               if (screenWidth > 750) ...[
                 _NavLink(
                   label: l.t('nav_home'),
                   isActive: activeRoute == 'home',
-                  onTap: () =>
-                      Navigator.of(context).popUntil((route) => route.isFirst),
+                  onTap: () => Navigator.of(context)
+                      .popUntil((route) => route.isFirst),
                 ),
                 _NavLink(
                   label: l.t('nav_terminal'),
@@ -114,6 +118,29 @@ class GlobalNavbar extends StatelessWidget {
                     }
                   },
                 ),
+                // ── NEW: Signs link ──────────────────
+                _NavLink(
+                  label: l.t('nav_signs'),
+                  isActive: activeRoute == 'signs',
+                  onTap: () {
+                    if (activeRoute != 'signs') {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (_, a, _) => SignsPage(
+                            toggleTheme: toggleTheme,
+                            setLocale: setLocale,
+                          ),
+                          transitionsBuilder: (_, anim, _, child) =>
+                              FadeTransition(opacity: anim, child: child),
+                          transitionDuration:
+                              const Duration(milliseconds: 350),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                // ────────────────────────────────────
                 _NavLink(label: l.t('nav_api')),
                 const SizedBox(width: 6),
               ],
@@ -127,17 +154,18 @@ class GlobalNavbar extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Container(
-                width: 1,
-                height: 20,
-                color: isDark ? Colors.white10 : Colors.black12,
-              ),
+                  width: 1,
+                  height: 20,
+                  color: isDark ? Colors.white10 : Colors.black12),
               const SizedBox(width: 4),
               // Theme Toggle
               IconButton(
                 onPressed: toggleTheme,
                 tooltip: isDark ? 'Light Mode' : 'Dark Mode',
                 icon: Icon(
-                  isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                  isDark
+                      ? Icons.light_mode_outlined
+                      : Icons.dark_mode_outlined,
                   size: 20,
                   color: isDark ? Colors.white54 : Colors.black45,
                 ),
@@ -150,6 +178,9 @@ class GlobalNavbar extends StatelessWidget {
   }
 }
 
+// ──────────────────────────────────────────────────────────────────
+//  LANGUAGE DROPDOWN  (unchanged)
+// ──────────────────────────────────────────────────────────────────
 class _LanguageDropdown extends StatelessWidget {
   final Locale currentLocale;
   final Function(Locale) setLocale;
@@ -181,7 +212,8 @@ class _LanguageDropdown extends StatelessWidget {
     return PopupMenuButton<String>(
       tooltip: l.t('nav_language'),
       offset: const Offset(0, 46),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape:
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: isDark ? const Color(0xFF1A1A3A) : Colors.white,
       elevation: 12,
       onSelected: (code) => setLocale(Locale(code)),
@@ -213,7 +245,8 @@ class _LanguageDropdown extends StatelessWidget {
         );
       }).toList(),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: primary.withOpacity(0.08),
           borderRadius: BorderRadius.circular(10),
@@ -222,7 +255,8 @@ class _LanguageDropdown extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(current['flag']!, style: const TextStyle(fontSize: 14)),
+            Text(current['flag']!,
+                style: const TextStyle(fontSize: 14)),
             const SizedBox(width: 8),
             Text(
               current['label']!,
@@ -234,7 +268,8 @@ class _LanguageDropdown extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            Icon(Icons.keyboard_arrow_down_rounded, color: primary, size: 16),
+            Icon(Icons.keyboard_arrow_down_rounded,
+                color: primary, size: 16),
           ],
         ),
       ),
@@ -242,15 +277,19 @@ class _LanguageDropdown extends StatelessWidget {
   }
 }
 
+// ──────────────────────────────────────────────────────────────────
+//  NAV LINK  (unchanged)
+// ──────────────────────────────────────────────────────────────────
 class _NavLink extends StatelessWidget {
   final String label;
   final bool isActive;
   final VoidCallback? onTap;
-  const _NavLink({required this.label, this.isActive = false, this.onTap});
+  const _NavLink(
+      {required this.label, this.isActive = false, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
     final primary = Theme.of(context).primaryColor;
 
     return InkWell(
