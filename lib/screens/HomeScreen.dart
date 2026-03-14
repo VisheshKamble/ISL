@@ -98,9 +98,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         children: [
           Positioned.fill(child: _GridTexture(isDark: isDark)),
           Positioned(top: -200, left: -100,
-            child: _AmbientGlow(color: _kViolet.withOpacity(isDark ? 0.22 : 0.10), size: 700)),
+              child: _AmbientGlow(color: _kViolet.withOpacity(isDark ? 0.22 : 0.10), size: 700)),
           Positioned(bottom: -300, right: -200,
-            child: _AmbientGlow(color: const Color(0xFF1D4ED8).withOpacity(isDark ? 0.14 : 0.06), size: 600)),
+              child: _AmbientGlow(color: const Color(0xFF1D4ED8).withOpacity(isDark ? 0.14 : 0.06), size: 600)),
           SafeArea(
             child: SingleChildScrollView(
               controller: _scrollController,
@@ -130,9 +130,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                   onLaunch: () => Navigator.push(
                                     context,
                                     PageRouteBuilder(
-                                      pageBuilder: (_, a, _) => TranslateScreen(
+                                      pageBuilder: (_, a, __) => TranslateScreen(
                                           toggleTheme: widget.toggleTheme, setLocale: widget.setLocale),
-                                      transitionsBuilder: (_, anim, _, child) =>
+                                      transitionsBuilder: (_, anim, __, child) =>
                                           FadeTransition(opacity: anim, child: child),
                                       transitionDuration: const Duration(milliseconds: 400),
                                     ),
@@ -146,7 +146,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         _DividerLine(isDark: isDark),
                         SizedBox(height: isDesktop ? 80 : 60),
                         Container(key: _statsKey,
-                          child: _StatsSection(isDesktop: isDesktop, isVisible: _statsVisible, l: l, isDark: isDark)),
+                            child: _StatsSection(isDesktop: isDesktop, isVisible: _statsVisible, l: l, isDark: isDark)),
                         SizedBox(height: isDesktop ? 120 : 80),
                         _SectionLabel(text: l.t('obj_heading'), sub: l.t('obj_sub'), isDark: isDark),
                         SizedBox(height: isDesktop ? 56 : 40),
@@ -235,7 +235,7 @@ class _StatusChip extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return AnimatedBuilder(
       animation: pulse,
-      builder: (_, _) => Container(
+      builder: (_, __) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
           color: isDark ? _kSurfaceUp : Colors.white,
@@ -278,7 +278,7 @@ class _HeroText extends StatelessWidget {
       textAlign: TextAlign.center,
       text: TextSpan(
         style: TextStyle(fontSize: fontSize, fontWeight: FontWeight.w900,
-          color: isDark ? _kTextPri : const Color(0xFF0A0A1F), height: 1.08, letterSpacing: -2.0),
+            color: isDark ? _kTextPri : const Color(0xFF0A0A1F), height: 1.08, letterSpacing: -2.0),
         children: [
           TextSpan(text: l.t('hero_title_1')),
           WidgetSpan(child: ShaderMask(
@@ -403,18 +403,18 @@ class _StatsSection extends StatelessWidget {
     ];
     return isDesktop
         ? IntrinsicHeight(
-            child: Row(children: [
-              for (int i = 0; i < stats.length; i++) ...[
-                Expanded(child: _StatCell(value: stats[i].value, label: stats[i].label,
-                    color: stats[i].color, suffix: stats[i].suffix, isVisible: isVisible, isDark: isDark)),
-                if (i < stats.length - 1) Container(width: 1, color: isDark ? _kBorder : const Color(0xFFDDDDEE)),
-              ],
-            ]),
-          )
+      child: Row(children: [
+        for (int i = 0; i < stats.length; i++) ...[
+          Expanded(child: _StatCell(value: stats[i].value, label: stats[i].label,
+              color: stats[i].color, suffix: stats[i].suffix, isVisible: isVisible, isDark: isDark)),
+          if (i < stats.length - 1) Container(width: 1, color: isDark ? _kBorder : const Color(0xFFDDDDEE)),
+        ],
+      ]),
+    )
         : Column(children: stats.map((s) => Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: _StatCell(value: s.value, label: s.label, color: s.color, suffix: s.suffix, isVisible: isVisible, isDark: isDark),
-          )).toList());
+      padding: const EdgeInsets.only(bottom: 16),
+      child: _StatCell(value: s.value, label: s.label, color: s.color, suffix: s.suffix, isVisible: isVisible, isDark: isDark),
+    )).toList());
   }
 }
 
@@ -435,7 +435,7 @@ class _StatCellState extends State<_StatCell> with SingleTickerProviderStateMixi
     super.initState();
     _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 2200));
     _anim = Tween<double>(begin: 0, end: double.parse(widget.value)).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutExpo));
+        CurvedAnimation(parent: _ctrl, curve: Curves.easeOutExpo));
   }
   @override
   void didUpdateWidget(_StatCell old) {
@@ -450,7 +450,7 @@ class _StatCellState extends State<_StatCell> with SingleTickerProviderStateMixi
     padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 32),
     child: AnimatedBuilder(
       animation: _anim,
-      builder: (_, _) => Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      builder: (_, __) => Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         RichText(text: TextSpan(children: [
           TextSpan(text: _fmt(_anim.value.toInt()), style: TextStyle(
             fontSize: 44, fontWeight: FontWeight.w900, color: widget.color,
@@ -512,27 +512,43 @@ class _ObjectivesGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final cards = [
       (icon: Icons.accessibility_new_rounded, title: l.t('obj_accessibility'), desc: l.t('obj_accessibility_desc'),
-       color: const Color(0xFF7C3AED), page: AccessibilityPage(toggleTheme: toggleTheme, setLocale: setLocale)),
+      color: const Color(0xFF7C3AED), page: AccessibilityPage(toggleTheme: toggleTheme, setLocale: setLocale)),
       (icon: Icons.connecting_airports_rounded, title: l.t('obj_bridging'), desc: l.t('obj_bridging_desc'),
-       color: const Color(0xFF0284C7), page: BridgingGapsPage(toggleTheme: toggleTheme, setLocale: setLocale)),
+      color: const Color(0xFF0284C7), page: BridgingGapsPage(toggleTheme: toggleTheme, setLocale: setLocale)),
       (icon: Icons.people_outline_rounded, title: l.t('obj_inclusivity'), desc: l.t('obj_inclusivity_desc'),
-       color: const Color(0xFF059669), page: InclusivityPage(toggleTheme: toggleTheme, setLocale: setLocale)),
+      color: const Color(0xFF059669), page: InclusivityPage(toggleTheme: toggleTheme, setLocale: setLocale)),
       (icon: Icons.shield_outlined, title: l.t('obj_privacy'), desc: l.t('obj_privacy_desc'),
-       color: const Color(0xFFD97706), page: PrivacyPage(toggleTheme: toggleTheme, setLocale: setLocale)),
+      color: const Color(0xFFD97706), page: PrivacyPage(toggleTheme: toggleTheme, setLocale: setLocale)),
       (icon: Icons.wifi_off_rounded, title: l.t('obj_offline'), desc: l.t('obj_offline_desc'),
-       color: const Color(0xFF6366F1), page: OfflinePage(toggleTheme: toggleTheme, setLocale: setLocale)),
+      color: const Color(0xFF6366F1), page: OfflinePage(toggleTheme: toggleTheme, setLocale: setLocale)),
       (icon: Icons.school_rounded, title: l.t('obj_education'), desc: l.t('obj_education_desc'),
-       color: const Color(0xFFDC2626), page: EducationPage(toggleTheme: toggleTheme, setLocale: setLocale)),
+      color: const Color(0xFFDC2626), page: EducationPage(toggleTheme: toggleTheme, setLocale: setLocale)),
     ];
 
-    final cols = isDesktop ? 3 : (isTablet ? 2 : 1);
+    // ── MOBILE: use a plain Column so each card sizes to its own content ──
+    if (!isDesktop && !isTablet) {
+      return Column(
+        children: cards.map((c) => Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: _ObjCard(
+            icon: c.icon, title: c.title, desc: c.desc,
+            isDark: isDark, accent: c.color, page: c.page,
+            isMobile: true,
+          ),
+        )).toList(),
+      );
+    }
+
+    // ── TABLET / DESKTOP: keep original GridView (unchanged) ──
+    final cols = isDesktop ? 3 : 2;
     return GridView.count(
       shrinkWrap: true, physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: cols, mainAxisSpacing: 16, crossAxisSpacing: 16,
-      childAspectRatio: isDesktop ? 1.65 : (isTablet ? 1.5 : 2.8),
+      childAspectRatio: isDesktop ? 1.65 : 1.5,
       children: cards.map((c) => _ObjCard(
         icon: c.icon, title: c.title, desc: c.desc,
         isDark: isDark, accent: c.color, page: c.page,
+        isMobile: false,
       )).toList(),
     );
   }
@@ -544,8 +560,9 @@ class _ObjCard extends StatefulWidget {
   final bool isDark;
   final Color accent;
   final Widget page;
+  final bool isMobile;
   const _ObjCard({required this.icon, required this.title, required this.desc,
-    required this.isDark, required this.accent, required this.page});
+    required this.isDark, required this.accent, required this.page, required this.isMobile});
   @override State<_ObjCard> createState() => _ObjCardState();
 }
 
@@ -559,8 +576,8 @@ class _ObjCardState extends State<_ObjCard> {
       onExit: (_) => setState(() => _hovered = false),
       child: GestureDetector(
         onTap: () => Navigator.push(context, PageRouteBuilder(
-          pageBuilder: (_, a, _) => widget.page,
-          transitionsBuilder: (_, anim, _, child) => FadeTransition(
+          pageBuilder: (_, a, __) => widget.page,
+          transitionsBuilder: (_, anim, __, child) => FadeTransition(
             opacity: anim,
             child: SlideTransition(
               position: Tween<Offset>(begin: const Offset(0, 0.03), end: Offset.zero)
@@ -572,7 +589,9 @@ class _ObjCardState extends State<_ObjCard> {
         )),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.all(28),
+          // Mobile: no fixed height — wrap content naturally
+          // Tablet/Desktop: keep original behaviour (GridView controls height)
+          padding: EdgeInsets.all(widget.isMobile ? 20 : 28),
           decoration: BoxDecoration(
             color: widget.isDark
                 ? (_hovered ? _kSurfaceUp : _kSurface)
@@ -588,7 +607,9 @@ class _ObjCardState extends State<_ObjCard> {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
+            // Mobile: shrink-wrap; Tablet/Desktop: center vertically inside fixed-height grid cell
+            mainAxisSize: widget.isMobile ? MainAxisSize.min : MainAxisSize.max,
+            mainAxisAlignment: widget.isMobile ? MainAxisAlignment.start : MainAxisAlignment.center,
             children: [
               Row(
                 children: [
