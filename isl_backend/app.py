@@ -52,7 +52,7 @@ except Exception as e:
 # ─────────────────────────────────────────────
 # INFERENCE CONFIG
 # ─────────────────────────────────────────────
-CONF_THRESHOLD = 0.50
+CONF_THRESHOLD = 0.30
 MAX_DET = 1
 SMOOTH_WINDOW = 5
 FRAME_SKIP_MS = 80  # ~12 FPS
