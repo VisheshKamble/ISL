@@ -2,6 +2,7 @@
 // Drop this widget anywhere in your app's widget tree.
 // It shows a persistent red SOS button — even on the translate screen.
 // On mobile: also works via shake (configured in main.dart).
+// Configures the SOS message type (general, medical, police) and opens a full-screen SOS page with more details and options.
 
 import 'package:flutter/material.dart';
 import '../services/EmergencyService.dart';
