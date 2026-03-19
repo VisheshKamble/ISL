@@ -2,7 +2,8 @@
 import 'package:flutter/material.dart';
 import '../screens/TranslateScreen.dart';
 import '../screens/SignsPage.dart';
-import '../screens/EmergencyScreen.dart';          // ← NEW
+import '../screens/EmergencyScreen.dart';
+import '../screens/TwoWayScreen.dart';
 import '../l10n/AppLocalizations.dart';
 
 class GlobalNavbar extends StatelessWidget {
@@ -107,7 +108,7 @@ class GlobalNavbar extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => TranslateScreen(
+                          builder: (_) => TranslateScreen(
                             toggleTheme: toggleTheme,
                             setLocale: setLocale,
                           ),
@@ -116,7 +117,6 @@ class GlobalNavbar extends StatelessWidget {
                     }
                   },
                 ),
-                // ── Signs link ───────────────────────
                 _NavLink(
                   label: l.t('nav_signs'),
                   isActive: activeRoute == 'signs',
@@ -131,14 +131,34 @@ class GlobalNavbar extends StatelessWidget {
                           ),
                           transitionsBuilder: (_, anim, __, child) =>
                               FadeTransition(opacity: anim, child: child),
-                          transitionDuration:
-                              const Duration(milliseconds: 350),
+                          transitionDuration: const Duration(milliseconds: 350),
                         ),
                       );
                     }
                   },
                 ),
-                // ── Emergency link ───────────────────
+                // ── Two-Way Bridge link ──────────────
+                _BridgeNavLink(
+                  label: l.t('nav_bridge'),
+                  isActive: activeRoute == 'bridge',
+                  onTap: () {
+                    if (activeRoute != 'bridge') {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (_, a, __) => TwoWayScreen(
+                            toggleTheme: toggleTheme,
+                            setLocale: setLocale,
+                          ),
+                          transitionsBuilder: (_, anim, __, child) =>
+                              FadeTransition(opacity: anim, child: child),
+                          transitionDuration: const Duration(milliseconds: 350),
+                        ),
+                      );
+                    }
+                  },
+                ),
+                // ── Emergency SOS link ───────────────
                 _EmergencyNavLink(
                   isActive: activeRoute == 'emergency',
                   onTap: () {
@@ -152,20 +172,37 @@ class GlobalNavbar extends StatelessWidget {
                           ),
                           transitionsBuilder: (_, anim, __, child) =>
                               FadeTransition(opacity: anim, child: child),
-                          transitionDuration:
-                              const Duration(milliseconds: 350),
+                          transitionDuration: const Duration(milliseconds: 350),
                         ),
                       );
                     }
                   },
                 ),
-                // ────────────────────────────────────
                 _NavLink(label: l.t('nav_api')),
                 const SizedBox(width: 6),
               ],
 
-              // ── Mobile: compact emergency icon ───────
-              if (screenWidth <= 750)
+              // ── Mobile: compact icon buttons ────────
+              if (screenWidth <= 750) ...[
+                _MobileBridgeIcon(
+                  isActive: activeRoute == 'bridge',
+                  onTap: () {
+                    if (activeRoute != 'bridge') {
+                      Navigator.push(
+                        context,
+                        PageRouteBuilder(
+                          pageBuilder: (_, a, __) => TwoWayScreen(
+                            toggleTheme: toggleTheme,
+                            setLocale: setLocale,
+                          ),
+                          transitionsBuilder: (_, anim, __, child) =>
+                              FadeTransition(opacity: anim, child: child),
+                          transitionDuration: const Duration(milliseconds: 350),
+                        ),
+                      );
+                    }
+                  },
+                ),
                 _MobileEmergencyIcon(
                   isActive: activeRoute == 'emergency',
                   onTap: () {
@@ -179,13 +216,13 @@ class GlobalNavbar extends StatelessWidget {
                           ),
                           transitionsBuilder: (_, anim, __, child) =>
                               FadeTransition(opacity: anim, child: child),
-                          transitionDuration:
-                              const Duration(milliseconds: 350),
+                          transitionDuration: const Duration(milliseconds: 350),
                         ),
                       );
                     }
                   },
                 ),
+              ],
 
               // Language Selector
               _LanguageDropdown(
@@ -216,6 +253,136 @@ class GlobalNavbar extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────
+//  BRIDGE NAV LINK — desktop (teal pill)
+// ──────────────────────────────────────────────────────────────────
+class _BridgeNavLink extends StatefulWidget {
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _BridgeNavLink({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  State<_BridgeNavLink> createState() => _BridgeNavLinkState();
+}
+
+class _BridgeNavLinkState extends State<_BridgeNavLink>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _pulseCtrl;
+  late Animation<double> _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 3),
+    )..repeat(reverse: true);
+    _pulse = Tween<double>(begin: 0.3, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _pulseCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const teal = Color(0xFF0891B2);
+    const tealLight = Color(0xFF22D3EE);
+
+    return InkWell(
+      onTap: widget.onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: widget.isActive
+              ? teal.withOpacity(0.18)
+              : teal.withOpacity(0.07),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: widget.isActive
+                ? teal.withOpacity(0.55)
+                : teal.withOpacity(0.2),
+            width: widget.isActive ? 1.5 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedBuilder(
+              animation: _pulse,
+              builder: (_, __) => Icon(
+                Icons.compare_arrows_rounded,
+                color: tealLight.withOpacity(0.5 + _pulse.value * 0.5),
+                size: 13,
+              ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              widget.label,
+              style: const TextStyle(
+                color: tealLight,
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+                letterSpacing: 1.0,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────
+//  MOBILE BRIDGE ICON
+// ──────────────────────────────────────────────────────────────────
+class _MobileBridgeIcon extends StatelessWidget {
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _MobileBridgeIcon({
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const teal = Color(0xFF0891B2);
+    const tealLight = Color(0xFF22D3EE);
+
+    return Container(
+      margin: const EdgeInsets.only(right: 4),
+      child: IconButton(
+        onPressed: onTap,
+        tooltip: 'Two-Way Communication',
+        style: IconButton.styleFrom(
+          backgroundColor: teal.withOpacity(isActive ? 0.18 : 0.08),
+          side: BorderSide(
+              color: teal.withOpacity(isActive ? 0.55 : 0.2)),
+        ),
+        icon: const Icon(
+          Icons.compare_arrows_rounded,
+          color: tealLight,
+          size: 18,
+        ),
       ),
     );
   }
@@ -286,7 +453,6 @@ class _EmergencyNavLinkState extends State<_EmergencyNavLink>
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Pulsing dot
             AnimatedBuilder(
               animation: _pulse,
               builder: (_, __) => Container(
@@ -323,7 +489,7 @@ class _EmergencyNavLinkState extends State<_EmergencyNavLink>
 }
 
 // ──────────────────────────────────────────────────────────────────
-//  EMERGENCY ICON — mobile navbar (compact red icon button)
+//  MOBILE EMERGENCY ICON
 // ──────────────────────────────────────────────────────────────────
 class _MobileEmergencyIcon extends StatefulWidget {
   final bool isActive;
@@ -385,11 +551,10 @@ class _MobileEmergencyIconState extends State<_MobileEmergencyIcon>
         onPressed: widget.onTap,
         tooltip: 'Emergency SOS',
         style: IconButton.styleFrom(
-          backgroundColor: crimson.withOpacity(
-              widget.isActive ? 0.18 : 0.10),
+          backgroundColor:
+              crimson.withOpacity(widget.isActive ? 0.18 : 0.10),
           side: BorderSide(
-            color: crimson.withOpacity(widget.isActive ? 0.6 : 0.3),
-          ),
+              color: crimson.withOpacity(widget.isActive ? 0.6 : 0.3)),
         ),
         icon: const Icon(
           Icons.emergency_rounded,
@@ -402,7 +567,7 @@ class _MobileEmergencyIconState extends State<_MobileEmergencyIcon>
 }
 
 // ──────────────────────────────────────────────────────────────────
-//  LANGUAGE DROPDOWN  (unchanged)
+//  LANGUAGE DROPDOWN
 // ──────────────────────────────────────────────────────────────────
 class _LanguageDropdown extends StatelessWidget {
   final Locale currentLocale;
@@ -435,8 +600,7 @@ class _LanguageDropdown extends StatelessWidget {
     return PopupMenuButton<String>(
       tooltip: l.t('nav_language'),
       offset: const Offset(0, 46),
-      shape:
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: isDark ? const Color(0xFF1A1A3A) : Colors.white,
       elevation: 12,
       onSelected: (code) => setLocale(Locale(code)),
@@ -468,8 +632,7 @@ class _LanguageDropdown extends StatelessWidget {
         );
       }).toList(),
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: primary.withOpacity(0.08),
           borderRadius: BorderRadius.circular(10),
@@ -478,8 +641,7 @@ class _LanguageDropdown extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(current['flag']!,
-                style: const TextStyle(fontSize: 14)),
+            Text(current['flag']!, style: const TextStyle(fontSize: 14)),
             const SizedBox(width: 8),
             Text(
               current['label']!,
@@ -491,8 +653,7 @@ class _LanguageDropdown extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 6),
-            Icon(Icons.keyboard_arrow_down_rounded,
-                color: primary, size: 16),
+            Icon(Icons.keyboard_arrow_down_rounded, color: primary, size: 16),
           ],
         ),
       ),
@@ -501,12 +662,13 @@ class _LanguageDropdown extends StatelessWidget {
 }
 
 // ──────────────────────────────────────────────────────────────────
-//  NAV LINK  (unchanged)
+//  NAV LINK
 // ──────────────────────────────────────────────────────────────────
 class _NavLink extends StatelessWidget {
   final String label;
   final bool isActive;
   final VoidCallback? onTap;
+
   const _NavLink(
       {required this.label, this.isActive = false, this.onTap});
 
