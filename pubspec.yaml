@@ -17,6 +17,9 @@ dependencies:
   cupertino_icons: ^1.0.8
   web_socket_channel: ^3.0.1
 
+  # google fonts
+  google_fonts: ^6.2.1
+
   # Localization
   flutter_localizations:
     sdk: flutter
