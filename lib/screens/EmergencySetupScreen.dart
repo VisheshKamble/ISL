@@ -1,10 +1,9 @@
 // lib/screens/EmergencySetupScreen.dart
 import 'package:flutter/material.dart';
 import '../components/GlobalNavbar.dart';
-import '../l10n/AppLocalizations.dart';
 import '../models/EmergencyContact.dart';
 import '../services/EmergencyService.dart';
-import '../Utils/PlatformHelper.dart';
+import '../utils/PlatformHelper.dart';
 
 // ── Accent colours — same in both modes ─────────────────────────
 const _kCrimson     = Color(0xFFE02020);
@@ -86,7 +85,21 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
     final contacts  = _service.getContacts();
     final w         = MediaQuery.of(context).size.width;
     final isDesktop = w > 1100;
-    final hPad      = isDesktop ? 120.0 : (w > 700 ? 64.0 : 24.0);
+
+    // Hard split: mobile-native below 700, website above
+    if (w < 700) return _buildMobileShell(context, t, contacts, isDark);
+    return _buildWebsite(context, t, contacts, isDesktop);
+  }
+
+  // ══════════════════════════════════════════════
+  //  MOBILE SHELL — native app contacts manager
+  //  No GlobalNavbar. Compact top bar with back.
+  //  Full-width contact cards with swipe-friendly sizing.
+  //  Capabilities strip replaces the old platform card.
+  // ══════════════════════════════════════════════
+  Widget _buildMobileShell(BuildContext context, _T t,
+      List<EmergencyContact> contacts, bool isDark) {
+    final hasPrimary = contacts.any((c) => c.isPrimary);
 
     return Scaffold(
       backgroundColor: t.scaffold,
@@ -94,20 +107,133 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
         child: FadeTransition(
           opacity: _entryFade,
           child: Column(children: [
-            GlobalNavbar(
-              toggleTheme: widget.toggleTheme,
-              setLocale: widget.setLocale,
-              activeRoute: 'emergency',
+
+            // ── Compact top bar ──────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(children: [
+                GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                        width: 38, height: 38,
+                        decoration: BoxDecoration(
+                            color: t.surfaceUp, shape: BoxShape.circle,
+                            border: Border.all(color: t.border)),
+                        child: Icon(Icons.arrow_back_rounded, color: t.textSec, size: 18))),
+                const SizedBox(width: 12),
+                // Icon + title
+                Container(
+                    width: 34, height: 34,
+                    decoration: BoxDecoration(
+                        color: _kCrimson.withOpacity(0.09),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: _kCrimson.withOpacity(0.18))),
+                    child: const Icon(Icons.contacts_rounded, color: _kCrimsonSoft, size: 16)),
+                const SizedBox(width: 10),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Emergency Contacts', style: TextStyle(
+                      color: t.textPri, fontSize: 15, fontWeight: FontWeight.w800)),
+                  Text('Up to 5 · Alerted on SOS', style: TextStyle(
+                      color: t.textSec, fontSize: 10.5)),
+                ])),
+                // Count badge
+                Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                    decoration: BoxDecoration(
+                        color: (hasPrimary ? _kGreen : _kAmber).withOpacity(isDark ? 0.10 : 0.07),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                            color: (hasPrimary ? _kGreen : _kAmber).withOpacity(0.22))),
+                    child: Text('${contacts.length}/5',
+                        style: TextStyle(
+                            color: hasPrimary ? _kGreen : _kAmber,
+                            fontSize: 11, fontWeight: FontWeight.w700))),
+              ]),
             ),
+
+            // ── Body ─────────────────────────────
             Expanded(
               child: SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 60),
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
                 physics: const BouncingScrollPhysics(),
-                child: isDesktop
-                    ? _buildDesktopLayout(t, contacts)
-                    : _buildMobileLayout(t, contacts),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
+                  // Mobile capabilities strip
+                  _MobileCapStrip(t: t, isDark: isDark),
+                  const SizedBox(height: 18),
+
+                  // Shake card
+                  if (PlatformHelper.supportsShake) ...[
+                    _buildShakeInfoCard(t),
+                    const SizedBox(height: 18),
+                  ],
+
+                  // Section header
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Text(
+                        contacts.isEmpty ? 'No contacts yet' : 'Your Contacts',
+                        style: TextStyle(color: t.textPri, fontSize: 14,
+                            fontWeight: FontWeight.w800)),
+                    if (!hasPrimary && contacts.isNotEmpty)
+                      Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                              color: _kAmber.withOpacity(isDark ? 0.08 : 0.06),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: _kAmber.withOpacity(0.20))),
+                          child: const Text('No primary set', style: TextStyle(
+                              color: _kAmber, fontSize: 10, fontWeight: FontWeight.w600))),
+                  ]),
+                  const SizedBox(height: 12),
+
+                  // Empty state
+                  if (contacts.isEmpty) _buildEmptyState(t),
+
+                  // Contact rows
+                  ...contacts.asMap().entries.map((e) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _ContactRow(
+                        contact: e.value, index: e.key, t: t,
+                        onDelete:     () => _confirmDelete(e.key),
+                        onSetPrimary: () => _setPrimary(e.key),
+                        onEdit:       () => _openDialog(existing: e.value, index: e.key),
+                      ))),
+
+                  // Add button
+                  if (contacts.length < 5) ...[
+                    const SizedBox(height: 4),
+                    _AddButton(t: t, onTap: () => _openDialog()),
+                  ],
+                ]),
               ),
             ),
+          ]),
+        ),
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════
+  //  WEBSITE (≥ 700px) — unchanged
+  // ══════════════════════════════════════════════
+  Widget _buildWebsite(BuildContext context, _T t,
+      List<EmergencyContact> contacts, bool isDesktop) {
+    final hPad = isDesktop ? 120.0 : 64.0;
+    return Scaffold(
+      backgroundColor: t.scaffold,
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _entryFade,
+          child: Column(children: [
+            GlobalNavbar(toggleTheme: widget.toggleTheme,
+                setLocale: widget.setLocale, activeRoute: 'emergency'),
+            Expanded(child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 60),
+              physics: const BouncingScrollPhysics(),
+              child: isDesktop
+                  ? _buildDesktopLayout(t, contacts)
+                  : _buildTabletLayout(t, contacts),
+            )),
           ]),
         ),
       ),
@@ -133,7 +259,7 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
     ]);
   }
 
-  Widget _buildMobileLayout(_T t, List<EmergencyContact> contacts) {
+  Widget _buildTabletLayout(_T t, List<EmergencyContact> contacts) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       _buildPageHeader(t),
       const SizedBox(height: 28),
@@ -150,14 +276,13 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
   // ── Page header ──────────────────────────────────────────────
 
   Widget _buildPageHeader(_T t) {
-    final l = AppLocalizations.of(context);
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       GestureDetector(
         onTap: () => Navigator.pop(context),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(Icons.arrow_back_rounded, color: t.textSec, size: 16),
           const SizedBox(width: 6),
-          Text(l.t('sos_setup_back'), style: TextStyle(color: t.textSec, fontSize: 13)),
+          Text('Emergency', style: TextStyle(color: t.textSec, fontSize: 13)),
         ]),
       ),
       const SizedBox(height: 20),
@@ -170,30 +295,37 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
             border: Border.all(color: _kCrimson.withOpacity(0.2)),
           ),
           child: const Center(
-            child: Icon(Icons.contacts_rounded, color: _kCrimsonSoft, size: 22)),
+              child: Icon(Icons.contacts_rounded, color: _kCrimsonSoft, size: 22)),
         ),
         const SizedBox(width: 16),
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(l.t('sos_setup_title'), style: TextStyle(
-            color: t.textPri, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
+          Text('Emergency Contacts', style: TextStyle(
+              color: t.textPri, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
           const SizedBox(height: 2),
-          Text(l.t('sos_setup_subtitle'),
+          Text('Up to 5 people alerted during SOS',
               style: TextStyle(color: t.textSec, fontSize: 13)),
         ]),
       ]),
     ]);
   }
 
-  // ── Platform card ────────────────────────────────────────────
+  // ── Platform card (desktop/tablet only) ─────────────────────
 
   Widget _buildPlatformCard(_T t) {
-    final l = AppLocalizations.of(context);
     final isMobile = PlatformHelper.isMobile;
     final features = isMobile
-        ? [('📲','Auto SMS with GPS coordinates'),('📳','Shake phone to trigger instantly'),
-           ('📍','Precise location attached'),('🔔','Vibration + sound feedback')]
-        : [('💬','WhatsApp + call links open'),('📍','Browser GPS when permitted'),
-           ('📋','One-tap copy for message'),('🔗','All contacts shown at once')];
+        ? [
+      (Icons.sms_rounded,       'Auto SMS with GPS coordinates'),
+      (Icons.vibration_rounded, 'Shake phone to trigger instantly'),
+      (Icons.location_on_rounded,'Precise location attached'),
+      (Icons.notifications_rounded,'Vibration + sound feedback'),
+    ]
+        : [
+      (Icons.chat_bubble_rounded, 'WhatsApp + call links open'),
+      (Icons.location_on_rounded, 'Browser GPS when permitted'),
+      (Icons.content_copy_rounded,'One-tap copy for message'),
+      (Icons.link_rounded,        'All contacts shown at once'),
+    ];
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -208,16 +340,21 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
               color: _kVioletLight, size: 15),
           const SizedBox(width: 8),
           Text(
-            isMobile ? l.t('sos_mobile_features') : l.t('sos_web_features'),
+            isMobile ? 'Mobile SOS capabilities' : 'Web SOS capabilities',
             style: const TextStyle(
-              color: _kVioletLight, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
+                color: _kVioletLight, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
           ),
         ]),
         const SizedBox(height: 14),
         ...features.map((f) => Padding(
-          padding: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.only(bottom: 9),
           child: Row(children: [
-            Text(f.$1, style: const TextStyle(fontSize: 13)),
+            Container(
+                width: 26, height: 26,
+                decoration: BoxDecoration(
+                    color: _kViolet.withOpacity(t.d ? 0.10 : 0.07),
+                    borderRadius: BorderRadius.circular(7)),
+                child: Icon(f.$1, color: _kVioletLight, size: 13)),
             const SizedBox(width: 10),
             Text(f.$2, style: TextStyle(color: t.textSec, fontSize: 12, height: 1.4)),
           ]),
@@ -229,22 +366,27 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
   // ── Shake info card ──────────────────────────────────────────
 
   Widget _buildShakeInfoCard(_T t) {
-    final l = AppLocalizations.of(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: _kViolet.withOpacity(t.d ? 0.06 : 0.04),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: _kViolet.withOpacity(0.15)),
       ),
       child: Row(children: [
-        const Text('📳', style: TextStyle(fontSize: 22)),
+        Container(
+            width: 38, height: 38,
+            decoration: BoxDecoration(
+                color: _kViolet.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: _kViolet.withOpacity(0.20))),
+            child: const Icon(Icons.vibration_rounded, color: _kVioletLight, size: 17)),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(l.t('sos_shake_active'), style: const TextStyle(
-            color: _kVioletLight, fontSize: 12, fontWeight: FontWeight.w700)),
+          const Text('Shake-to-SOS is active', style: TextStyle(
+              color: _kVioletLight, fontSize: 12, fontWeight: FontWeight.w700)),
           const SizedBox(height: 3),
-          Text(l.t('sos_shake_body_setup'),
+          Text('Shake phone twice from any screen to trigger a general SOS.',
               style: TextStyle(color: t.textSec, fontSize: 11, height: 1.5)),
         ])),
       ]),
@@ -254,15 +396,12 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
   // ── Contacts section ─────────────────────────────────────────
 
   Widget _buildContactsSection(_T t, List<EmergencyContact> contacts) {
-    final l = AppLocalizations.of(context);
     final hasPrimary = contacts.any((c) => c.isPrimary);
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Text(
-          contacts.isEmpty
-              ? l.t('sos_no_contacts_yet')
-              : l.t('sos_contacts_count').replaceAll('{n}', contacts.length.toString()),
+          contacts.isEmpty ? 'No contacts yet' : '${contacts.length} of 5 contacts',
           style: TextStyle(color: t.textSec, fontSize: 12,
               fontWeight: FontWeight.w600, letterSpacing: 0.5),
         ),
@@ -275,10 +414,10 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
               border: Border.all(color: (hasPrimary ? _kGreen : _kAmber).withOpacity(0.2)),
             ),
             child: Text(
-              hasPrimary ? l.t('sos_primary_set') : l.t('sos_no_primary'),
+              hasPrimary ? '● Primary set' : '○ No primary',
               style: TextStyle(
-                color: hasPrimary ? _kGreen : _kAmber,
-                fontSize: 10, fontWeight: FontWeight.w600),
+                  color: hasPrimary ? _kGreen : _kAmber,
+                  fontSize: 10, fontWeight: FontWeight.w600),
             ),
           ),
       ]),
@@ -303,7 +442,6 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
   }
 
   Widget _buildEmptyState(_T t) {
-    final l = AppLocalizations.of(context);
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(bottom: 16),
@@ -321,13 +459,13 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
             shape: BoxShape.circle,
           ),
           child: const Center(
-            child: Icon(Icons.person_add_rounded, color: _kCrimsonSoft, size: 24)),
+              child: Icon(Icons.person_add_rounded, color: _kCrimsonSoft, size: 24)),
         ),
         const SizedBox(height: 14),
-        Text(l.t('sos_add_first'), style: TextStyle(
-          color: t.textPri, fontSize: 16, fontWeight: FontWeight.w700)),
+        Text('Add your first contact', style: TextStyle(
+            color: t.textPri, fontSize: 16, fontWeight: FontWeight.w700)),
         const SizedBox(height: 6),
-        Text(l.t('sos_add_first_body'),
+        Text("They'll receive your SOS message\nwith your GPS location.",
             textAlign: TextAlign.center,
             style: TextStyle(color: t.textSec, fontSize: 12, height: 1.6)),
       ]),
@@ -337,13 +475,12 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
   // ── Actions ──────────────────────────────────────────────────
 
   void _confirmDelete(int index) {
-    final l = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => _ConfirmDialog(
-        title: l.t('sos_remove_title'),
-        body: l.t('sos_remove_body'),
-        confirmLabel: l.t('sos_remove_btn'),
+        title: 'Remove contact?',
+        body: 'This person will no longer receive your SOS alerts.',
+        confirmLabel: 'Remove',
         confirmColor: _kCrimsonSoft,
         onConfirm: () async {
           await _service.deleteContact(index);
@@ -458,7 +595,7 @@ class _ContactRowState extends State<_ContactRow> {
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
               Text(widget.contact.name, style: TextStyle(
-                color: t.textPri, fontWeight: FontWeight.w700, fontSize: 14)),
+                  color: t.textPri, fontWeight: FontWeight.w700, fontSize: 14)),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -467,13 +604,13 @@ class _ContactRowState extends State<_ContactRow> {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(widget.contact.relation, style: TextStyle(
-                  color: color, fontSize: 10, fontWeight: FontWeight.w600)),
+                    color: color, fontSize: 10, fontWeight: FontWeight.w600)),
               ),
             ]),
             const SizedBox(height: 3),
             Text(widget.contact.phone, style: TextStyle(
-              color: t.textSec, fontSize: 12,
-              fontFeatures: const [FontFeature.tabularFigures()])),
+                color: t.textSec, fontSize: 12,
+                fontFeatures: const [FontFeature.tabularFigures()])),
           ])),
 
           PopupMenuButton<String>(
@@ -490,9 +627,9 @@ class _ContactRowState extends State<_ContactRow> {
             },
             itemBuilder: (_) => [
               if (!widget.contact.isPrimary)
-                _menuItem(t, 'primary', AppLocalizations.of(context).t('sos_set_primary'), _kVioletLight),
-              _menuItem(t, 'edit',   AppLocalizations.of(context).t('sos_edit_btn'),  t.textPri),
-              _menuItem(t, 'delete', AppLocalizations.of(context).t('sos_remove_menu'), _kCrimsonSoft),
+                _menuItem(t, 'primary', '★  Set as primary', _kVioletLight),
+              _menuItem(t, 'edit',   '✎  Edit contact',  t.textPri),
+              _menuItem(t, 'delete', '✕  Remove',         _kCrimsonSoft),
             ],
           ),
         ]),
@@ -525,7 +662,6 @@ class _AddButtonState extends State<_AddButton> {
   @override
   Widget build(BuildContext context) {
     final t = widget.t;
-    final l = AppLocalizations.of(context);
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit:  (_) => setState(() => _hovered = false),
@@ -539,15 +675,15 @@ class _AddButtonState extends State<_AddButton> {
             color: _hovered ? _kViolet.withOpacity(t.d ? 0.08 : 0.05) : Colors.transparent,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: _hovered ? _kViolet.withOpacity(0.4) : t.borderBrt),
+                color: _hovered ? _kViolet.withOpacity(0.4) : t.borderBrt),
           ),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
             Icon(Icons.add_rounded,
                 color: _hovered ? _kVioletLight : t.textSec, size: 18),
             const SizedBox(width: 8),
-            Text(l.t('sos_add_contact'), style: TextStyle(
-              color: _hovered ? _kVioletLight : t.textSec,
-              fontSize: 13, fontWeight: FontWeight.w700)),
+            Text('Add emergency contact', style: TextStyle(
+                color: _hovered ? _kVioletLight : t.textSec,
+                fontSize: 13, fontWeight: FontWeight.w700)),
           ]),
         ),
       ),
@@ -595,7 +731,6 @@ class _ContactFormDialogState extends State<_ContactFormDialog> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final t      = _T(isDark);
     final isEdit = widget.existing != null;
-    final l      = AppLocalizations.of(context);
 
     return Dialog(
       backgroundColor: t.surface,
@@ -620,13 +755,13 @@ class _ContactFormDialogState extends State<_ContactFormDialog> {
                     border: Border.all(color: _kViolet.withOpacity(0.2)),
                   ),
                   child: const Center(
-                    child: Icon(Icons.person_rounded, color: _kVioletLight, size: 18)),
+                      child: Icon(Icons.person_rounded, color: _kVioletLight, size: 18)),
                 ),
                 const SizedBox(width: 14),
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(isEdit ? l.t('sos_edit_contact') : l.t('sos_new_contact'), style: TextStyle(
-                    color: t.textPri, fontSize: 16, fontWeight: FontWeight.w800)),
-                  Text(l.t('sos_will_notify'),
+                  Text(isEdit ? 'Edit Contact' : 'New Contact', style: TextStyle(
+                      color: t.textPri, fontSize: 16, fontWeight: FontWeight.w800)),
+                  Text('Will be notified during SOS',
                       style: TextStyle(color: t.textSec, fontSize: 11)),
                 ]),
                 const Spacer(),
@@ -635,7 +770,7 @@ class _ContactFormDialogState extends State<_ContactFormDialog> {
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: t.surfaceHi, borderRadius: BorderRadius.circular(8)),
+                        color: t.surfaceHi, borderRadius: BorderRadius.circular(8)),
                     child: Icon(Icons.close_rounded, color: t.textSec, size: 16),
                   ),
                 ),
@@ -646,26 +781,26 @@ class _ContactFormDialogState extends State<_ContactFormDialog> {
               const SizedBox(height: 24),
 
               // Name
-                _buildLabel(l.t('sos_full_name'), t),
+              _buildLabel('Full name', t),
               const SizedBox(height: 6),
-                _buildTextField(t: t, controller: _nameCtrl, hint: l.t('sos_name_hint'),
+              _buildTextField(t: t, controller: _nameCtrl, hint: 'e.g. Priya Sharma',
                   validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Name is required' : null),
+                  (v == null || v.trim().isEmpty) ? 'Name is required' : null),
 
               const SizedBox(height: 18),
 
               // Phone
-              _buildLabel(l.t('sos_phone'), t),
+              _buildLabel('Phone number', t),
               const SizedBox(height: 6),
               _buildTextField(
                 t: t,
                 controller: _phoneCtrl,
-                hint: l.t('sos_phone_hint'),
+                hint: 'e.g. 9876543210',
                 keyboardType: TextInputType.phone,
                 prefix: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text('+91', style: TextStyle(
-                    color: _kVioletLight, fontSize: 13, fontWeight: FontWeight.w600)),
+                      color: _kVioletLight, fontSize: 13, fontWeight: FontWeight.w600)),
                 ),
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Phone is required';
@@ -680,7 +815,7 @@ class _ContactFormDialogState extends State<_ContactFormDialog> {
               const SizedBox(height: 18),
 
               // Relation
-              _buildLabel(l.t('sos_relation'), t),
+              _buildLabel('Relation', t),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8, runSpacing: 8,
@@ -726,8 +861,8 @@ class _ContactFormDialogState extends State<_ContactFormDialog> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: t.borderBrt),
                       ),
-                      child: Center(child: Text(l.t('sos_cancel'), style: TextStyle(
-                        color: t.textSec, fontWeight: FontWeight.w600, fontSize: 13))),
+                      child: Center(child: Text('Cancel', style: TextStyle(
+                          color: t.textSec, fontWeight: FontWeight.w600, fontSize: 13))),
                     ),
                   ),
                 ),
@@ -745,15 +880,15 @@ class _ContactFormDialogState extends State<_ContactFormDialog> {
                             : [_kViolet, const Color(0xFF5B21B6)]),
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: _saving ? [] : [BoxShadow(
-                          color: _kViolet.withOpacity(0.35),
-                          blurRadius: 16, offset: const Offset(0, 6))],
+                            color: _kViolet.withOpacity(0.35),
+                            blurRadius: 16, offset: const Offset(0, 6))],
                       ),
                       child: Center(child: _saving
                           ? const SizedBox(width: 16, height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                            : Text(isEdit ? l.t('sos_save_changes') : l.t('sos_add_btn'),
-                              style: const TextStyle(
-                                  color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13))),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : Text(isEdit ? 'Save changes' : 'Add contact',
+                          style: const TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13))),
                     ),
                   ),
                 ),
@@ -766,11 +901,11 @@ class _ContactFormDialogState extends State<_ContactFormDialog> {
   }
 
   Widget _buildLabel(String text, _T t) => Text(text, style: TextStyle(
-    color: t.textSec, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.8));
+      color: t.textSec, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.8));
 
   Widget _buildDivider(_T t) => Container(height: 1,
-    decoration: BoxDecoration(gradient: LinearGradient(colors: [
-      Colors.transparent, t.borderBrt, Colors.transparent])));
+      decoration: BoxDecoration(gradient: LinearGradient(colors: [
+        Colors.transparent, t.borderBrt, Colors.transparent])));
 
   Widget _buildTextField({
     required _T t,
@@ -836,7 +971,6 @@ class _ConfirmDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final t = _T(isDark);
-    final l = AppLocalizations.of(context);
 
     return Dialog(
       backgroundColor: t.surface,
@@ -847,14 +981,14 @@ class _ConfirmDialog extends StatelessWidget {
         child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(title, style: TextStyle(
-              color: t.textPri, fontSize: 16, fontWeight: FontWeight.w800)),
+                color: t.textPri, fontSize: 16, fontWeight: FontWeight.w800)),
             const SizedBox(height: 10),
             Text(body, style: TextStyle(color: t.textSec, fontSize: 13, height: 1.6)),
             const SizedBox(height: 24),
             Row(children: [
               Expanded(child: TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text(l.t('sos_cancel'), style: TextStyle(color: t.textSec)))),
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Cancel', style: TextStyle(color: t.textSec)))),
               const SizedBox(width: 8),
               Expanded(child: GestureDetector(
                 onTap: () { Navigator.pop(context); onConfirm(); },
@@ -866,7 +1000,7 @@ class _ConfirmDialog extends StatelessWidget {
                     border: Border.all(color: confirmColor.withOpacity(0.3)),
                   ),
                   child: Center(child: Text(confirmLabel, style: TextStyle(
-                    color: confirmColor, fontWeight: FontWeight.w700, fontSize: 13))),
+                      color: confirmColor, fontWeight: FontWeight.w700, fontSize: 13))),
                 ),
               )),
             ]),
@@ -874,5 +1008,62 @@ class _ConfirmDialog extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+// ─────────────────────────────────────────────
+//  MOBILE CAPABILITIES STRIP
+//  Compact icon-grid showing what SOS can do on this device.
+//  Used only in the mobile shell — replaces desktop platform card.
+// ─────────────────────────────────────────────
+class _MobileCapStrip extends StatelessWidget {
+  final _T t;
+  final bool isDark;
+  const _MobileCapStrip({required this.t, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final caps = [
+      (Icons.sms_rounded,           'Auto SMS',  'GPS attached',       _kCrimson),
+      (Icons.vibration_rounded,     'Shake',     'Double = alert',     const Color(0xFF7C3AED)),
+      (Icons.location_on_rounded,   'GPS',       'Precise coords',     const Color(0xFF0891B2)),
+      (Icons.notifications_rounded, 'Haptics',   'Vibe feedback',      const Color(0xFF059669)),
+    ];
+    return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: t.surfaceUp,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: t.border)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.smartphone_rounded, color: _kVioletLight, size: 13),
+            const SizedBox(width: 7),
+            const Text('MOBILE SOS CAPABILITIES', style: TextStyle(
+                color: _kVioletLight, fontSize: 9.5,
+                fontWeight: FontWeight.w700, letterSpacing: 1.2)),
+          ]),
+          const SizedBox(height: 12),
+          Row(children: caps.asMap().entries.map((e) {
+            final c = e.value;
+            final isLast = e.key == caps.length - 1;
+            return Expanded(child: Container(
+                margin: EdgeInsets.only(right: isLast ? 0 : 8),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+                decoration: BoxDecoration(
+                    color: c.$4.withOpacity(isDark ? 0.07 : 0.05),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: c.$4.withOpacity(0.16))),
+                child: Column(children: [
+                  Icon(c.$1, color: c.$4, size: 18),
+                  const SizedBox(height: 5),
+                  Text(c.$2, textAlign: TextAlign.center, style: TextStyle(
+                      color: t.textPri, fontSize: 9.5, fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 2),
+                  Text(c.$3, textAlign: TextAlign.center, style: TextStyle(
+                      color: t.textSec, fontSize: 8.5, height: 1.2)),
+                ])));
+          }).toList()),
+        ]));
   }
 }
