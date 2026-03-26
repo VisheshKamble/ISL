@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import 'l10n/AppLocalizations.dart';
 import 'models/EmergencyContact.dart';
@@ -52,11 +51,8 @@ class _VaniAppState extends State<VaniApp> {
     const lBg         = Color(0xFFF5F6FE);
     const lSurface    = Color(0xFFFFFFFF);
 
-    // ── Google Sans equivalent: Nunito ─────────
-    // Nunito is the closest publicly available match to Google Sans —
-    // humanist sans-serif, identical stroke weight range, same rounded
-    // terminals, same legibility profile. Applied globally via textTheme.
-    final baseTextTheme = GoogleFonts.nunitoTextTheme();
+    // Bundled Google Sans font family from assets/fonts for exact cross-platform rendering.
+    const appFontFamily = 'Google Sans';
 
     return MaterialApp(
       onGenerateTitle:            (context) => AppLocalizations.of(context).t('app_title'),
@@ -75,13 +71,13 @@ class _VaniAppState extends State<VaniApp> {
       darkTheme: ThemeData(
         brightness:              Brightness.dark,
         useMaterial3:            true,
+        fontFamily:              appFontFamily,
         primaryColor:            violet,
         scaffoldBackgroundColor: dBg,
         cardColor:               dSurface,
         canvasColor:             dBg,
         dividerColor:            Colors.white.withOpacity(0.05),
-        textTheme:               GoogleFonts.nunitoTextTheme(
-            ThemeData.dark().textTheme),
+        textTheme:               ThemeData.dark().textTheme,
         colorScheme: ColorScheme.dark(
           primary:   violet,
           secondary: violetLight,
@@ -102,11 +98,11 @@ class _VaniAppState extends State<VaniApp> {
       theme: ThemeData(
         brightness:              Brightness.light,
         useMaterial3:            true,
+        fontFamily:              appFontFamily,
         primaryColor:            violet,
         scaffoldBackgroundColor: lBg,
         cardColor:               lSurface,
-        textTheme:               GoogleFonts.nunitoTextTheme(
-            ThemeData.light().textTheme),
+        textTheme:               ThemeData.light().textTheme,
         colorScheme: const ColorScheme.light(
           primary:   violet,
           secondary: violetLight,

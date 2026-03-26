@@ -9,7 +9,6 @@ import 'dart:ui';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../components/GlobalNavbar.dart';
 import '../l10n/AppLocalizations.dart';
 import 'TranslateScreen.dart';
@@ -59,7 +58,7 @@ const _lTextMuted = Color(0xFFB0B0C8);
 // ── Shorthand for Nunito text style ──────────
 TextStyle _gs(double size, FontWeight weight, Color color, {
   double? height, double? letterSpacing}) =>
-    GoogleFonts.nunito(
+    TextStyle(
         fontSize: size, fontWeight: weight, color: color,
         height: height, letterSpacing: letterSpacing);
 
@@ -405,7 +404,7 @@ class _BottomNav extends StatelessWidget {
                     const SizedBox(height: 4),
                     AnimatedDefaultTextStyle(
                         duration: const Duration(milliseconds: 200),
-                        style: GoogleFonts.nunito(
+                        style: TextStyle(
                             color: accentColor,
                             fontSize: active ? 10.5 : 9.5,
                             fontWeight: active ? FontWeight.w800 : FontWeight.w600),
@@ -532,7 +531,7 @@ class _TopBar extends StatelessWidget {
                 colors: [_kVioletDeep, _kViolet, _kVioletLight],
                 stops: [0.0, 0.5, 1.0],
               ).createShader(b),
-              child: Text('VANI', style: GoogleFonts.nunito(
+              child: Text('VANI', style: TextStyle(
                   fontSize: 24, fontWeight: FontWeight.w900,
                   color: Colors.white, letterSpacing: 5))),
           const SizedBox(width: 6),
@@ -597,7 +596,7 @@ class _LangPill extends StatelessWidget {
             child: Row(children: [
               Text(lang['flag']!, style: const TextStyle(fontSize: 18)),
               const SizedBox(width: 10),
-              Text(lang['code']!.toUpperCase(), style: GoogleFonts.nunito(
+              Text(lang['code']!.toUpperCase(), style: TextStyle(
                   fontWeight: FontWeight.w700, fontSize: 13,
                   color: lang['code'] == locale.languageCode
                       ? primary : (isDark ? Colors.white70 : Colors.black87))),
@@ -727,7 +726,7 @@ class _GlassHero extends StatelessWidget {
                                   color: _kViolet.withOpacity(0.5),
                                   blurRadius: 6)])),
                       const SizedBox(width: 7),
-                      Text('ISL · On-Device AI · Offline', style: GoogleFonts.nunito(
+                      Text('ISL · On-Device AI · Offline', style: TextStyle(
                           color: isDark ? _kVioletLight : _kVioletDeep,
                           fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 0.3)),
                     ])),
@@ -735,7 +734,7 @@ class _GlassHero extends StatelessWidget {
                 const SizedBox(height: 16),
 
                 // Headline
-                Text('Sign Language\nTo Text,', style: GoogleFonts.nunito(
+                Text('Sign Language\nTo Text,', style: TextStyle(
                     fontSize: 32, fontWeight: FontWeight.w900, height: 1.10,
                     color: isDark ? const Color(0xFFF0EEFF) : const Color(0xFF1A0A40),
                     letterSpacing: -0.5)),
@@ -747,7 +746,7 @@ class _GlassHero extends StatelessWidget {
                           ? [_kVioletLight, const Color(0xFF60A5FA)]
                           : [_kViolet, const Color(0xFF0891B2)],
                     ).createShader(b),
-                    child: Text('Instantly.', style: GoogleFonts.nunito(
+                    child: Text('Instantly.', style: TextStyle(
                         fontSize: 32, fontWeight: FontWeight.w900, height: 1.10,
                         color: Colors.white, letterSpacing: -0.5))),
 
@@ -755,7 +754,7 @@ class _GlassHero extends StatelessWidget {
 
                 Text(
                     'Empowering India\'s 63M+ deaf & mute\ncommunity — private, accurate, offline.',
-                    style: GoogleFonts.nunito(
+                    style: TextStyle(
                         fontSize: 13.5,
                         color: isDark
                             ? Colors.white.withOpacity(0.60)
@@ -789,7 +788,7 @@ class _GlassHero extends StatelessWidget {
                               const Icon(Icons.translate_rounded,
                                   color: Colors.white, size: 18),
                               const SizedBox(width: 10),
-                              Text(l.t('get_started'), style: GoogleFonts.nunito(
+                              Text(l.t('get_started'), style: TextStyle(
                                   color: Colors.white, fontSize: 15,
                                   fontWeight: FontWeight.w800, letterSpacing: 0.3)),
                               const SizedBox(width: 8),
@@ -868,15 +867,15 @@ class _AnimatedStatsRowState extends State<_AnimatedStatsRow>
                       right: BorderSide(color: d ? _kBorder : _lBorder))),
                   child: Column(children: [
                     RichText(text: TextSpan(children: [
-                      TextSpan(text: s.$1, style: GoogleFonts.nunito(
+                      TextSpan(text: s.$1, style: TextStyle(
                           color: s.$4, fontSize: 19,
                           fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-                      TextSpan(text: s.$2, style: GoogleFonts.nunito(
+                      TextSpan(text: s.$2, style: TextStyle(
                           color: s.$4.withOpacity(0.60), fontSize: 13,
                           fontWeight: FontWeight.w900)),
                     ])),
                     const SizedBox(height: 4),
-                    Text(s.$3, textAlign: TextAlign.center, style: GoogleFonts.nunito(
+                    Text(s.$3, textAlign: TextAlign.center, style: TextStyle(
                         color: d ? _kTextSec : _lTextSec,
                         fontSize: 8.5, height: 1.3, fontWeight: FontWeight.w600)),
                   ])));
@@ -989,10 +988,10 @@ class _QuickCardState extends State<_QuickCard> {
                             color: widget.color.withOpacity(0.22))),
                     child: Icon(widget.icon, color: widget.accent, size: 20)),
                 const SizedBox(height: 9),
-                Text(widget.line1, style: GoogleFonts.nunito(
+                Text(widget.line1, style: TextStyle(
                     color: widget.isDark ? _kTextPri : _lTextPri,
                     fontSize: 11.5, fontWeight: FontWeight.w800)),
-                Text(widget.line2, style: GoogleFonts.nunito(
+                Text(widget.line2, style: TextStyle(
                     color: widget.isDark ? _kTextSec : _lTextSec,
                     fontSize: 10, fontWeight: FontWeight.w600)),
               ]))));
@@ -1106,11 +1105,11 @@ class _ObjCardState extends State<_ObjCard> {
                         border: Border.all(color: widget.color.withOpacity(0.18))),
                     child: Icon(widget.icon, color: widget.color, size: 16)),
                 const SizedBox(height: 10),
-                Text(widget.title, style: GoogleFonts.nunito(
+                Text(widget.title, style: TextStyle(
                     color: widget.isDark ? _kTextPri : _lTextPri,
                     fontSize: 12.5, fontWeight: FontWeight.w800, height: 1.2)),
                 const SizedBox(height: 5),
-                Expanded(child: Text(widget.desc, style: GoogleFonts.nunito(
+                Expanded(child: Text(widget.desc, style: TextStyle(
                     color: widget.isDark ? _kTextSec : _lTextSec,
                     fontSize: 10.5, height: 1.4),
                     maxLines: 3, overflow: TextOverflow.ellipsis)),
@@ -1150,12 +1149,12 @@ class _ImpactCard extends StatelessWidget {
               child: const Icon(Icons.volunteer_activism_rounded,
                   color: _kVioletLight, size: 16)),
           const SizedBox(width: 10),
-          Text('Our Mission', style: GoogleFonts.nunito(
+          Text('Our Mission', style: TextStyle(
               color: isDark ? _kVioletLight : _kViolet,
               fontSize: 11.5, fontWeight: FontWeight.w800, letterSpacing: 0.8)),
         ]),
         const SizedBox(height: 12),
-        Text(l.t('vision_title'), style: GoogleFonts.nunito(
+        Text(l.t('vision_title'), style: TextStyle(
             color: isDark ? _kVioletLight : _kVioletDeep,
             fontSize: 17, fontWeight: FontWeight.w900,
             letterSpacing: -0.3, height: 1.2)),
@@ -1164,7 +1163,7 @@ class _ImpactCard extends StatelessWidget {
             'With only 1 certified translator for every 33,000+ deaf individuals '
                 'in India, VANI bridges the gap — delivering real-time sign language '
                 'translation on your device, privately.',
-            style: GoogleFonts.nunito(
+            style: TextStyle(
                 fontSize: 13, height: 1.65,
                 color: isDark ? _kTextSec : _kVioletDeep.withOpacity(0.65))),
         const SizedBox(height: 14),
@@ -1178,7 +1177,7 @@ class _ImpactCard extends StatelessWidget {
               Container(width: 6, height: 6,
                   decoration: const BoxDecoration(color: _kCrimson, shape: BoxShape.circle)),
               const SizedBox(width: 8),
-              Text('1 interpreter : 33,000+ people', style: GoogleFonts.nunito(
+              Text('1 interpreter : 33,000+ people', style: TextStyle(
                   color: _kCrimson.withOpacity(0.90), fontSize: 11.5,
                   fontWeight: FontWeight.w800)),
             ])),
@@ -1235,18 +1234,18 @@ class _FeaturePage extends StatelessWidget {
                       border: Border.all(color: accentColor.withOpacity(0.28))),
                   child: Icon(icon, color: accentColor, size: 26)),
               const SizedBox(height: 14),
-              Text(title, style: GoogleFonts.nunito(
+              Text(title, style: TextStyle(
                   color: isDark ? _kTextPri : _lTextPri,
                   fontSize: 24, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
               const SizedBox(height: 6),
-              Text(subtitle, style: GoogleFonts.nunito(
+              Text(subtitle, style: TextStyle(
                   color: isDark ? _kTextSec : _lTextSec,
                   fontSize: 13.5, height: 1.5)),
             ])),
 
         const SizedBox(height: 22),
 
-        Text("What's Inside", style: GoogleFonts.nunito(
+        Text("What's Inside", style: TextStyle(
             color: isDark ? _kTextMuted : _lTextMuted,
             fontSize: 10.5, fontWeight: FontWeight.w800, letterSpacing: 1.3)),
         const SizedBox(height: 10),
@@ -1271,11 +1270,11 @@ class _FeaturePage extends StatelessWidget {
                       child: Icon(f.$1, color: accentColor, size: 17)),
                   const SizedBox(width: 14),
                   Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(f.$2, style: GoogleFonts.nunito(
+                    Text(f.$2, style: TextStyle(
                         color: isDark ? _kTextPri : _lTextPri,
                         fontSize: 13, fontWeight: FontWeight.w800)),
                     const SizedBox(height: 2),
-                    Text(f.$3, style: GoogleFonts.nunito(
+                    Text(f.$3, style: TextStyle(
                         color: isDark ? _kTextSec : _lTextSec,
                         fontSize: 11.5, height: 1.4)),
                   ])),
@@ -1302,7 +1301,7 @@ class _FeaturePage extends StatelessWidget {
                 child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Icon(icon, color: Colors.white, size: 18),
                   const SizedBox(width: 10),
-                  Text(launchLabel, style: GoogleFonts.nunito(
+                  Text(launchLabel, style: TextStyle(
                       color: Colors.white, fontSize: 15,
                       fontWeight: FontWeight.w800, letterSpacing: 0.3)),
                   const SizedBox(width: 8),
@@ -1337,7 +1336,7 @@ class _StatusChip extends StatelessWidget {
                     color: _kVioletLight.withOpacity(pulse.value * 0.75),
                     blurRadius: 7, spreadRadius: 1)])),
             const SizedBox(width: 9),
-            Text(l.t('badge'), style: GoogleFonts.nunito(
+            Text(l.t('badge'), style: TextStyle(
                 color: isDark ? _kVioletLight : _kViolet,
                 fontWeight: FontWeight.w700, fontSize: 11.5, letterSpacing: 0.3)),
           ])));
@@ -1354,18 +1353,18 @@ class _HeroText extends StatelessWidget {
     final color = isDark ? _kTextPri : _lTextPri;
     return Column(children: [
       Text(l.t('hero_title_1'), textAlign: TextAlign.center,
-          style: GoogleFonts.nunito(fontSize: fs, fontWeight: FontWeight.w900,
+          style: TextStyle(fontSize: fs, fontWeight: FontWeight.w900,
               color: color, height: 1.10, letterSpacing: ls)),
       ShaderMask(
           shaderCallback: (b) => const LinearGradient(
               colors: [_kViolet, _kVioletLight, Color(0xFF60A5FA)],
               stops: [0.0, 0.55, 1.0]).createShader(b),
           child: Text(l.t('hero_title_highlight'), textAlign: TextAlign.center,
-              style: GoogleFonts.nunito(fontSize: fs, fontWeight: FontWeight.w900,
+              style: TextStyle(fontSize: fs, fontWeight: FontWeight.w900,
                   color: Colors.white, height: 1.10, letterSpacing: ls))),
       if (l.t('hero_title_2').isNotEmpty)
         Text(l.t('hero_title_2'), textAlign: TextAlign.center,
-            style: GoogleFonts.nunito(fontSize: fs, fontWeight: FontWeight.w900,
+            style: TextStyle(fontSize: fs, fontWeight: FontWeight.w900,
                 color: color, height: 1.10, letterSpacing: ls)),
     ]);
   }
@@ -1378,7 +1377,7 @@ class _HeroSub extends StatelessWidget {
   Widget build(BuildContext context) => ConstrainedBox(
       constraints: BoxConstraints(maxWidth: isDesktop ? 580 : 480),
       child: Text(l.t('hero_sub'), textAlign: TextAlign.center,
-          style: GoogleFonts.nunito(
+          style: TextStyle(
               fontSize: isDesktop ? 17 : 15.5,
               color: isDark ? _kTextSec : _lTextSec,
               height: 1.75, letterSpacing: 0.1)));
@@ -1409,7 +1408,7 @@ class _CTAButtonState extends State<_CTAButton> {
                       color: _kViolet.withOpacity(_h ? 0.50 : 0.28),
                       blurRadius: _h ? 44 : 22, offset: const Offset(0, 8))]),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Text(widget.label, style: GoogleFonts.nunito(
+                Text(widget.label, style: TextStyle(
                     fontSize: 14.5, fontWeight: FontWeight.w800,
                     color: Colors.white, letterSpacing: 0.4)),
                 const SizedBox(width: 12),
@@ -1482,14 +1481,14 @@ class _StatCellState extends State<_StatCell> with SingleTickerProviderStateMixi
       child: AnimatedBuilder(animation: _anim, builder: (_, __) =>
           Column(mainAxisAlignment: MainAxisAlignment.center, children: [
             RichText(text: TextSpan(children: [
-              TextSpan(text: _fmt(_anim.value.toInt()), style: GoogleFonts.nunito(
+              TextSpan(text: _fmt(_anim.value.toInt()), style: TextStyle(
                   fontSize: 44, fontWeight: FontWeight.w900, color: widget.color,
                   letterSpacing: -1.5, fontFeatures: const [FontFeature.tabularFigures()])),
-              TextSpan(text: widget.suffix, style: GoogleFonts.nunito(fontSize: 28,
+              TextSpan(text: widget.suffix, style: TextStyle(fontSize: 28,
                   fontWeight: FontWeight.w900, color: widget.color.withOpacity(0.55))),
             ])),
             const SizedBox(height: 10),
-            Text(widget.label, textAlign: TextAlign.center, style: GoogleFonts.nunito(
+            Text(widget.label, textAlign: TextAlign.center, style: TextStyle(
                 fontSize: 13, fontWeight: FontWeight.w600,
                 color: widget.isDark ? _kTextSec : _lTextSec, letterSpacing: 0.3)),
           ])));
@@ -1505,15 +1504,15 @@ class _SectionLabel extends StatelessWidget {
         decoration: BoxDecoration(
             border: Border.all(color: _kViolet.withOpacity(0.28)),
             borderRadius: BorderRadius.circular(6)),
-        child: Text('// OBJECTIVES', style: GoogleFonts.nunito(
+        child: Text('// OBJECTIVES', style: TextStyle(
             fontSize: 10, fontWeight: FontWeight.w800,
             color: _kViolet.withOpacity(0.75), letterSpacing: 2.0))),
     const SizedBox(height: 16),
-    Text(text, textAlign: TextAlign.center, style: GoogleFonts.nunito(
+    Text(text, textAlign: TextAlign.center, style: TextStyle(
         fontSize: 34, fontWeight: FontWeight.w900,
         color: isDark ? _kTextPri : _lTextPri, letterSpacing: -0.8, height: 1.15)),
     const SizedBox(height: 10),
-    Text(sub, textAlign: TextAlign.center, style: GoogleFonts.nunito(
+    Text(sub, textAlign: TextAlign.center, style: TextStyle(
         fontSize: 14, color: isDark ? _kTextMuted : _lTextMuted, letterSpacing: 0.15)),
   ]);
 }
@@ -1608,17 +1607,17 @@ class _WebObjCardState extends State<_WebObjCard> {
                               child: Icon(Icons.arrow_forward_rounded, color: widget.accent, size: 13))),
                     ]),
                     const SizedBox(height: 14),
-                    Text(widget.title, style: GoogleFonts.nunito(
+                    Text(widget.title, style: TextStyle(
                         fontSize: 15, fontWeight: FontWeight.w800, letterSpacing: -0.2,
                         color: widget.isDark ? _kTextPri : _lTextPri)),
                     const SizedBox(height: 5),
-                    Text(widget.desc, style: GoogleFonts.nunito(
+                    Text(widget.desc, style: TextStyle(
                         fontSize: 12.5, height: 1.5,
                         color: widget.isDark ? _kTextSec : _lTextSec)),
                     const SizedBox(height: 10),
                     AnimatedOpacity(opacity: _h ? 1.0 : 0.0,
                         duration: const Duration(milliseconds: 180),
-                        child: Text('Explore →', style: GoogleFonts.nunito(
+                        child: Text('Explore →', style: TextStyle(
                             fontSize: 11.5, fontWeight: FontWeight.w800,
                             color: widget.accent, letterSpacing: 0.2))),
                   ]))));
@@ -1652,14 +1651,14 @@ class _VisionCard extends StatelessWidget {
                   Container(width: 32, height: 1, color: _kViolet.withOpacity(0.35)),
                 ]),
                 const SizedBox(height: 24),
-                Text(l.t('vision_title'), textAlign: TextAlign.center, style: GoogleFonts.nunito(
+                Text(l.t('vision_title'), textAlign: TextAlign.center, style: TextStyle(
                     fontSize: 22, fontWeight: FontWeight.w800, color: _kVioletLight,
                     letterSpacing: -0.4, height: 1.25)),
                 const SizedBox(height: 14),
                 ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 600),
                     child: Text(l.t('vision_body'), textAlign: TextAlign.center,
-                        style: GoogleFonts.nunito(fontSize: 15,
+                        style: TextStyle(fontSize: 15,
                             color: isDark ? _kTextSec : _lTextSec, height: 1.75))),
                 const SizedBox(height: 28),
                 Container(
@@ -1672,7 +1671,7 @@ class _VisionCard extends StatelessWidget {
                       Container(width: 6, height: 6, decoration: const BoxDecoration(
                           color: _kCrimson, shape: BoxShape.circle)),
                       const SizedBox(width: 9),
-                      Text('1 translator : 33,000+ people', style: GoogleFonts.nunito(
+                      Text('1 translator : 33,000+ people', style: TextStyle(
                           color: _kCrimson.withOpacity(0.85), fontSize: 12.5, fontWeight: FontWeight.w800)),
                     ])),
               ]))));
@@ -1692,12 +1691,12 @@ class _Footer extends StatelessWidget {
           ShaderMask(
               shaderCallback: (b) => const LinearGradient(
                   colors: [_kViolet, _kVioletLight]).createShader(b),
-              child: Text('VANI', style: GoogleFonts.nunito(
+              child: Text('VANI', style: TextStyle(
                   fontSize: 13, fontWeight: FontWeight.w900,
                   color: Colors.white, letterSpacing: 5))),
           Container(width: 1, height: 12,
               color: isDark ? _kBorderBrt : const Color(0xFFCCCCDD)),
-          Text('© 2026 — Empowering Silence', style: GoogleFonts.nunito(
+          Text('© 2026 — Empowering Silence', style: TextStyle(
               fontSize: 11.5,
               color: isDark ? _kTextMuted : const Color(0xFFAAAAAACC),
               letterSpacing: 0.2)),
