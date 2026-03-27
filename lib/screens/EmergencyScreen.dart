@@ -1,4 +1,12 @@
 // lib/screens/EmergencyScreen.dart
+//
+// ╔══════════════════════════════════════════════════════════╗
+// ║  VANI — Emergency Screen  · Apple-Inspired Premium UI  ║
+// ║  Font: Google Sans (SF Pro equivalent)                 ║
+// ║  < 700px  → iOS native emergency shell                 ║
+// ║  ≥ 700px  → macOS/web emergency centre                 ║
+// ╚══════════════════════════════════════════════════════════╝
+
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -7,155 +15,126 @@ import '../services/EmergencyService.dart';
 import '../utils/PlatformHelper.dart';
 import 'EmergencySetupScreen.dart';
 
-// ─────────────────────────────────────────────
-//  DESIGN TOKENS
-// ─────────────────────────────────────────────
-const _kCrimson     = Color(0xFFDC2626);
-const _kCrimsonSoft = Color(0xFFEF4444);
-const _kViolet      = Color(0xFF7C3AED);
-const _kVioletLight = Color(0xFFA78BFA);
-const _kAmber       = Color(0xFFD97706);
-const _kAmberSoft   = Color(0xFFFBBF24);
-const _kBlue        = Color(0xFF0284C7);
-const _kBlueSoft    = Color(0xFF38BDF8);
-const _kGreen       = Color(0xFF059669);
-const _kOrange      = Color(0xFFEA580C);
-const _kOrangeSoft  = Color(0xFFFB923C);
-const _kPurple      = Color(0xFF7E22CE);
-const _kPurpleSoft  = Color(0xFFC084FC);
-const _kTeal        = Color(0xFF0F766E);
-const _kTealSoft    = Color(0xFF2DD4BF);
+// ─────────────────────────────────────────────────────────────
+//  APPLE DESIGN TOKENS
+// ─────────────────────────────────────────────────────────────
+const _red      = Color(0xFFFF3B30);
+const _red_D    = Color(0xFFFF453A);
+const _orange   = Color(0xFFFF9500);
+const _orange_D = Color(0xFFFF9F0A);
+const _blue     = Color(0xFF007AFF);
+const _blue_D   = Color(0xFF0A84FF);
+const _green    = Color(0xFF34C759);
+const _green_D  = Color(0xFF30D158);
+const _indigo   = Color(0xFF5856D6);
+const _indigo_D = Color(0xFF5E5CE6);
+const _teal     = Color(0xFF32ADE6);
+const _teal_D   = Color(0xFF5AC8F5);
+const _purple   = Color(0xFFAF52DE);
+const _purple_D = Color(0xFFBF5AF2);
+const _amber    = Color(0xFFFF9500);   // same as orange
+const _amber_D  = Color(0xFFFF9F0A);
 
-class _T {
-  final bool d;
-  const _T(this.d);
-  Color get scaffold  => d ? const Color(0xFF030307) : const Color(0xFFF4F5FD);
-  Color get surface   => d ? const Color(0xFF09091A) : Colors.white;
-  Color get surfaceUp => d ? const Color(0xFF0E0E1E) : const Color(0xFFF7F7FC);
-  Color get surfaceHi => d ? const Color(0xFF141428) : const Color(0xFFEEEEF8);
-  Color get border    => d ? const Color(0xFF1A1A2E) : const Color(0xFFE2E2F2);
-  Color get borderBrt => d ? const Color(0xFF252540) : const Color(0xFFCCCCDE);
-  Color get textPri   => d ? const Color(0xFFF2F0FF) : const Color(0xFF080820);
-  Color get textSec   => d ? const Color(0xFF6060A0) : const Color(0xFF606080);
-  Color get textMuted => d ? const Color(0xFF282848) : const Color(0xFFB8B8D0);
-  Color get gridLine  => d
-      ? const Color(0xFF10102A).withOpacity(0.5)
-      : const Color(0xFFE0E0F0).withOpacity(0.7);
-}
+// Light surfaces
+const _lBg       = Color(0xFFF2F2F7);
+const _lSurface  = Color(0xFFFFFFFF);
+const _lSurface2 = Color(0xFFEFEFF4);
+const _lSep      = Color(0xFFC6C6C8);
+const _lLabel    = Color(0xFF000000);
+const _lLabel2   = Color(0x993C3C43);
+const _lLabel3   = Color(0x4D3C3C43);
+const _lFill     = Color(0x1F787880);
 
-// ─────────────────────────────────────────────
-//  SCENARIO DATA MODEL
-//  No emojis — using Material icons throughout.
-// ─────────────────────────────────────────────
+// Dark surfaces
+const _dBg       = Color(0xFF000000);
+const _dSurface  = Color(0xFF1C1C1E);
+const _dSurface2 = Color(0xFF2C2C2E);
+const _dSep      = Color(0xFF38383A);
+const _dLabel    = Color(0xFFFFFFFF);
+const _dLabel2   = Color(0x99EBEBF5);
+const _dLabel3   = Color(0x4DEBEBF5);
+const _dFill     = Color(0x3A787880);
+
+TextStyle _t(double size, FontWeight w, Color c,
+    {double ls = 0, double? h}) =>
+    TextStyle(fontFamily: 'Google Sans',
+        fontSize: size, fontWeight: w, color: c,
+        letterSpacing: ls, height: h);
+
+// ─────────────────────────────────────────────────────────────
+//  SCENARIO MODEL
+// ─────────────────────────────────────────────────────────────
 class _Scenario {
   final SOSMessageType type;
   final IconData icon;
-  final String title;
-  final String subtitle;
-  final String signHint;       // ISL sign that triggers this
-  final Color  color;
-  final Color  soft;
-  final String smsTemplate;    // contains {LOCATION} and {TIME}
-  final String helpline;
-  final String helplineName;
-
+  final String title, subtitle, signHint, helpline, helplineName, smsTemplate;
+  final Color accentLight, accentDark;
   const _Scenario({
     required this.type, required this.icon,
     required this.title, required this.subtitle,
-    required this.signHint,
-    required this.color, required this.soft,
+    required this.signHint, required this.helpline, required this.helplineName,
     required this.smsTemplate,
-    required this.helpline, required this.helplineName,
+    required this.accentLight, required this.accentDark,
   });
+  Color accent(bool dark) => dark ? accentDark : accentLight;
 }
 
-// Professional, multilingual-ready SMS templates.
-// No emojis — plain text is more compatible across SMS carriers and
-// is readable in assistive contexts (screen readers, feature phones).
 const List<_Scenario> _kScenarios = [
   _Scenario(
     type: SOSMessageType.generalHelp,
     icon: Icons.emergency_rounded,
     title: 'I Need Help',
-    subtitle: 'General distress — immediate assistance needed',
+    subtitle: 'General distress — immediate assistance',
     signHint: 'ISL: HELP',
-    color: _kCrimson, soft: _kCrimsonSoft,
-    helpline: '112', helplineName: 'National Emergency',
+    helpline: '112', helplineName: 'Emergency',
+    accentLight: _red, accentDark: _red_D,
     smsTemplate:
     'URGENT — EMERGENCY ALERT\n\n'
-        'This alert was sent by the VANI sign-language assistance app.\n\n'
-        'The sender is DEAF or MUTE and cannot speak or call for help. '
-        'They need your immediate assistance.\n\n'
-        'Actions required:\n'
-        '  1. Call them back.\n'
-        '  2. Go to their current location.\n'
-        '  3. Contact emergency services (dial 112) on their behalf.\n\n'
-        'Location: {LOCATION}\n'
-        'Time: {TIME}\n\n'
-        '— Sent automatically via VANI Emergency SOS',
+        'Sent via VANI. The sender is DEAF or MUTE and cannot call for help.\n\n'
+        'Actions:\n  1. Call them back.\n  2. Go to their location.\n  3. Dial 112.\n\n'
+        'Location: {LOCATION}\nTime: {TIME}\n\n— VANI Emergency SOS',
   ),
   _Scenario(
     type: SOSMessageType.medical,
     icon: Icons.medical_services_rounded,
     title: 'Medical Emergency',
-    subtitle: 'Injury, seizure, chest pain, or acute illness',
-    signHint: 'ISL: BANDAID / DOCTOR',
-    color: _kOrange, soft: _kOrangeSoft,
+    subtitle: 'Injury, seizure, chest pain, illness',
+    signHint: 'ISL: DOCTOR',
     helpline: '108', helplineName: 'Ambulance',
+    accentLight: _orange, accentDark: _orange_D,
     smsTemplate:
     'URGENT — MEDICAL EMERGENCY\n\n'
-        'This alert was sent by the VANI sign-language assistance app.\n\n'
-        'The sender is DEAF or MUTE and is experiencing a medical emergency. '
-        'They cannot call for help verbally.\n\n'
-        'Actions required:\n'
-        '  1. Call an ambulance — dial 108.\n'
-        '  2. Go to their location immediately.\n'
-        '  3. Contact a nearby doctor or hospital.\n\n'
-        'Location: {LOCATION}\n'
-        'Time: {TIME}\n\n'
-        '— Sent automatically via VANI Emergency SOS',
+        'Sent via VANI. Sender is DEAF or MUTE — cannot call verbally.\n\n'
+        'Actions:\n  1. Dial 108 (ambulance).\n  2. Go to their location.\n\n'
+        'Location: {LOCATION}\nTime: {TIME}\n\n— VANI Emergency SOS',
   ),
   _Scenario(
     type: SOSMessageType.police,
     icon: Icons.shield_rounded,
     title: 'I Feel Unsafe',
-    subtitle: 'Threat, harassment, assault, or danger',
-    signHint: 'ISL: STRONG / QUIET',
-    color: _kBlue, soft: _kBlueSoft,
+    subtitle: 'Threat, harassment, or danger',
+    signHint: 'ISL: STRONG',
     helpline: '100', helplineName: 'Police',
+    accentLight: _blue, accentDark: _blue_D,
     smsTemplate:
     'URGENT — SAFETY EMERGENCY\n\n'
-        'This alert was sent by the VANI sign-language assistance app.\n\n'
-        'The sender is DEAF or MUTE and is in a dangerous situation. '
-        'They cannot call the police verbally.\n\n'
-        'Actions required:\n'
-        '  1. Call the police — dial 100.\n'
-        '  2. Go to their location immediately.\n'
-        '  3. Alert someone nearby to assist them.\n\n'
-        'Location: {LOCATION}\n'
-        'Time: {TIME}\n\n'
-        '— Sent automatically via VANI Emergency SOS',
+        'Sent via VANI. Sender is DEAF or MUTE — cannot call police verbally.\n\n'
+        'Actions:\n  1. Dial 100 (police).\n  2. Go to their location.\n\n'
+        'Location: {LOCATION}\nTime: {TIME}\n\n— VANI Emergency SOS',
   ),
   _Scenario(
     type: SOSMessageType.fire,
     icon: Icons.local_fire_department_rounded,
     title: 'Fire or Smoke',
     subtitle: 'Fire, gas leak, or smoke emergency',
-    signHint: 'ISL: BAD / HELP',
-    color: _kAmber, soft: _kAmberSoft,
+    signHint: 'ISL: HELP + BAD',
     helpline: '101', helplineName: 'Fire Brigade',
+    accentLight: _amber, accentDark: _amber_D,
     smsTemplate:
     'URGENT — FIRE / SMOKE EMERGENCY\n\n'
-        'This alert was sent by the VANI sign-language assistance app.\n\n'
-        'The sender is DEAF or MUTE and is reporting a fire or smoke emergency. '
-        'They cannot call the fire brigade verbally.\n\n'
-        'Actions required:\n'
-        '  1. Call the fire brigade — dial 101.\n'
-        '  2. Ensure evacuation of the building.\n'
-        '  3. Alert people near this location.\n\n'
-        'Location: {LOCATION}\n'
-        'Time: {TIME}\n\n'
-        '— Sent automatically via VANI Emergency SOS',
+        'Sent via VANI. Sender is DEAF or MUTE — cannot call fire brigade verbally.\n\n'
+        'Actions:\n  1. Dial 101 (fire).\n  2. Evacuate the area.\n\n'
+        'Location: {LOCATION}\nTime: {TIME}\n\n— VANI Emergency SOS',
   ),
   _Scenario(
     type: SOSMessageType.custom,
@@ -163,60 +142,41 @@ const List<_Scenario> _kScenarios = [
     title: 'Road Accident',
     subtitle: 'Vehicle accident — injuries possible',
     signHint: 'ISL: BAD + SORRY',
-    color: _kPurple, soft: _kPurpleSoft,
-    helpline: '1033', helplineName: 'Highway Helpline',
+    helpline: '1033', helplineName: 'Highway',
+    accentLight: _purple, accentDark: _purple_D,
     smsTemplate:
     'URGENT — ROAD ACCIDENT\n\n'
-        'This alert was sent by the VANI sign-language assistance app.\n\n'
-        'The sender is DEAF or MUTE and has been involved in or witnessed a road accident. '
-        'They cannot call for help verbally.\n\n'
-        'Actions required:\n'
-        '  1. Call ambulance — dial 108.\n'
-        '  2. Call highway helpline — dial 1033.\n'
-        '  3. Go to their location and assist.\n\n'
-        'Location: {LOCATION}\n'
-        'Time: {TIME}\n\n'
-        '— Sent automatically via VANI Emergency SOS',
+        'Sent via VANI. Sender is DEAF or MUTE.\n\n'
+        'Actions:\n  1. Dial 108 (ambulance).\n  2. Dial 1033 (highway).\n\n'
+        'Location: {LOCATION}\nTime: {TIME}\n\n— VANI Emergency SOS',
   ),
   _Scenario(
     type: SOSMessageType.custom,
     icon: Icons.child_care_rounded,
     title: 'Child Safety',
     subtitle: 'Child missing, lost, or in distress',
-    signHint: 'ISL: BROTHER / MOTHER',
-    color: _kTeal, soft: _kTealSoft,
+    signHint: 'ISL: MOTHER',
     helpline: '1098', helplineName: 'Childline',
+    accentLight: _teal, accentDark: _teal_D,
     smsTemplate:
     'URGENT — CHILD SAFETY ALERT\n\n'
-        'This alert was sent by the VANI sign-language assistance app.\n\n'
-        'The sender is DEAF or MUTE and is reporting a child safety emergency. '
-        'A child may be missing, lost, or in distress. They cannot call verbally.\n\n'
-        'Actions required:\n'
-        '  1. Call Childline — dial 1098.\n'
-        '  2. Call police — dial 100.\n'
-        '  3. Go to this location and assist immediately.\n\n'
-        'Location: {LOCATION}\n'
-        'Time: {TIME}\n\n'
-        '— Sent automatically via VANI Emergency SOS',
+        'Sent via VANI. Sender is DEAF or MUTE.\n\n'
+        'Actions:\n  1. Dial 1098 (Childline).\n  2. Dial 100 (police).\n\n'
+        'Location: {LOCATION}\nTime: {TIME}\n\n— VANI Emergency SOS',
   ),
 ];
 
-// ════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 //  EMERGENCY SCREEN
-// ════════════════════════════════════════════
-
+// ══════════════════════════════════════════════════════════════
 class EmergencyScreen extends StatefulWidget {
   final VoidCallback toggleTheme;
   final Function(Locale) setLocale;
   final String? detectedSign;
-
   const EmergencyScreen({
-    super.key,
-    required this.toggleTheme,
-    required this.setLocale,
+    super.key, required this.toggleTheme, required this.setLocale,
     this.detectedSign,
   });
-
   @override
   State<EmergencyScreen> createState() => _EmergencyScreenState();
 }
@@ -225,42 +185,32 @@ class _EmergencyScreenState extends State<EmergencyScreen>
     with TickerProviderStateMixin {
   final _service = EmergencyService.instance;
 
-  bool _isSending = false;
-  int? _activeSendIndex;
+  bool    _isSending       = false;
+  int?    _activeSendIndex;
   String? _statusMsg;
-  bool _statusOk = false;
+  bool    _statusOk        = false;
   _Scenario? _autoScenario;
 
-  late AnimationController _ambientCtrl;
   late AnimationController _entryCtrl;
   late AnimationController _pulseCtrl;
-  late Animation<double> _ambientAnim;
-  late Animation<double> _entryFade;
-  late Animation<Offset> _entrySlide;
-  late Animation<double> _pulseAnim;
+  late Animation<double>   _entryFade;
+  late Animation<Offset>   _entrySlide;
+  late Animation<double>   _pulseAnim;
 
   @override
   void initState() {
     super.initState();
     _service.updateContext(context);
 
-    _ambientCtrl = AnimationController(
-        vsync: this, duration: const Duration(seconds: 4))
-      ..repeat(reverse: true);
-    _entryCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 900));
-    _pulseCtrl = AnimationController(
-        vsync: this, duration: const Duration(seconds: 2))
-      ..repeat(reverse: true);
+    _entryCtrl = AnimationController(vsync: this,
+        duration: const Duration(milliseconds: 700));
+    _pulseCtrl = AnimationController(vsync: this,
+        duration: const Duration(seconds: 2))..repeat(reverse: true);
 
-    _ambientAnim = CurvedAnimation(parent: _ambientCtrl, curve: Curves.easeInOut);
-    _pulseAnim   = CurvedAnimation(parent: _pulseCtrl,   curve: Curves.easeInOut);
-    _entryFade   = CurvedAnimation(parent: _entryCtrl,
-        curve: const Interval(0.0, 0.65, curve: Curves.easeOut));
-    _entrySlide  = Tween<Offset>(
-        begin: const Offset(0, 0.02), end: Offset.zero).animate(
-        CurvedAnimation(parent: _entryCtrl,
-            curve: const Interval(0.0, 0.75, curve: Curves.easeOut)));
+    _entryFade  = CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut);
+    _entrySlide = Tween<Offset>(begin: const Offset(0, 0.03), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut));
+    _pulseAnim  = CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut);
 
     _entryCtrl.forward();
 
@@ -271,21 +221,17 @@ class _EmergencyScreenState extends State<EmergencyScreen>
 
   _Scenario? _matchSign(String sign) {
     final s = sign.toLowerCase();
-    if (s.contains('help') || s.contains('sos'))              return _kScenarios[0];
-    if (s.contains('doctor') || s.contains('bandaid') ||
-        s.contains('pain')   || s.contains('sick'))           return _kScenarios[1];
-    if (s.contains('danger') || s.contains('police') ||
-        s.contains('strong') || s.contains('quiet'))          return _kScenarios[2];
-    if (s.contains('fire')   || s.contains('smoke'))          return _kScenarios[3];
-    if (s.contains('accident')|| s.contains('car'))           return _kScenarios[4];
-    if (s.contains('child')  || s.contains('brother') ||
-        s.contains('mother'))                                  return _kScenarios[5];
+    if (s.contains('help') || s.contains('sos'))                    return _kScenarios[0];
+    if (s.contains('doctor') || s.contains('sick'))                 return _kScenarios[1];
+    if (s.contains('danger') || s.contains('police'))               return _kScenarios[2];
+    if (s.contains('fire')   || s.contains('smoke'))                return _kScenarios[3];
+    if (s.contains('accident') || s.contains('car'))                return _kScenarios[4];
+    if (s.contains('child') || s.contains('mother'))                return _kScenarios[5];
     return _kScenarios[0];
   }
 
   @override
   void dispose() {
-    _ambientCtrl.dispose();
     _entryCtrl.dispose();
     _pulseCtrl.dispose();
     super.dispose();
@@ -293,26 +239,23 @@ class _EmergencyScreenState extends State<EmergencyScreen>
 
   Future<void> _triggerSOS(int idx) async {
     if (_isSending) return;
-    final s = _kScenarios[idx];
     HapticFeedback.heavyImpact();
-
     setState(() { _isSending = true; _activeSendIndex = idx; _statusMsg = null; });
 
     final result = await _service.triggerSOS(
-      type: s.type,
-      customMessage: s.smsTemplate,
-    );
+        type: _kScenarios[idx].type,
+        customMessage: _kScenarios[idx].smsTemplate);
 
     if (mounted) {
       HapticFeedback.mediumImpact();
       setState(() {
-        _isSending = false;
+        _isSending       = false;
         _activeSendIndex = null;
-        _statusOk  = result.success;
-        _statusMsg = result.success
+        _statusOk        = result.success;
+        _statusMsg       = result.success
             ? (PlatformHelper.isMobile
-            ? 'Alert dispatched to ${result.sentCount} contact${result.sentCount == 1 ? '' : 's'}. Help is on the way.'
-            : 'Contact panel opened. Tap WhatsApp or Call to send your alert.')
+            ? 'Alert sent to ${result.sentCount} contact${result.sentCount == 1 ? '' : 's'}.'
+            : 'Contact panel opened. Tap WhatsApp or Call to alert.')
             : result.reason;
       });
       Future.delayed(const Duration(seconds: 8), () {
@@ -321,144 +264,161 @@ class _EmergencyScreenState extends State<EmergencyScreen>
     }
   }
 
-  // ── Build ────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final t      = _T(isDark);
     final w      = MediaQuery.of(context).size.width;
-
-    // Hard split: mobile-native below 700, website above
-    if (w < 700) return _buildMobile(context, t, isDark);
-    return _buildWebsite(context, t, w);
+    return w < 700
+        ? _buildMobile(context, isDark)
+        : _buildWeb(context, isDark, w);
   }
 
-  // ══════════════════════════════════════════════
-  //  MOBILE LAYOUT — native app shell
-  //  No GlobalNavbar. Back button in compact top bar.
-  //  Scenario cards are large thumb-friendly tiles.
-  //  Helplines, shake card, contacts btn in a scrollable body.
-  // ══════════════════════════════════════════════
-  Widget _buildMobile(BuildContext context, _T t, bool isDark) {
+  // ════════════════════════════════════════════
+  //  MOBILE  (<700px)  — iOS emergency style
+  //  Compact nav bar, 2-col scenario grid,
+  //  helplines pill row, shake card at bottom.
+  // ════════════════════════════════════════════
+  Widget _buildMobile(BuildContext ctx, bool isDark) {
+    final bg = isDark ? _dBg : _lBg;
+
     return Scaffold(
-      backgroundColor: t.scaffold,
-      body: Stack(children: [
-        AnimatedBuilder(animation: _ambientAnim, builder: (_, __) => Stack(children: [
-          Positioned(top: -100, left: -40,
-              child: _Glow(color: _kCrimson.withOpacity(
-                  isDark ? 0.08 + _ambientAnim.value * 0.04 : 0.03), size: 300)),
-          Positioned(bottom: -80, right: -60,
-              child: _Glow(color: _kViolet.withOpacity(
-                  isDark ? 0.05 + _ambientAnim.value * 0.03 : 0.015), size: 240)),
-        ])),
-        Positioned.fill(child: CustomPaint(painter: _GridPainter(t: t))),
+      backgroundColor: bg,
+      body: SafeArea(
+        child: Column(children: [
 
-        SafeArea(
-          child: Column(children: [
+          // ── Mobile nav bar ───────────────────
+          _MobileEmergencyBar(
+            isDark: isDark, pulseAnim: _pulseAnim,
+            onBack: () => Navigator.pop(ctx),
+            onContacts: () => Navigator.push(ctx, PageRouteBuilder(
+                pageBuilder: (_, __, ___) => EmergencySetupScreen(
+                    toggleTheme: widget.toggleTheme, setLocale: widget.setLocale),
+                transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
+                transitionDuration: const Duration(milliseconds: 260))),
+          ),
 
-            // ── Compact mobile top bar ───────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
-              child: Row(children: [
-                // Back
-                GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                        width: 38, height: 38,
-                        decoration: BoxDecoration(
-                            color: t.surfaceUp,
-                            shape: BoxShape.circle,
-                            border: Border.all(color: t.border)),
-                        child: Icon(Icons.arrow_back_rounded, color: t.textSec, size: 18))),
-                const SizedBox(width: 12),
-                // Title
-                Expanded(child: Row(children: [
-                  AnimatedBuilder(animation: _pulseAnim, builder: (_, __) =>
-                      Container(width: 6, height: 6, decoration: BoxDecoration(
-                          shape: BoxShape.circle, color: _kCrimsonSoft,
-                          boxShadow: [BoxShadow(
-                              color: _kCrimsonSoft.withOpacity(_pulseAnim.value * 0.8),
-                              blurRadius: 6, spreadRadius: 1)]))),
-                  const SizedBox(width: 8),
-                  Text('Emergency SOS', style: TextStyle(
-                      color: t.textPri, fontSize: 16, fontWeight: FontWeight.w800)),
-                ])),
-                // Setup contacts
-                GestureDetector(
-                    onTap: () => Navigator.push(context, PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => EmergencySetupScreen(
-                            toggleTheme: widget.toggleTheme, setLocale: widget.setLocale),
-                        transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
-                        transitionDuration: const Duration(milliseconds: 260))),
-                    child: Container(
-                        width: 38, height: 38,
-                        decoration: BoxDecoration(
-                            color: t.surfaceUp, shape: BoxShape.circle,
-                            border: Border.all(color: t.border)),
-                        child: Icon(Icons.contacts_rounded, color: t.textSec, size: 17))),
-              ]),
-            ),
-
-            // ── Scrollable body ──────────────────
-            Expanded(
-              child: FadeTransition(
-                opacity: _entryFade,
+          // ── Scrollable body ──────────────────
+          Expanded(
+            child: FadeTransition(
+              opacity: _entryFade,
+              child: SlideTransition(
+                position: _entrySlide,
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
                   physics: const BouncingScrollPhysics(),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-                    // Auto-detected sign banner
+                    // Auto-detect banner
                     if (_autoScenario != null) ...[
-                      _autoDetectBanner(t), const SizedBox(height: 12)],
-                    // Status banner
+                      _AutoDetectBanner(
+                        scenario: _autoScenario!, isDark: isDark,
+                        signLabel: widget.detectedSign ?? '',
+                        onTap: () => _triggerSOS(_kScenarios.indexOf(_autoScenario!)),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // Status bar
                     if (_statusMsg != null) ...[
-                      _statusBar(t), const SizedBox(height: 12)],
+                      _StatusBar(
+                          message: _statusMsg!, ok: _statusOk, isDark: isDark),
+                      const SizedBox(height: 12),
+                    ],
+
                     // No contacts warning
                     if (!_service.hasContacts) ...[
-                      _noContactsBanner(t), const SizedBox(height: 12)],
+                      _NoContactsBanner(isDark: isDark, onTap: () =>
+                          Navigator.push(ctx, PageRouteBuilder(
+                              pageBuilder: (_, __, ___) => EmergencySetupScreen(
+                                  toggleTheme: widget.toggleTheme,
+                                  setLocale: widget.setLocale),
+                              transitionsBuilder: (_, a, __, c) =>
+                                  FadeTransition(opacity: a, child: c),
+                              transitionDuration: const Duration(milliseconds: 260)))),
+                      const SizedBox(height: 12),
+                    ],
 
                     // Section label
                     _MobileSectionLabel(
                         label: 'SELECT EMERGENCY TYPE',
-                        sub: 'Tap a card — GPS alert sent instantly',
-                        t: t),
+                        sub: 'Tap — GPS alert sent immediately',
+                        isDark: isDark),
                     const SizedBox(height: 12),
 
-                    // 2-column scenario grid (touch-optimised sizing)
+                    // 2-col grid
                     GridView.count(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       crossAxisCount: 2,
                       mainAxisSpacing: 10, crossAxisSpacing: 10,
-                      childAspectRatio: 1.18,
-                      children: _kScenarios.asMap().entries.map((e) => _ScenarioCard(
-                        scenario:       e.value,
-                        t:              t,
-                        pulseAnim:      _pulseAnim,
-                        isSending:      _isSending && _activeSendIndex == e.key,
-                        isDisabled:     _isSending && _activeSendIndex != e.key,
-                        isAutoDetected: _autoScenario == e.value,
-                        onTap:          () => _triggerSOS(e.key),
-                      )).toList(),
+                      childAspectRatio: 1.10,
+                      children: _kScenarios.asMap().entries.map((e) =>
+                          _ScenarioCard(
+                            scenario:       e.value,
+                            isDark:         isDark,
+                            pulseAnim:      _pulseAnim,
+                            isSending:      _isSending && _activeSendIndex == e.key,
+                            isDisabled:     _isSending && _activeSendIndex != e.key,
+                            isAutoDetected: _autoScenario == e.value,
+                            onTap:          () => _triggerSOS(e.key),
+                          )).toList(),
                     ),
 
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 22),
 
-                    // Helplines strip
-                    _MobileSectionLabel(label: 'HELPLINES', sub: 'Tap to call', t: t),
+                    // Helplines section
+                    _MobileSectionLabel(
+                        label: 'QUICK HELPLINES',
+                        sub: 'Tap to call', isDark: isDark),
                     const SizedBox(height: 10),
-                    _mobileHelplinesRow(t),
+                    _MobileHelplinesRow(isDark: isDark),
 
                     const SizedBox(height: 16),
 
                     // Shake card
-                    if (PlatformHelper.supportsShake) ...[
-                      _shakeCard(t),
-                      const SizedBox(height: 12),
-                    ],
+                    if (PlatformHelper.supportsShake)
+                      _ShakeCard(isDark: isDark),
                   ]),
+                ),
+              ),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+
+  // ════════════════════════════════════════════
+  //  WEB / TABLET  (≥700px)
+  // ════════════════════════════════════════════
+  Widget _buildWeb(BuildContext ctx, bool isDark, double w) {
+    final isDesktop = w > 1100;
+    final hPad      = isDesktop ? 96.0 : 52.0;
+    final bg        = isDark ? _dBg : _lBg;
+
+    return Scaffold(
+      backgroundColor: bg,
+      body: Stack(children: [
+        // Subtle ambient glow — barely visible, premium not flashy
+        Positioned(top: -200, left: w * 0.1,
+            child: _AmbientGlow(
+                color: (isDark ? _red_D : _red).withOpacity(0.06), size: 500)),
+        SafeArea(
+          child: Column(children: [
+            GlobalNavbar(toggleTheme: widget.toggleTheme,
+                setLocale: widget.setLocale, activeRoute: 'emergency'),
+            Expanded(
+              child: FadeTransition(
+                opacity: _entryFade,
+                child: SlideTransition(
+                  position: _entrySlide,
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.fromLTRB(hPad, 24, hPad, 64),
+                    physics: const BouncingScrollPhysics(),
+                    child: isDesktop
+                        ? _webDesktopLayout(ctx, isDark)
+                        : _webTabletLayout(ctx, isDark),
+                  ),
                 ),
               ),
             ),
@@ -468,462 +428,164 @@ class _EmergencyScreenState extends State<EmergencyScreen>
     );
   }
 
-  // ── Mobile helplines row (tap-to-call tiles) ──
-  Widget _mobileHelplinesRow(_T t) {
-    final items = [
-      ('112', 'Emergency', _kCrimson),
-      ('108', 'Ambulance', _kOrange),
-      ('100', 'Police',    _kBlue),
-      ('101', 'Fire',      _kAmber),
-    ];
-    return Row(children: items.map((item) {
-      final isLast = item == items.last;
-      return Expanded(child: GestureDetector(
-          onTap: () {},
-          child: Container(
-              margin: EdgeInsets.only(right: isLast ? 0 : 8),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                  color: item.$3.withOpacity(t.d ? 0.07 : 0.05),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: item.$3.withOpacity(0.20))),
-              child: Column(children: [
-                Text(item.$1, style: TextStyle(
-                    color: item.$3, fontSize: 18,
-                    fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-                const SizedBox(height: 2),
-                Text(item.$2, style: TextStyle(
-                    color: t.textSec, fontSize: 9, fontWeight: FontWeight.w600)),
-              ]))));
-    }).toList());
-  }
-
-  // ══════════════════════════════════════════════
-  //  WEBSITE LAYOUT (≥ 700px) — unchanged
-  // ══════════════════════════════════════════════
-  Widget _buildWebsite(BuildContext context, _T t, double w) {
-    final isDesktop = w > 1100;
-    final hPad = isDesktop ? 96.0 : 48.0;
-
-    return Scaffold(
-      backgroundColor: t.scaffold,
-      body: Stack(children: [
-        AnimatedBuilder(animation: _ambientAnim, builder: (_, __) => Stack(children: [
-          Positioned(top: -180, left: w * 0.05,
-              child: _Glow(color: _kCrimson.withOpacity(
-                  t.d ? 0.07 + _ambientAnim.value * 0.04 : 0.025), size: 520)),
-          Positioned(bottom: -200, right: -80,
-              child: _Glow(color: _kViolet.withOpacity(
-                  t.d ? 0.05 + _ambientAnim.value * 0.03 : 0.018), size: 400)),
+  Widget _webDesktopLayout(BuildContext ctx, bool isDark) =>
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        // Left — info + utilities
+        SizedBox(width: 320, child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+          _WebHero(isDark: isDark, pulseAnim: _pulseAnim, onBack: () => Navigator.pop(ctx)),
+          const SizedBox(height: 20),
+          if (_autoScenario != null) ...[
+            _AutoDetectBanner(
+                scenario: _autoScenario!, isDark: isDark,
+                signLabel: widget.detectedSign ?? '',
+                onTap: () => _triggerSOS(_kScenarios.indexOf(_autoScenario!))),
+            const SizedBox(height: 12),
+          ],
+          if (_statusMsg != null) ...[
+            _StatusBar(message: _statusMsg!, ok: _statusOk, isDark: isDark),
+            const SizedBox(height: 12),
+          ],
+          if (!_service.hasContacts) ...[
+            _NoContactsBanner(isDark: isDark, onTap: () => _pushSetup(ctx)),
+            const SizedBox(height: 12),
+          ],
+          _WebHelplinesCard(isDark: isDark),
+          const SizedBox(height: 12),
+          if (PlatformHelper.supportsShake) ...[
+            _ShakeCard(isDark: isDark),
+            const SizedBox(height: 12),
+          ],
+          _ContactsButton(isDark: isDark, count: _service.contactCount,
+              onTap: () => _pushSetup(ctx)),
         ])),
-        Positioned.fill(child: CustomPaint(painter: _GridPainter(t: t))),
-        SafeArea(
-          child: Column(children: [
-            GlobalNavbar(toggleTheme: widget.toggleTheme,
-                setLocale: widget.setLocale, activeRoute: 'emergency'),
-            Expanded(child: FadeTransition(opacity: _entryFade,
-                child: SlideTransition(position: _entrySlide,
-                    child: SingleChildScrollView(
-                      padding: EdgeInsets.fromLTRB(hPad, 12, hPad, 56),
-                      physics: const BouncingScrollPhysics(),
-                      child: isDesktop ? _desktopLayout(t, w) : _tabletLayout(t),
-                    )))),
+        const SizedBox(width: 40),
+        // Right — scenario grid
+        Expanded(child: _WebScenariosGrid(
+            isDark: isDark, pulseAnim: _pulseAnim,
+            activeSendIndex: _activeSendIndex,
+            isSending: _isSending, autoScenario: _autoScenario,
+            onTap: _triggerSOS)),
+      ]);
+
+  Widget _webTabletLayout(BuildContext ctx, bool isDark) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        _WebHero(isDark: isDark, pulseAnim: _pulseAnim, onBack: () => Navigator.pop(ctx)),
+        const SizedBox(height: 20),
+        if (_autoScenario != null) ...[
+          _AutoDetectBanner(
+              scenario: _autoScenario!, isDark: isDark,
+              signLabel: widget.detectedSign ?? '',
+              onTap: () => _triggerSOS(_kScenarios.indexOf(_autoScenario!))),
+          const SizedBox(height: 12),
+        ],
+        if (_statusMsg != null) ...[
+          _StatusBar(message: _statusMsg!, ok: _statusOk, isDark: isDark),
+          const SizedBox(height: 12),
+        ],
+        if (!_service.hasContacts) ...[
+          _NoContactsBanner(isDark: isDark, onTap: () => _pushSetup(ctx)),
+          const SizedBox(height: 12),
+        ],
+        _WebScenariosGrid(
+            isDark: isDark, pulseAnim: _pulseAnim,
+            activeSendIndex: _activeSendIndex,
+            isSending: _isSending, autoScenario: _autoScenario,
+            onTap: _triggerSOS),
+        const SizedBox(height: 20),
+        _WebHelplinesCard(isDark: isDark),
+        const SizedBox(height: 12),
+        if (PlatformHelper.supportsShake) ...[
+          _ShakeCard(isDark: isDark),
+          const SizedBox(height: 12),
+        ],
+        _ContactsButton(isDark: isDark, count: _service.contactCount,
+            onTap: () => _pushSetup(ctx)),
+      ]);
+
+  void _pushSetup(BuildContext ctx) => Navigator.push(ctx, PageRouteBuilder(
+      pageBuilder: (_, __, ___) => EmergencySetupScreen(
+          toggleTheme: widget.toggleTheme, setLocale: widget.setLocale),
+      transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
+      transitionDuration: const Duration(milliseconds: 260)));
+}
+
+// ══════════════════════════════════════════════════════════════
+//  MOBILE NAV BAR
+// ══════════════════════════════════════════════════════════════
+class _MobileEmergencyBar extends StatelessWidget {
+  final bool isDark;
+  final Animation<double> pulseAnim;
+  final VoidCallback onBack, onContacts;
+  const _MobileEmergencyBar({required this.isDark, required this.pulseAnim,
+    required this.onBack, required this.onContacts});
+
+  @override
+  Widget build(BuildContext context) {
+    final bg     = isDark ? _dSurface : _lSurface;
+    final label  = isDark ? _dLabel   : _lLabel;
+    final label2 = isDark ? _dLabel2  : _lLabel2;
+    final sep    = isDark ? _dSep     : _lSep.withOpacity(0.5);
+    final accent = isDark ? _red_D    : _red;
+    final blueA  = isDark ? _blue_D   : _blue;
+
+    return Container(
+      decoration: BoxDecoration(
+          color: bg,
+          border: Border(bottom: BorderSide(color: sep, width: 0.5))),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Row(children: [
+        // Back
+        GestureDetector(
+          onTap: onBack,
+          behavior: HitTestBehavior.opaque,
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.chevron_left_rounded, color: blueA, size: 28),
+            Text('Back', style: _t(15, FontWeight.w400, blueA)),
           ]),
         ),
-      ]),
-    );
-  }
-
-  Widget _desktopLayout(_T t, double w) => Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Expanded(flex: 4, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        _hero(t),
-        const SizedBox(height: 24),
-        if (_autoScenario != null) ...[ _autoDetectBanner(t), const SizedBox(height: 16) ],
-        if (_statusMsg != null)    ...[ _statusBar(t),         const SizedBox(height: 16) ],
-        if (!_service.hasContacts) ...[ _noContactsBanner(t), const SizedBox(height: 16) ],
-        _helplinesRow(t),
-        const SizedBox(height: 16),
-        if (PlatformHelper.supportsShake) _shakeCard(t),
-        const SizedBox(height: 14),
-        _contactsBtn(t),
-      ])),
-      const SizedBox(width: 32),
-      Expanded(flex: 6, child: _scenariosGrid(t, twoCol: true)),
-    ],
-  );
-
-  Widget _tabletLayout(_T t) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    _hero(t),
-    const SizedBox(height: 20),
-    if (_autoScenario != null) ...[ _autoDetectBanner(t), const SizedBox(height: 14) ],
-    if (_statusMsg != null)    ...[ _statusBar(t),         const SizedBox(height: 14) ],
-    if (!_service.hasContacts) ...[ _noContactsBanner(t), const SizedBox(height: 14) ],
-    _scenariosGrid(t, twoCol: true),
-    const SizedBox(height: 18),
-    _helplinesRow(t),
-    const SizedBox(height: 14),
-    if (PlatformHelper.supportsShake) ...[ _shakeCard(t), const SizedBox(height: 12) ],
-    _contactsBtn(t),
-  ]);
-
-  // ─────────────────────────────────────────────
-  //  HERO — mobile overflow fixed:
-  //  fontSize 44 + letterSpacing -2.0 on 375px → overflow.
-  //  Fix: adaptive font sizes, no negative letter-spacing on mobile.
-  // ─────────────────────────────────────────────
-
-  Widget _hero(_T t) {
-    final w        = MediaQuery.of(context).size.width;
-    final isMobile = w <= 700;
-    final titleFs  = isMobile ? 28.0 : 40.0;
-    final titleLS  = isMobile ? -0.4 : -1.5;
-
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
-      // Live badge
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-            color: _kCrimson.withOpacity(0.07),
-            borderRadius: BorderRadius.circular(6),
-            border: Border.all(color: _kCrimson.withOpacity(0.20))),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
+        const Spacer(),
+        // Centre — title with live dot
+        Row(mainAxisSize: MainAxisSize.min, children: [
           AnimatedBuilder(
-            animation: _pulseAnim,
-            builder: (_, __) => Container(
-                width: 5, height: 5,
-                decoration: BoxDecoration(
-                    shape: BoxShape.circle, color: _kCrimsonSoft,
-                    boxShadow: [BoxShadow(
-                        color: _kCrimsonSoft.withOpacity(_pulseAnim.value * 0.8),
-                        blurRadius: 6, spreadRadius: 1)])),
-          ),
+              animation: pulseAnim,
+              builder: (_, __) => Container(
+                  width: 6, height: 6,
+                  decoration: BoxDecoration(
+                      shape: BoxShape.circle, color: accent,
+                      boxShadow: [BoxShadow(
+                          color: accent.withOpacity(pulseAnim.value * 0.7),
+                          blurRadius: 6, spreadRadius: 1)]))),
           const SizedBox(width: 8),
-          Text(
-              PlatformHelper.isMobile
-                  ? 'LIVE — SHAKE OR TAP'
-                  : 'EMERGENCY SOS — TAP TO ALERT',
-              style: const TextStyle(
-                  color: _kCrimsonSoft, fontSize: 9.5,
-                  fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+          Text('Emergency SOS', style: _t(16, FontWeight.w600, label, ls: -0.2)),
         ]),
-      ),
-
-      const SizedBox(height: 14),
-
-      Text(
-          'Emergency\nAlert Centre',
-          style: TextStyle(
-              color: t.textPri, fontSize: titleFs,
-              fontWeight: FontWeight.w900,
-              height: 1.08, letterSpacing: titleLS)),
-
-      const SizedBox(height: 10),
-
-      Text(
-          'Select the type of emergency. A formal alert with your GPS '
-              'location will be sent instantly to all your saved contacts.',
-          style: TextStyle(
-              color: t.textSec, fontSize: isMobile ? 12.5 : 13.5,
-              height: 1.7, letterSpacing: 0.05)),
-    ]);
-  }
-
-  // ─────────────────────────────────────────────
-  //  AUTO DETECT BANNER
-  // ─────────────────────────────────────────────
-
-  Widget _autoDetectBanner(_T t) {
-    final s = _autoScenario!;
-    return GestureDetector(
-      onTap: () => _triggerSOS(_kScenarios.indexOf(s)),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-            color: s.color.withOpacity(t.d ? 0.08 : 0.05),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: s.color.withOpacity(0.30), width: 1.5),
-            boxShadow: [BoxShadow(
-                color: s.color.withOpacity(t.d ? 0.12 : 0.06),
-                blurRadius: 16, offset: const Offset(0, 5))]),
-        child: Row(children: [
-          Container(
-              width: 40, height: 40,
-              decoration: BoxDecoration(
-                  color: s.color.withOpacity(0.10),
-                  borderRadius: BorderRadius.circular(11),
-                  border: Border.all(color: s.color.withOpacity(0.25))),
-              child: Icon(s.icon, color: s.soft, size: 18)),
-          const SizedBox(width: 12),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('ISL Sign Detected: "${widget.detectedSign}"',
-                style: TextStyle(color: s.soft, fontSize: 10,
-                    fontWeight: FontWeight.w700, letterSpacing: 0.5)),
-            const SizedBox(height: 2),
-            Text('Suggested: ${s.title} — Tap to send immediately',
-                style: TextStyle(color: t.textPri, fontSize: 12.5, fontWeight: FontWeight.w700)),
-          ])),
-          Icon(Icons.arrow_forward_rounded, color: s.soft, size: 14),
-        ]),
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────
-  //  STATUS BAR
-  // ─────────────────────────────────────────────
-
-  Widget _statusBar(_T t) {
-    final color = _statusOk ? _kGreen : _kCrimsonSoft;
-    final icon  = _statusOk
-        ? Icons.check_circle_outline_rounded
-        : Icons.error_outline_rounded;
-    return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
-      builder: (_, v, child) => Opacity(
-          opacity: v,
-          child: Transform.translate(offset: Offset(0, (1 - v) * 8), child: child)),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-            color: color.withOpacity(t.d ? 0.07 : 0.05),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: color.withOpacity(0.22))),
-        child: Row(children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 10),
-          Expanded(child: Text(_statusMsg!,
-              style: TextStyle(color: color, fontSize: 12.5,
-                  fontWeight: FontWeight.w600, height: 1.4))),
-        ]),
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────
-  //  NO CONTACTS BANNER
-  // ─────────────────────────────────────────────
-
-  Widget _noContactsBanner(_T t) {
-    return GestureDetector(
-      onTap: () => Navigator.push(context, PageRouteBuilder(
-        pageBuilder: (_, __, ___) => EmergencySetupScreen(
-            toggleTheme: widget.toggleTheme, setLocale: widget.setLocale),
-        transitionsBuilder: (_, anim, __, child) =>
-            FadeTransition(opacity: anim, child: child),
-        transitionDuration: const Duration(milliseconds: 280),
-      )),
-      child: Container(
-        padding: const EdgeInsets.all(13),
-        decoration: BoxDecoration(
-            color: _kAmber.withOpacity(t.d ? 0.06 : 0.04),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _kAmber.withOpacity(0.18))),
-        child: Row(children: [
-          Icon(Icons.warning_rounded, color: _kAmber, size: 16),
-          const SizedBox(width: 10),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text('No emergency contacts configured',
-                style: TextStyle(color: _kAmber, fontSize: 11.5,
-                    fontWeight: FontWeight.w700)),
-            const SizedBox(height: 2),
-            Text('Alerts cannot be sent without contacts. Tap to add them.',
-                style: TextStyle(color: _kAmber.withOpacity(0.70),
-                    fontSize: 10.5, height: 1.4)),
-          ])),
-          Icon(Icons.arrow_forward_ios_rounded, color: _kAmber, size: 11),
-        ]),
-      ),
-    );
-  }
-
-  // ─────────────────────────────────────────────
-  //  SCENARIOS GRID
-  // ─────────────────────────────────────────────
-
-  Widget _scenariosGrid(_T t, {required bool twoCol}) {
-    if (twoCol) {
-      return GridView.count(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: 2,
-        mainAxisSpacing: 10, crossAxisSpacing: 10,
-        childAspectRatio: 1.35,
-        children: _kScenarios.asMap().entries.map((e) => _ScenarioCard(
-          scenario:      e.value,
-          t:             t,
-          pulseAnim:     _pulseAnim,
-          isSending:     _isSending && _activeSendIndex == e.key,
-          isDisabled:    _isSending && _activeSendIndex != e.key,
-          isAutoDetected: _autoScenario == e.value,
-          onTap:         () => _triggerSOS(e.key),
-        )).toList(),
-      );
-    }
-
-    return Column(
-      children: _kScenarios.asMap().entries.map((e) => Padding(
-        padding: const EdgeInsets.only(bottom: 9),
-        child: _ScenarioCard(
-          scenario:      e.value,
-          t:             t,
-          pulseAnim:     _pulseAnim,
-          isSending:     _isSending && _activeSendIndex == e.key,
-          isDisabled:    _isSending && _activeSendIndex != e.key,
-          isAutoDetected: _autoScenario == e.value,
-          onTap:         () => _triggerSOS(e.key),
-        ),
-      )).toList(),
-    );
-  }
-
-  // ─────────────────────────────────────────────
-  //  HELPLINES ROW — mobile overflow fixed:
-  //  fontSize 16 numbers on 375px ÷ 4 columns was fine,
-  //  but the label text wrapped poorly.
-  //  Fix: use shorter labels + smaller font + same Expanded layout.
-  // ─────────────────────────────────────────────
-
-  Widget _helplinesRow(_T t) {
-    final w        = MediaQuery.of(context).size.width;
-    final isMobile = w <= 700;
-    final numFs    = isMobile ? 14.0 : 16.0;
-    final labFs    = isMobile ? 8.0  : 9.0;
-
-    final items = [
-      ('112', 'Emergency', _kCrimson),
-      ('108', 'Ambulance', _kOrange),
-      ('100', 'Police',    _kBlue),
-      ('101', 'Fire',      _kAmber),
-    ];
-    return Container(
-      padding: const EdgeInsets.all(13),
-      decoration: BoxDecoration(
-          color: t.surfaceUp,
-          borderRadius: BorderRadius.circular(13),
-          border: Border.all(color: t.border)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('QUICK REFERENCE HELPLINES',
-            style: TextStyle(color: t.textMuted, fontSize: 8.5,
-                fontWeight: FontWeight.w700, letterSpacing: 1.5)),
-        const SizedBox(height: 10),
-        Row(children: items.map((item) => Expanded(
+        const Spacer(),
+        // Contacts icon
+        GestureDetector(
+          onTap: onContacts,
           child: Container(
-            margin: EdgeInsets.only(right: item == items.last ? 0 : 7),
-            padding: const EdgeInsets.symmetric(vertical: 9),
-            decoration: BoxDecoration(
-                color: item.$3.withOpacity(t.d ? 0.06 : 0.04),
-                borderRadius: BorderRadius.circular(9),
-                border: Border.all(color: item.$3.withOpacity(0.15))),
-            child: Column(children: [
-              Text(item.$1,
-                  style: TextStyle(color: item.$3,
-                      fontSize: numFs, fontWeight: FontWeight.w900, letterSpacing: -0.4)),
-              const SizedBox(height: 2),
-              Text(item.$2,
-                  style: TextStyle(color: t.textSec, fontSize: labFs, height: 1.2)),
-            ]),
-          ),
-        )).toList()),
-      ]),
-    );
-  }
-
-  // ─────────────────────────────────────────────
-  //  SHAKE CARD
-  // ─────────────────────────────────────────────
-
-  Widget _shakeCard(_T t) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-          color: t.surfaceUp,
-          borderRadius: BorderRadius.circular(13),
-          border: Border.all(color: t.border)),
-      child: Row(children: [
-        AnimatedBuilder(
-          animation: _pulseAnim,
-          builder: (_, __) => Container(
-              width: 40, height: 40,
+              width: 34, height: 34,
               decoration: BoxDecoration(
-                  color: _kViolet.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                      color: _kViolet.withOpacity(0.12 + _pulseAnim.value * 0.12))),
-              child: const Icon(Icons.vibration_rounded,
-                  color: _kVioletLight, size: 18)),
+                  color: isDark ? _dFill : _lFill,
+                  borderRadius: BorderRadius.circular(10)),
+              child: Icon(Icons.contacts_rounded, color: label2, size: 16)),
         ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Shake phone to send General Alert',
-              style: TextStyle(color: t.textPri, fontSize: 11.5, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 2),
-          Text('Shake twice from any screen to alert all your contacts immediately.',
-              style: TextStyle(color: t.textSec, fontSize: 10.5, height: 1.5)),
-        ])),
       ]),
-    );
-  }
-
-  // ─────────────────────────────────────────────
-  //  CONTACTS BUTTON
-  // ─────────────────────────────────────────────
-
-  Widget _contactsBtn(_T t) {
-    final count = _service.contactCount;
-    return GestureDetector(
-      onTap: () => Navigator.push(context, PageRouteBuilder(
-        pageBuilder: (_, __, ___) => EmergencySetupScreen(
-            toggleTheme: widget.toggleTheme, setLocale: widget.setLocale),
-        transitionsBuilder: (_, anim, __, child) =>
-            FadeTransition(opacity: anim, child: child),
-        transitionDuration: const Duration(milliseconds: 280),
-      )),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 14),
-        decoration: BoxDecoration(
-            color: t.surfaceUp,
-            borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: t.border)),
-        child: Row(children: [
-          Container(
-              padding: const EdgeInsets.all(7),
-              decoration: BoxDecoration(
-                  color: _kViolet.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(8)),
-              child: const Icon(Icons.contacts_rounded,
-                  color: _kVioletLight, size: 15)),
-          const SizedBox(width: 11),
-          Expanded(child: Text(
-              count > 0
-                  ? '$count emergency contact${count == 1 ? '' : 's'} configured'
-                  : 'Set up emergency contacts',
-              style: TextStyle(color: t.textSec, fontSize: 12.5,
-                  fontWeight: FontWeight.w600))),
-          Icon(Icons.arrow_forward_ios_rounded, color: t.textMuted, size: 11),
-        ]),
-      ),
     );
   }
 }
 
-// ════════════════════════════════════════════
-//  SCENARIO CARD  — no emojis, Material icons only
-// ════════════════════════════════════════════
-
+// ══════════════════════════════════════════════════════════════
+//  SCENARIO CARD  — the core UI unit
+// ══════════════════════════════════════════════════════════════
 class _ScenarioCard extends StatefulWidget {
   final _Scenario scenario;
-  final _T t;
+  final bool isDark;
   final Animation<double> pulseAnim;
   final bool isSending, isDisabled, isAutoDetected;
   final VoidCallback onTap;
   const _ScenarioCard({
-    required this.scenario, required this.t,
+    required this.scenario, required this.isDark,
     required this.pulseAnim,
     required this.isSending, required this.isDisabled,
     required this.isAutoDetected, required this.onTap,
@@ -934,148 +596,134 @@ class _ScenarioCard extends StatefulWidget {
 
 class _ScenarioCardState extends State<_ScenarioCard>
     with SingleTickerProviderStateMixin {
-  late AnimationController _hoverCtrl;
-  late Animation<double>   _hoverAnim;
+  late AnimationController _hCtrl;
+  late Animation<double>   _hAnim;
   bool _pressed = false;
 
   @override
   void initState() {
     super.initState();
-    _hoverCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 180));
-    _hoverAnim = CurvedAnimation(parent: _hoverCtrl, curve: Curves.easeOut);
+    _hCtrl = AnimationController(vsync: this,
+        duration: const Duration(milliseconds: 160));
+    _hAnim = CurvedAnimation(parent: _hCtrl, curve: Curves.easeOut);
   }
+
   @override
-  void dispose() { _hoverCtrl.dispose(); super.dispose(); }
+  void dispose() { _hCtrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
-    final s  = widget.scenario;
-    final t  = widget.t;
-    final c  = s.color;
-    final sc = s.soft;
+    final s      = widget.scenario;
+    final isDark = widget.isDark;
+    final accent = s.accent(isDark);
+    final bg     = isDark ? _dSurface  : _lSurface;
+    final label  = isDark ? _dLabel    : _lLabel;
+    final label2 = isDark ? _dLabel2   : _lLabel2;
 
     return MouseRegion(
-      onEnter: (_) { if (!widget.isDisabled) _hoverCtrl.forward(); },
-      onExit:  (_) => _hoverCtrl.reverse(),
+      onEnter: (_) { if (!widget.isDisabled) _hCtrl.forward(); },
+      onExit:  (_) => _hCtrl.reverse(),
       child: GestureDetector(
         onTapDown:   (_) { if (!widget.isDisabled) setState(() => _pressed = true); },
         onTapUp:     (_) { setState(() => _pressed = false);
         if (!widget.isDisabled) widget.onTap(); },
-        onTapCancel: ()  { setState(() => _pressed = false); },
+        onTapCancel: ()  => setState(() => _pressed = false),
         child: AnimatedBuilder(
-          animation: _hoverAnim,
+          animation: _hAnim,
           builder: (_, __) {
-            final hv = _hoverAnim.value;
+            final hv = _hAnim.value;
+            final elevated = widget.isSending || widget.isAutoDetected || hv > 0.1;
             return AnimatedScale(
-              scale: _pressed ? 0.955 : 1.0,
+              scale: _pressed ? 0.95 : 1.0,
               duration: const Duration(milliseconds: 80),
+              curve: Curves.easeOutBack,
               child: AnimatedOpacity(
-                opacity: widget.isDisabled ? 0.28 : 1.0,
+                opacity: widget.isDisabled ? 0.25 : 1.0,
                 duration: const Duration(milliseconds: 180),
                 child: Container(
-                  width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Color.lerp(
-                        t.surfaceUp,
-                        c.withOpacity(t.d ? 0.12 : 0.06),
-                        widget.isAutoDetected ? 0.65 : (widget.isSending ? 1.0 : hv)),
-                    borderRadius: BorderRadius.circular(18),
+                    color: elevated
+                        ? Color.lerp(bg, accent.withOpacity(0.08), hv.clamp(0.0, 1.0))
+                        : bg,
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                        color: c.withOpacity(
-                            widget.isSending || widget.isAutoDetected
-                                ? 0.55
-                                : (0.15 + hv * 0.28)),
-                        width: (widget.isSending || widget.isAutoDetected) ? 1.5 : 1.0),
-                    boxShadow: [BoxShadow(
-                        color: c.withOpacity(
-                            widget.isSending ? (t.d ? 0.24 : 0.12)
-                                : widget.isAutoDetected ? (t.d ? 0.15 : 0.07)
-                                : hv * (t.d ? 0.10 : 0.05)),
-                        blurRadius: widget.isSending ? 28 : 18,
-                        offset: const Offset(0, 5))],
+                        color: elevated
+                            ? accent.withOpacity(
+                            widget.isSending || widget.isAutoDetected ? 0.40 : hv * 0.30)
+                            : Colors.black.withOpacity(isDark ? 0.0 : 0.05),
+                        width: (widget.isSending || widget.isAutoDetected) ? 1.0 : 0.5),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.30 : 0.07),
+                          blurRadius: elevated ? 20 : 10,
+                          offset: const Offset(0, 4)),
+                      if (elevated)
+                        BoxShadow(
+                            color: accent.withOpacity(isDark ? 0.12 : 0.06),
+                            blurRadius: 24, offset: const Offset(0, 6)),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-
                       // Top row — icon + helpline badge
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 42, height: 42,
-                            decoration: BoxDecoration(
-                                color: c.withOpacity(t.d ? 0.11 : 0.07),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                    color: c.withOpacity(0.18 + hv * 0.18))),
-                            child: Center(child: widget.isSending
-                                ? SizedBox(
-                                width: 18, height: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2.0, color: sc))
-                                : Icon(s.icon, color: sc, size: 19)),
-                          ),
-                          Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Icon container
+                            Container(
+                              width: 44, height: 44,
                               decoration: BoxDecoration(
-                                  color: c.withOpacity(t.d ? 0.09 : 0.06),
-                                  borderRadius: BorderRadius.circular(5),
-                                  border: Border.all(color: c.withOpacity(0.18))),
-                              child: Text(s.helpline,
-                                  style: TextStyle(color: sc,
-                                      fontSize: 10.5, fontWeight: FontWeight.w800,
-                                      letterSpacing: -0.2))),
-                        ],
-                      ),
+                                  color: accent.withOpacity(0.10),
+                                  borderRadius: BorderRadius.circular(13)),
+                              child: Center(child: widget.isSending
+                                  ? SizedBox(width: 18, height: 18,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: accent))
+                                  : Icon(s.icon, color: accent, size: 20)),
+                            ),
+                            // Helpline number badge
+                            Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                    color: accent.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(20)),
+                                child: Text(s.helpline,
+                                    style: _t(11, FontWeight.w700, accent))),
+                          ]),
 
-                      const SizedBox(height: 11),
+                      const Spacer(),
 
                       // Title
                       Text(
-                        widget.isSending ? 'Sending alert…' : s.title,
-                        style: TextStyle(
-                            color: widget.isSending ? sc : t.textPri,
-                            fontSize: 13, fontWeight: FontWeight.w800,
-                            letterSpacing: -0.2, height: 1.15),
-                      ),
+                          widget.isSending ? 'Sending…' : s.title,
+                          style: _t(14, FontWeight.w600,
+                              widget.isSending ? accent : label, ls: -0.2)),
 
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 2),
 
                       // Subtitle
                       Text(
-                        widget.isSending
-                            ? 'Contacting ${EmergencyService.instance.contactCount} person(s)…'
-                            : s.subtitle,
-                        style: TextStyle(
-                            color: widget.isSending ? sc.withOpacity(0.65) : t.textSec,
-                            fontSize: 9.5, height: 1.4),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                          widget.isSending
+                              ? 'Alerting contacts…'
+                              : s.subtitle,
+                          style: _t(10.5, FontWeight.w400,
+                              widget.isSending ? accent.withOpacity(0.6) : label2,
+                              h: 1.35),
+                          maxLines: 2, overflow: TextOverflow.ellipsis),
 
-                      // ISL sign hint (on hover or auto-detected)
-                      if (widget.isAutoDetected || hv > 0.25) ...[
-                        const SizedBox(height: 7),
+                      // ISL sign hint — shown on hover / auto-detected
+                      if (widget.isAutoDetected || hv > 0.3) ...[
+                        const SizedBox(height: 6),
                         AnimatedOpacity(
                           opacity: widget.isAutoDetected ? 1.0 : hv,
-                          duration: const Duration(milliseconds: 140),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 7, vertical: 3),
-                            decoration: BoxDecoration(
-                                color: c.withOpacity(0.07),
-                                borderRadius: BorderRadius.circular(4)),
-                            child: Text(s.signHint,
-                                style: TextStyle(
-                                    color: sc.withOpacity(0.75),
-                                    fontSize: 8.5, fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.2)),
-                          ),
+                          duration: const Duration(milliseconds: 130),
+                          child: Text(s.signHint,
+                              style: _t(9, FontWeight.w600,
+                                  accent.withOpacity(0.70), ls: 0.2)),
                         ),
                       ],
                     ],
@@ -1090,62 +738,443 @@ class _ScenarioCardState extends State<_ScenarioCard>
   }
 }
 
-// ─────────────────────────────────────────────
-//  MOBILE SECTION LABEL
-// ─────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  WEB COMPONENTS
+// ══════════════════════════════════════════════════════════════
+
+class _WebHero extends StatelessWidget {
+  final bool isDark;
+  final Animation<double> pulseAnim;
+  final VoidCallback onBack;
+  const _WebHero({required this.isDark, required this.pulseAnim,
+    required this.onBack});
+
+  @override
+  Widget build(BuildContext context) {
+    final label  = isDark ? _dLabel   : _lLabel;
+    final label2 = isDark ? _dLabel2  : _lLabel2;
+    final accent = isDark ? _red_D    : _red;
+    final blueA  = isDark ? _blue_D   : _blue;
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      // Back breadcrumb
+      GestureDetector(
+        onTap: onBack,
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.chevron_left_rounded, color: blueA, size: 20),
+          Text('Emergency', style: _t(14, FontWeight.w400, blueA)),
+        ]),
+      ),
+      const SizedBox(height: 20),
+
+      // Live status badge
+      AnimatedBuilder(
+          animation: pulseAnim,
+          builder: (_, __) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                  color: accent.withOpacity(0.06),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: accent.withOpacity(0.18), width: 0.5)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Container(width: 5, height: 5,
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle, color: accent,
+                        boxShadow: [BoxShadow(
+                            color: accent.withOpacity(pulseAnim.value * 0.7),
+                            blurRadius: 6, spreadRadius: 1)])),
+                const SizedBox(width: 8),
+                Text('LIVE — TAP TO ALERT',
+                    style: _t(10, FontWeight.w700, accent, ls: 1.0)),
+              ]))),
+
+      const SizedBox(height: 16),
+
+      Text('Emergency\nAlert Centre',
+          style: _t(36, FontWeight.w700, label, ls: -1.0, h: 1.08)),
+
+      const SizedBox(height: 10),
+
+      Text('Select the emergency type. A formal alert with your GPS location '
+          'is sent instantly to all saved contacts.',
+          style: _t(14, FontWeight.w400, label2, ls: -0.1, h: 1.65)),
+    ]);
+  }
+}
+
+class _WebScenariosGrid extends StatelessWidget {
+  final bool isDark;
+  final Animation<double> pulseAnim;
+  final int? activeSendIndex;
+  final bool isSending;
+  final _Scenario? autoScenario;
+  final void Function(int) onTap;
+  const _WebScenariosGrid({required this.isDark, required this.pulseAnim,
+    required this.activeSendIndex, required this.isSending,
+    required this.autoScenario, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: 2,
+        mainAxisSpacing: 12, crossAxisSpacing: 12,
+        childAspectRatio: 1.30,
+        children: _kScenarios.asMap().entries.map((e) => _ScenarioCard(
+          scenario:       e.value,
+          isDark:         isDark,
+          pulseAnim:      pulseAnim,
+          isSending:      isSending && activeSendIndex == e.key,
+          isDisabled:     isSending && activeSendIndex != e.key,
+          isAutoDetected: autoScenario == e.value,
+          onTap:          () => onTap(e.key),
+        )).toList());
+  }
+}
+
+class _WebHelplinesCard extends StatelessWidget {
+  final bool isDark;
+  const _WebHelplinesCard({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      ('112', 'Emergency', isDark ? _red_D    : _red),
+      ('108', 'Ambulance', isDark ? _orange_D : _orange),
+      ('100', 'Police',    isDark ? _blue_D   : _blue),
+      ('101', 'Fire',      isDark ? _amber_D  : _amber),
+    ];
+    final bg    = isDark ? _dSurface  : _lSurface;
+    final sub   = isDark ? _dLabel2   : _lLabel2;
+    final sep   = isDark ? _dSep      : _lSep.withOpacity(0.4);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: Colors.black.withOpacity(isDark ? 0.0 : 0.04), width: 0.5),
+          boxShadow: [BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
+              blurRadius: 10, offset: const Offset(0, 3))]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('HELPLINES', style: _t(10, FontWeight.w600, sub, ls: 0.8)),
+        const SizedBox(height: 12),
+        IntrinsicHeight(child: Row(children: [
+          for (int i = 0; i < items.length; i++) ...[
+            Expanded(child: Column(children: [
+              Text(items[i].$1,
+                  style: _t(18, FontWeight.w700, items[i].$3, ls: -0.5)),
+              const SizedBox(height: 2),
+              Text(items[i].$2,
+                  style: _t(10, FontWeight.w400, sub), textAlign: TextAlign.center),
+            ])),
+            if (i < items.length - 1)
+              Container(width: 0.5, color: sep),
+          ],
+        ])),
+      ]),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SHARED COMPONENTS  (mobile + web)
+// ══════════════════════════════════════════════════════════════
+
+// ── Auto-detect banner ────────────────────────────────────────
+class _AutoDetectBanner extends StatelessWidget {
+  final _Scenario scenario;
+  final bool isDark;
+  final String signLabel;
+  final VoidCallback onTap;
+  const _AutoDetectBanner({required this.scenario, required this.isDark,
+    required this.signLabel, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = scenario.accent(isDark);
+    final label  = isDark ? _dLabel  : _lLabel;
+    final bg     = isDark ? _dSurface : _lSurface;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: accent.withOpacity(0.30), width: 1.0),
+            boxShadow: [BoxShadow(
+                color: accent.withOpacity(isDark ? 0.10 : 0.06),
+                blurRadius: 16, offset: const Offset(0, 4))]),
+        child: Row(children: [
+          Container(
+              width: 40, height: 40,
+              decoration: BoxDecoration(
+                  color: accent.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(12)),
+              child: Icon(scenario.icon, color: accent, size: 18)),
+          const SizedBox(width: 12),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('ISL Detected: "$signLabel"',
+                style: _t(10, FontWeight.w600, accent, ls: 0.2)),
+            const SizedBox(height: 2),
+            Text('Suggested: ${scenario.title} — Tap to send',
+                style: _t(13, FontWeight.w600, label, ls: -0.2)),
+          ])),
+          Icon(Icons.arrow_forward_ios_rounded, color: accent, size: 12),
+        ]),
+      ),
+    );
+  }
+}
+
+// ── Status bar ────────────────────────────────────────────────
+class _StatusBar extends StatelessWidget {
+  final String message;
+  final bool ok, isDark;
+  const _StatusBar({required this.message, required this.ok, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = ok ? (isDark ? _green_D : _green) : (isDark ? _red_D : _red);
+    final icon  = ok ? Icons.check_circle_rounded : Icons.error_outline_rounded;
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 360),
+      curve: Curves.easeOutCubic,
+      builder: (_, v, child) => Opacity(
+          opacity: v,
+          child: Transform.translate(offset: Offset(0, (1 - v) * 8), child: child)),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+            color: color.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withOpacity(0.22), width: 0.5)),
+        child: Row(children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 10),
+          Expanded(child: Text(message,
+              style: _t(13, FontWeight.w500, color, h: 1.4))),
+        ]),
+      ),
+    );
+  }
+}
+
+// ── No contacts banner ────────────────────────────────────────
+class _NoContactsBanner extends StatelessWidget {
+  final bool isDark;
+  final VoidCallback onTap;
+  const _NoContactsBanner({required this.isDark, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final amber = isDark ? _amber_D : _amber;
+    final bg    = isDark ? _dSurface : _lSurface;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(13),
+        decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: amber.withOpacity(0.25), width: 0.5),
+            boxShadow: [BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
+                blurRadius: 8, offset: const Offset(0, 2))]),
+        child: Row(children: [
+          Icon(Icons.warning_rounded, color: amber, size: 16),
+          const SizedBox(width: 10),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('No emergency contacts configured',
+                style: _t(12, FontWeight.w600, amber)),
+            const SizedBox(height: 2),
+            Text('Tap to add contacts — alerts cannot be sent without them.',
+                style: _t(11, FontWeight.w400, amber.withOpacity(0.70), h: 1.4)),
+          ])),
+          Icon(Icons.chevron_right_rounded, color: amber, size: 16),
+        ]),
+      ),
+    );
+  }
+}
+
+// ── Shake card ────────────────────────────────────────────────
+class _ShakeCard extends StatelessWidget {
+  final bool isDark;
+  const _ShakeCard({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final bg     = isDark ? _dSurface  : _lSurface;
+    final label  = isDark ? _dLabel    : _lLabel;
+    final label2 = isDark ? _dLabel2   : _lLabel2;
+    final accent = isDark ? _indigo_D  : _indigo;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: Colors.black.withOpacity(isDark ? 0.0 : 0.04), width: 0.5),
+          boxShadow: [BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
+              blurRadius: 10, offset: const Offset(0, 3))]),
+      child: Row(children: [
+        Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(
+                color: accent.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(12)),
+            child: Icon(Icons.vibration_rounded, color: accent, size: 18)),
+        const SizedBox(width: 14),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Shake-to-SOS active',
+              style: _t(13.5, FontWeight.w600, label, ls: -0.2)),
+          const SizedBox(height: 2),
+          Text('Shake twice from any screen to alert your contacts.',
+              style: _t(12, FontWeight.w400, label2, h: 1.45)),
+        ])),
+      ]),
+    );
+  }
+}
+
+// ── Contacts button ───────────────────────────────────────────
+class _ContactsButton extends StatefulWidget {
+  final bool isDark;
+  final int count;
+  final VoidCallback onTap;
+  const _ContactsButton({required this.isDark, required this.count,
+    required this.onTap});
+  @override
+  State<_ContactsButton> createState() => _ContactsButtonState();
+}
+
+class _ContactsButtonState extends State<_ContactsButton> {
+  bool _hovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg    = widget.isDark ? _dSurface  : _lSurface;
+    final label = widget.isDark ? _dLabel    : _lLabel;
+    final sub   = widget.isDark ? _dLabel2   : _lLabel2;
+    final sep   = widget.isDark ? _dSep      : _lSep.withOpacity(0.5);
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit:  (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+          decoration: BoxDecoration(
+              color: _hovered
+                  ? (widget.isDark ? _dSurface2 : _lSurface2)
+                  : bg,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                  color: _hovered ? sep : Colors.black.withOpacity(widget.isDark ? 0.0 : 0.04),
+                  width: 0.5),
+              boxShadow: [BoxShadow(
+                  color: Colors.black.withOpacity(widget.isDark ? 0.25 : 0.05),
+                  blurRadius: 8, offset: const Offset(0, 2))]),
+          child: Row(children: [
+            Icon(Icons.contacts_rounded,
+                color: widget.isDark ? _blue_D : _blue, size: 16),
+            const SizedBox(width: 12),
+            Expanded(child: Text(
+                widget.count > 0
+                    ? '${widget.count} emergency contact${widget.count == 1 ? '' : 's'}'
+                    : 'Set up emergency contacts',
+                style: _t(13, FontWeight.w500, widget.count > 0 ? label : sub))),
+            Icon(Icons.chevron_right_rounded, color: sub, size: 16),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+// ── Mobile helplines row ──────────────────────────────────────
+class _MobileHelplinesRow extends StatelessWidget {
+  final bool isDark;
+  const _MobileHelplinesRow({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      ('112', 'Emergency', isDark ? _red_D    : _red),
+      ('108', 'Ambulance', isDark ? _orange_D : _orange),
+      ('100', 'Police',    isDark ? _blue_D   : _blue),
+      ('101', 'Fire',      isDark ? _amber_D  : _amber),
+    ];
+    final bg  = isDark ? _dSurface : _lSurface;
+    final sub = isDark ? _dLabel2  : _lLabel2;
+
+    return Row(children: items.asMap().entries.map((e) {
+      final i = e.key; final item = e.value;
+      return Expanded(child: Padding(
+        padding: EdgeInsets.only(right: i < items.length - 1 ? 8 : 0),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                  color: Colors.black.withOpacity(isDark ? 0.0 : 0.04), width: 0.5),
+              boxShadow: [BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
+                  blurRadius: 8, offset: const Offset(0, 2))]),
+          child: Column(children: [
+            Text(item.$1, style: _t(17, FontWeight.w700, item.$3, ls: -0.5)),
+            const SizedBox(height: 2),
+            Text(item.$2, style: _t(9, FontWeight.w400, sub)),
+          ]),
+        ),
+      ));
+    }).toList());
+  }
+}
+
+// ── Mobile section label ──────────────────────────────────────
 class _MobileSectionLabel extends StatelessWidget {
   final String label, sub;
-  final _T t;
-  const _MobileSectionLabel({required this.label, required this.sub, required this.t});
+  final bool isDark;
+  const _MobileSectionLabel({required this.label, required this.sub,
+    required this.isDark});
+
   @override
   Widget build(BuildContext context) => Column(
       crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Text(label, style: TextStyle(
-        color: t.textMuted, fontSize: 9.5,
-        fontWeight: FontWeight.w700, letterSpacing: 1.4)),
+    Text(label, style: _t(10, FontWeight.w600,
+        isDark ? _dLabel3 : _lLabel3, ls: 0.6)),
     const SizedBox(height: 2),
-    Text(sub, style: TextStyle(color: t.textSec, fontSize: 11.5)),
+    Text(sub, style: _t(12, FontWeight.w400, isDark ? _dLabel2 : _lLabel2)),
   ]);
 }
 
-// ─────────────────────────────────────────────
-//  BACKGROUND HELPERS
-// ─────────────────────────────────────────────
-
-class _Glow extends StatelessWidget {
+// ── Ambient glow ──────────────────────────────────────────────
+class _AmbientGlow extends StatelessWidget {
   final Color color;
   final double size;
-  const _Glow({required this.color, required this.size});
+  const _AmbientGlow({required this.color, required this.size});
+
   @override
   Widget build(BuildContext context) => Container(
-    width: size, height: size,
-    decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-    child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 110, sigmaY: 110),
-        child: const SizedBox.expand()),
-  );
-}
-
-class _GridPainter extends CustomPainter {
-  final _T t;
-  const _GridPainter({required this.t});
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()..color = t.gridLine..strokeWidth = 0.5;
-    const step = 52.0;
-    for (double x = 0; x < size.width;  x += step)
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), p);
-    for (double y = 0; y < size.height; y += step)
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), p);
-    final dp = Paint()
-      ..color = _kCrimson.withOpacity(t.d ? 0.028 : 0.015);
-    for (double x = 0; x < size.width;  x += step)
-      for (double y = 0; y < size.height; y += step)
-        canvas.drawCircle(Offset(x, y), 0.8, dp);
-  }
-  @override
-  bool shouldRepaint(_GridPainter old) => old.t.d != t.d;
-  Color get gridLine => t.d
-      ? const Color(0xFF10102A).withOpacity(0.5)
-      : const Color(0xFFE0E0F0).withOpacity(0.7);
+      width: size, height: size,
+      decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+      child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 100, sigmaY: 100),
+          child: const SizedBox.expand()));
 }

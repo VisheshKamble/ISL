@@ -1,57 +1,96 @@
 // lib/screens/EmergencySetupScreen.dart
+//
+// ╔══════════════════════════════════════════════════════════╗
+// ║  VANI — Emergency Setup  · Apple-Inspired Premium UI   ║
+// ║  Font: Google Sans (SF Pro equivalent)                 ║
+// ║  < 700px  → iOS Contacts Manager shell                 ║
+// ║  ≥ 700px  → macOS Settings panel layout                ║
+// ╚══════════════════════════════════════════════════════════╝
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../components/GlobalNavbar.dart';
 import '../models/EmergencyContact.dart';
 import '../services/EmergencyService.dart';
 import '../utils/PlatformHelper.dart';
 
-// ── Accent colours — same in both modes ─────────────────────────
-const _kCrimson     = Color(0xFFE02020);
-const _kCrimsonSoft = Color(0xFFFF4444);
-const _kViolet      = Color(0xFF7C3AED);
-const _kVioletLight = Color(0xFFA78BFA);
-const _kAmber       = Color(0xFFD97706);
-const _kGreen       = Color(0xFF10B981);
+// ─────────────────────────────────────────────────────────────
+//  APPLE DESIGN TOKENS
+// ─────────────────────────────────────────────────────────────
+const _red      = Color(0xFFFF3B30);
+const _red_D    = Color(0xFFFF453A);
+const _orange   = Color(0xFFFF9500);
+const _orange_D = Color(0xFFFF9F0A);
+const _blue     = Color(0xFF007AFF);
+const _blue_D   = Color(0xFF0A84FF);
+const _green    = Color(0xFF34C759);
+const _green_D  = Color(0xFF30D158);
+const _indigo   = Color(0xFF5856D6);
+const _indigo_D = Color(0xFF5E5CE6);
+const _teal     = Color(0xFF32ADE6);
+const _teal_D   = Color(0xFF5AC8F5);
+const _purple   = Color(0xFFAF52DE);
+const _purple_D = Color(0xFFBF5AF2);
+const _mint     = Color(0xFF00C7BE);
+const _mint_D   = Color(0xFF63E6E2);
 
-// ── Theme helper ─────────────────────────────────────────────────
-class _T {
-  final bool d;
-  const _T(this.d);
+// Light surfaces
+const _lBg       = Color(0xFFF2F2F7);
+const _lSurface  = Color(0xFFFFFFFF);
+const _lSep      = Color(0xFFC6C6C8);
+const _lLabel    = Color(0xFF000000);
+const _lLabel2   = Color(0x993C3C43);
+const _lLabel3   = Color(0x4D3C3C43);
+const _lFill     = Color(0x1F787880);
 
-  Color get scaffold  => d ? const Color(0xFF020205) : const Color(0xFFF4F6FD);
-  Color get surface   => d ? const Color(0xFF0A0A12) : Colors.white;
-  Color get surfaceUp => d ? const Color(0xFF10101C) : const Color(0xFFF8F8FC);
-  Color get surfaceHi => d ? const Color(0xFF161625) : const Color(0xFFEEEEF8);
-  Color get border    => d ? const Color(0xFF1C1C2E) : const Color(0xFFE0E0EE);
-  Color get borderBrt => d ? const Color(0xFF252540) : const Color(0xFFCCCCDD);
-  Color get textPri   => d ? const Color(0xFFF2F0FF) : const Color(0xFF0A0A1F);
-  Color get textSec   => d ? const Color(0xFF6B6B8A) : const Color(0xFF6A6A8A);
-  Color get textMuted => d ? const Color(0xFF2E2E4A) : const Color(0xFFAAAAAA);
+// Dark surfaces
+const _dBg       = Color(0xFF000000);
+const _dSurface  = Color(0xFF1C1C1E);
+const _dSurface2 = Color(0xFF2C2C2E);
+const _dSep      = Color(0xFF38383A);
+const _dLabel    = Color(0xFFFFFFFF);
+const _dLabel2   = Color(0x99EBEBF5);
+const _dLabel3   = Color(0x4DEBEBF5);
+const _dFill     = Color(0x3A787880);
+
+// ── Text style shorthand ──────────────────────────────────────
+TextStyle _t(double size, FontWeight w, Color c,
+    {double ls = 0, double? h}) =>
+    TextStyle(fontFamily: 'Google Sans',
+        fontSize: size, fontWeight: w, color: c,
+        letterSpacing: ls, height: h);
+
+// ── Relation → system colour mapping ─────────────────────────
+const _relationAccents = {
+  'Family':    _blue,
+  'Parent':    _teal,
+  'Sibling':   _green,
+  'Spouse':    _red,
+  'Friend':    _orange,
+  'Doctor':    _mint,
+  'Caretaker': _purple,
+  'Other':     Color(0xFF8E8E93),
+};
+Color _accentFor(String r, bool dark) {
+  final base = _relationAccents[r] ?? const Color(0xFF8E8E93);
+  if (!dark) return base;
+  final map = {
+    _blue: _blue_D, _teal: _teal_D, _green: _green_D,
+    _red: _red_D, _orange: _orange_D, _mint: _mint_D,
+    _purple: _purple_D,
+  };
+  return map[base] ?? base;
 }
 
-// ── Relation → accent colour ─────────────────────────────────────
-const _relationColors = {
-  'Family':    Color(0xFF7C3AED),
-  'Parent':    Color(0xFF0EA5E9),
-  'Sibling':   Color(0xFF10B981),
-  'Spouse':    Color(0xFFE02020),
-  'Friend':    Color(0xFFD97706),
-  'Doctor':    Color(0xFF06B6D4),
-  'Caretaker': Color(0xFF8B5CF6),
-  'Other':     Color(0xFF6B7280),
-};
-Color _colorFor(String r) => _relationColors[r] ?? const Color(0xFF6B7280);
-
+// ══════════════════════════════════════════════════════════════
+//  SCREEN
+// ══════════════════════════════════════════════════════════════
 class EmergencySetupScreen extends StatefulWidget {
   final VoidCallback toggleTheme;
   final Function(Locale) setLocale;
-
   const EmergencySetupScreen({
-    super.key,
-    required this.toggleTheme,
-    required this.setLocale,
+    super.key, required this.toggleTheme, required this.setLocale,
   });
-
   @override
   State<EmergencySetupScreen> createState() => _EmergencySetupScreenState();
 }
@@ -61,150 +100,104 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
   final _service = EmergencyService.instance;
 
   late AnimationController _entryCtrl;
-  late Animation<double> _entryFade;
+  late Animation<double>   _entryFade;
+  late Animation<Offset>   _entrySlide;
 
   @override
   void initState() {
     super.initState();
     _entryCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 700));
-    _entryFade = CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut);
+        vsync: this, duration: const Duration(milliseconds: 600));
+    _entryFade  = CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut);
+    _entrySlide = Tween<Offset>(begin: const Offset(0, 0.03), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _entryCtrl, curve: Curves.easeOut));
     _entryCtrl.forward();
   }
 
   @override
-  void dispose() {
-    _entryCtrl.dispose();
-    super.dispose();
-  }
+  void dispose() { _entryCtrl.dispose(); super.dispose(); }
 
   @override
   Widget build(BuildContext context) {
-    final isDark    = Theme.of(context).brightness == Brightness.dark;
-    final t         = _T(isDark);
-    final contacts  = _service.getContacts();
-    final w         = MediaQuery.of(context).size.width;
-    final isDesktop = w > 1100;
-
-    // Hard split: mobile-native below 700, website above
-    if (w < 700) return _buildMobileShell(context, t, contacts, isDark);
-    return _buildWebsite(context, t, contacts, isDesktop);
+    final isDark   = Theme.of(context).brightness == Brightness.dark;
+    final contacts = _service.getContacts();
+    final w        = MediaQuery.of(context).size.width;
+    return w < 700
+        ? _buildMobile(context, contacts, isDark)
+        : _buildWeb(context, contacts, isDark, w > 1100);
   }
 
-  // ══════════════════════════════════════════════
-  //  MOBILE SHELL — native app contacts manager
-  //  No GlobalNavbar. Compact top bar with back.
-  //  Full-width contact cards with swipe-friendly sizing.
-  //  Capabilities strip replaces the old platform card.
-  // ══════════════════════════════════════════════
-  Widget _buildMobileShell(BuildContext context, _T t,
-      List<EmergencyContact> contacts, bool isDark) {
+  // ════════════════════════════════════════════
+  //  MOBILE  (<700px)  — iOS Contacts style
+  // ════════════════════════════════════════════
+  Widget _buildMobile(BuildContext ctx, List<EmergencyContact> contacts, bool isDark) {
     final hasPrimary = contacts.any((c) => c.isPrimary);
+    final bg     = isDark ? _dBg      : _lBg;
 
     return Scaffold(
-      backgroundColor: t.scaffold,
+      backgroundColor: bg,
       body: SafeArea(
         child: FadeTransition(
           opacity: _entryFade,
           child: Column(children: [
 
-            // ── Compact top bar ──────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Row(children: [
-                GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
-                        width: 38, height: 38,
-                        decoration: BoxDecoration(
-                            color: t.surfaceUp, shape: BoxShape.circle,
-                            border: Border.all(color: t.border)),
-                        child: Icon(Icons.arrow_back_rounded, color: t.textSec, size: 18))),
-                const SizedBox(width: 12),
-                // Icon + title
-                Container(
-                    width: 34, height: 34,
-                    decoration: BoxDecoration(
-                        color: _kCrimson.withOpacity(0.09),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: _kCrimson.withOpacity(0.18))),
-                    child: const Icon(Icons.contacts_rounded, color: _kCrimsonSoft, size: 16)),
-                const SizedBox(width: 10),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('Emergency Contacts', style: TextStyle(
-                      color: t.textPri, fontSize: 15, fontWeight: FontWeight.w800)),
-                  Text('Up to 5 · Alerted on SOS', style: TextStyle(
-                      color: t.textSec, fontSize: 10.5)),
-                ])),
-                // Count badge
-                Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                    decoration: BoxDecoration(
-                        color: (hasPrimary ? _kGreen : _kAmber).withOpacity(isDark ? 0.10 : 0.07),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                            color: (hasPrimary ? _kGreen : _kAmber).withOpacity(0.22))),
-                    child: Text('${contacts.length}/5',
-                        style: TextStyle(
-                            color: hasPrimary ? _kGreen : _kAmber,
-                            fontSize: 11, fontWeight: FontWeight.w700))),
-              ]),
+            // ── iOS-style navigation bar ──────────
+            _MobileNavBar(
+              isDark: isDark, title: 'Emergency Contacts',
+              subtitle: 'Up to 5 · Alerted on SOS',
+              onBack: () => Navigator.pop(ctx),
+              trailing: _ContactCountBadge(
+                  count: contacts.length, hasPrimary: hasPrimary, isDark: isDark),
             ),
 
             // ── Body ─────────────────────────────
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
-                physics: const BouncingScrollPhysics(),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              child: SlideTransition(
+                position: _entrySlide,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 40),
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-                  // Mobile capabilities strip
-                  _MobileCapStrip(t: t, isDark: isDark),
-                  const SizedBox(height: 18),
+                    // Capabilities strip — iOS "grouped list" card
+                    _MobileCapabilitiesCard(isDark: isDark),
+                    const SizedBox(height: 8),
 
-                  // Shake card
-                  if (PlatformHelper.supportsShake) ...[
-                    _buildShakeInfoCard(t),
-                    const SizedBox(height: 18),
-                  ],
+                    // Shake card
+                    if (PlatformHelper.supportsShake) ...[
+                      _ShakeInfoCard(isDark: isDark),
+                      const SizedBox(height: 8),
+                    ],
 
-                  // Section header
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                    Text(
-                        contacts.isEmpty ? 'No contacts yet' : 'Your Contacts',
-                        style: TextStyle(color: t.textPri, fontSize: 14,
-                            fontWeight: FontWeight.w800)),
-                    if (!hasPrimary && contacts.isNotEmpty)
-                      Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(
-                              color: _kAmber.withOpacity(isDark ? 0.08 : 0.06),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: _kAmber.withOpacity(0.20))),
-                          child: const Text('No primary set', style: TextStyle(
-                              color: _kAmber, fontSize: 10, fontWeight: FontWeight.w600))),
-                  ]),
-                  const SizedBox(height: 12),
+                    // Section header — iOS grouped list header style
+                    _GroupedSectionHeader(
+                      title: contacts.isEmpty ? 'No contacts added' : 'Your Contacts',
+                      trailing: (!hasPrimary && contacts.isNotEmpty)
+                          ? _WarningChip(label: 'No primary set', isDark: isDark)
+                          : null,
+                      isDark: isDark,
+                    ),
 
-                  // Empty state
-                  if (contacts.isEmpty) _buildEmptyState(t),
+                    // Empty state
+                    if (contacts.isEmpty)
+                      _EmptyContactsCard(isDark: isDark),
 
-                  // Contact rows
-                  ...contacts.asMap().entries.map((e) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _ContactRow(
-                        contact: e.value, index: e.key, t: t,
-                        onDelete:     () => _confirmDelete(e.key),
-                        onSetPrimary: () => _setPrimary(e.key),
-                        onEdit:       () => _openDialog(existing: e.value, index: e.key),
-                      ))),
+                    // Contact list — iOS grouped list style
+                    if (contacts.isNotEmpty)
+                      _ContactList(
+                        contacts: contacts, isDark: isDark,
+                        onDelete:     (i) => _confirmDelete(i),
+                        onSetPrimary: (i) => _setPrimary(i),
+                        onEdit:       (c, i) => _openForm(existing: c, index: i),
+                      ),
 
-                  // Add button
-                  if (contacts.length < 5) ...[
                     const SizedBox(height: 4),
-                    _AddButton(t: t, onTap: () => _openDialog()),
-                  ],
-                ]),
+
+                    // Add contact — iOS "+" list row
+                    if (contacts.length < 5)
+                      _AddContactRow(isDark: isDark, onTap: () => _openForm()),
+                  ]),
+                ),
               ),
             ),
           ]),
@@ -213,276 +206,94 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
     );
   }
 
-  // ══════════════════════════════════════════════
-  //  WEBSITE (≥ 700px) — unchanged
-  // ══════════════════════════════════════════════
-  Widget _buildWebsite(BuildContext context, _T t,
-      List<EmergencyContact> contacts, bool isDesktop) {
-    final hPad = isDesktop ? 120.0 : 64.0;
+  // ════════════════════════════════════════════
+  //  WEB / TABLET  (≥700px)  — macOS Settings
+  // ════════════════════════════════════════════
+  Widget _buildWeb(BuildContext ctx, List<EmergencyContact> contacts,
+      bool isDark, bool isDesktop) {
+    final hPad = isDesktop ? 96.0 : 52.0;
+    final bg   = isDark ? _dBg : _lBg;
+
     return Scaffold(
-      backgroundColor: t.scaffold,
+      backgroundColor: bg,
       body: SafeArea(
         child: FadeTransition(
           opacity: _entryFade,
           child: Column(children: [
             GlobalNavbar(toggleTheme: widget.toggleTheme,
                 setLocale: widget.setLocale, activeRoute: 'emergency'),
-            Expanded(child: SingleChildScrollView(
-              padding: EdgeInsets.fromLTRB(hPad, 20, hPad, 60),
-              physics: const BouncingScrollPhysics(),
-              child: isDesktop
-                  ? _buildDesktopLayout(t, contacts)
-                  : _buildTabletLayout(t, contacts),
-            )),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(hPad, 24, hPad, 64),
+                physics: const BouncingScrollPhysics(),
+                child: isDesktop
+                    ? _webDesktopLayout(ctx, contacts, isDark)
+                    : _webTabletLayout(ctx, contacts, isDark),
+              ),
+            ),
           ]),
         ),
       ),
     );
   }
 
-  // ── Layouts ──────────────────────────────────────────────────
-
-  Widget _buildDesktopLayout(_T t, List<EmergencyContact> contacts) {
+  Widget _webDesktopLayout(BuildContext ctx, List<EmergencyContact> contacts, bool isDark) {
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Expanded(
-        flex: 4,
+      // Left — info panels
+      SizedBox(
+        width: 320,
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          _buildPageHeader(t),
-          const SizedBox(height: 32),
-          _buildPlatformCard(t),
-          const SizedBox(height: 20),
-          if (PlatformHelper.supportsShake) _buildShakeInfoCard(t),
+          _WebPageHeader(isDark: isDark, onBack: () => Navigator.pop(ctx)),
+          const SizedBox(height: 28),
+          _WebCapabilitiesCard(isDark: isDark),
+          const SizedBox(height: 12),
+          if (PlatformHelper.supportsShake) ...[
+            _ShakeInfoCard(isDark: isDark),
+            const SizedBox(height: 12),
+          ],
         ]),
       ),
       const SizedBox(width: 48),
-      Expanded(flex: 5, child: _buildContactsSection(t, contacts)),
+      // Right — contacts
+      Expanded(child: _WebContactsPanel(
+        contacts: contacts, isDark: isDark,
+        onAdd:        () => _openForm(),
+        onDelete:     (i) => _confirmDelete(i),
+        onSetPrimary: (i) => _setPrimary(i),
+        onEdit:       (c, i) => _openForm(existing: c, index: i),
+      )),
     ]);
   }
 
-  Widget _buildTabletLayout(_T t, List<EmergencyContact> contacts) {
+  Widget _webTabletLayout(BuildContext ctx, List<EmergencyContact> contacts, bool isDark) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _buildPageHeader(t),
-      const SizedBox(height: 28),
-      _buildPlatformCard(t),
+      _WebPageHeader(isDark: isDark, onBack: () => Navigator.pop(ctx)),
       const SizedBox(height: 24),
-      _buildContactsSection(t, contacts),
+      _WebCapabilitiesCard(isDark: isDark),
+      const SizedBox(height: 20),
+      _WebContactsPanel(
+        contacts: contacts, isDark: isDark,
+        onAdd:        () => _openForm(),
+        onDelete:     (i) => _confirmDelete(i),
+        onSetPrimary: (i) => _setPrimary(i),
+        onEdit:       (c, i) => _openForm(existing: c, index: i),
+      ),
       if (PlatformHelper.supportsShake) ...[
-        const SizedBox(height: 20),
-        _buildShakeInfoCard(t),
+        const SizedBox(height: 12),
+        _ShakeInfoCard(isDark: isDark),
       ],
     ]);
   }
 
-  // ── Page header ──────────────────────────────────────────────
-
-  Widget _buildPageHeader(_T t) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(Icons.arrow_back_rounded, color: t.textSec, size: 16),
-          const SizedBox(width: 6),
-          Text('Emergency', style: TextStyle(color: t.textSec, fontSize: 13)),
-        ]),
-      ),
-      const SizedBox(height: 20),
-      Row(children: [
-        Container(
-          width: 48, height: 48,
-          decoration: BoxDecoration(
-            color: _kCrimson.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _kCrimson.withOpacity(0.2)),
-          ),
-          child: const Center(
-              child: Icon(Icons.contacts_rounded, color: _kCrimsonSoft, size: 22)),
-        ),
-        const SizedBox(width: 16),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Emergency Contacts', style: TextStyle(
-              color: t.textPri, fontSize: 22, fontWeight: FontWeight.w900, letterSpacing: -0.5)),
-          const SizedBox(height: 2),
-          Text('Up to 5 people alerted during SOS',
-              style: TextStyle(color: t.textSec, fontSize: 13)),
-        ]),
-      ]),
-    ]);
-  }
-
-  // ── Platform card (desktop/tablet only) ─────────────────────
-
-  Widget _buildPlatformCard(_T t) {
-    final isMobile = PlatformHelper.isMobile;
-    final features = isMobile
-        ? [
-      (Icons.sms_rounded,       'Auto SMS with GPS coordinates'),
-      (Icons.vibration_rounded, 'Shake phone to trigger instantly'),
-      (Icons.location_on_rounded,'Precise location attached'),
-      (Icons.notifications_rounded,'Vibration + sound feedback'),
-    ]
-        : [
-      (Icons.chat_bubble_rounded, 'WhatsApp + call links open'),
-      (Icons.location_on_rounded, 'Browser GPS when permitted'),
-      (Icons.content_copy_rounded,'One-tap copy for message'),
-      (Icons.link_rounded,        'All contacts shown at once'),
-    ];
-
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: t.surfaceUp,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: t.border),
-      ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Icon(isMobile ? Icons.smartphone_rounded : Icons.language_rounded,
-              color: _kVioletLight, size: 15),
-          const SizedBox(width: 8),
-          Text(
-            isMobile ? 'Mobile SOS capabilities' : 'Web SOS capabilities',
-            style: const TextStyle(
-                color: _kVioletLight, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
-          ),
-        ]),
-        const SizedBox(height: 14),
-        ...features.map((f) => Padding(
-          padding: const EdgeInsets.only(bottom: 9),
-          child: Row(children: [
-            Container(
-                width: 26, height: 26,
-                decoration: BoxDecoration(
-                    color: _kViolet.withOpacity(t.d ? 0.10 : 0.07),
-                    borderRadius: BorderRadius.circular(7)),
-                child: Icon(f.$1, color: _kVioletLight, size: 13)),
-            const SizedBox(width: 10),
-            Text(f.$2, style: TextStyle(color: t.textSec, fontSize: 12, height: 1.4)),
-          ]),
-        )),
-      ]),
-    );
-  }
-
-  // ── Shake info card ──────────────────────────────────────────
-
-  Widget _buildShakeInfoCard(_T t) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: _kViolet.withOpacity(t.d ? 0.06 : 0.04),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _kViolet.withOpacity(0.15)),
-      ),
-      child: Row(children: [
-        Container(
-            width: 38, height: 38,
-            decoration: BoxDecoration(
-                color: _kViolet.withOpacity(0.10),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: _kViolet.withOpacity(0.20))),
-            child: const Icon(Icons.vibration_rounded, color: _kVioletLight, size: 17)),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text('Shake-to-SOS is active', style: TextStyle(
-              color: _kVioletLight, fontSize: 12, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 3),
-          Text('Shake phone twice from any screen to trigger a general SOS.',
-              style: TextStyle(color: t.textSec, fontSize: 11, height: 1.5)),
-        ])),
-      ]),
-    );
-  }
-
-  // ── Contacts section ─────────────────────────────────────────
-
-  Widget _buildContactsSection(_T t, List<EmergencyContact> contacts) {
-    final hasPrimary = contacts.any((c) => c.isPrimary);
-
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(
-          contacts.isEmpty ? 'No contacts yet' : '${contacts.length} of 5 contacts',
-          style: TextStyle(color: t.textSec, fontSize: 12,
-              fontWeight: FontWeight.w600, letterSpacing: 0.5),
-        ),
-        if (contacts.isNotEmpty)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: (hasPrimary ? _kGreen : _kAmber).withOpacity(t.d ? 0.08 : 0.06),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: (hasPrimary ? _kGreen : _kAmber).withOpacity(0.2)),
-            ),
-            child: Text(
-              hasPrimary ? '● Primary set' : '○ No primary',
-              style: TextStyle(
-                  color: hasPrimary ? _kGreen : _kAmber,
-                  fontSize: 10, fontWeight: FontWeight.w600),
-            ),
-          ),
-      ]),
-
-      const SizedBox(height: 12),
-
-      if (contacts.isEmpty) _buildEmptyState(t),
-
-      ...contacts.asMap().entries.map((e) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: _ContactRow(
-          contact: e.value, index: e.key, t: t,
-          onDelete:     () => _confirmDelete(e.key),
-          onSetPrimary: () => _setPrimary(e.key),
-          onEdit:       () => _openDialog(existing: e.value, index: e.key),
-        ),
-      )),
-
-      const SizedBox(height: 4),
-      if (contacts.length < 5) _AddButton(t: t, onTap: () => _openDialog()),
-    ]);
-  }
-
-  Widget _buildEmptyState(_T t) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
-      decoration: BoxDecoration(
-        color: t.surfaceUp,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: t.border),
-      ),
-      child: Column(children: [
-        Container(
-          width: 52, height: 52,
-          decoration: BoxDecoration(
-            color: _kCrimson.withOpacity(t.d ? 0.08 : 0.06),
-            shape: BoxShape.circle,
-          ),
-          child: const Center(
-              child: Icon(Icons.person_add_rounded, color: _kCrimsonSoft, size: 24)),
-        ),
-        const SizedBox(height: 14),
-        Text('Add your first contact', style: TextStyle(
-            color: t.textPri, fontSize: 16, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 6),
-        Text("They'll receive your SOS message\nwith your GPS location.",
-            textAlign: TextAlign.center,
-            style: TextStyle(color: t.textSec, fontSize: 12, height: 1.6)),
-      ]),
-    );
-  }
-
-  // ── Actions ──────────────────────────────────────────────────
-
+  // ── Actions ──────────────────────────────────────────────
   void _confirmDelete(int index) {
     showDialog(
       context: context,
-      builder: (ctx) => _ConfirmDialog(
-        title: 'Remove contact?',
-        body: 'This person will no longer receive your SOS alerts.',
-        confirmLabel: 'Remove',
-        confirmColor: _kCrimsonSoft,
-        onConfirm: () async {
+      builder: (_) => _AppleAlertDialog(
+        title: 'Remove Contact',
+        message: 'This person will no longer receive your SOS alerts.',
+        destructiveLabel: 'Remove',
+        onDestructive: () async {
           await _service.deleteContact(index);
           if (mounted) setState(() {});
         },
@@ -495,11 +306,12 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
     if (mounted) setState(() {});
   }
 
-  void _openDialog({EmergencyContact? existing, int? index}) {
+  void _openForm({EmergencyContact? existing, int? index}) {
     showDialog(
       context: context,
-      builder: (ctx) => _ContactFormDialog(
+      builder: (_) => _ContactFormSheet(
         existing: existing,
+        isDark: Theme.of(context).brightness == Brightness.dark,
         onSave: (contact) async {
           try {
             index != null
@@ -509,9 +321,10 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                content: Text(e.toString()),
-                backgroundColor: _kCrimson,
+                content: Text(e.toString(), style: _t(13, FontWeight.w500, Colors.white)),
+                backgroundColor: _red,
                 behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ));
             }
           }
@@ -521,169 +334,662 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
   }
 }
 
-// ─────────────────────────────────────────────
-//  CONTACT ROW
-// ─────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  MOBILE COMPONENTS
+// ══════════════════════════════════════════════════════════════
 
-class _ContactRow extends StatefulWidget {
-  final EmergencyContact contact;
-  final int index;
-  final _T t;
-  final VoidCallback onDelete, onSetPrimary, onEdit;
-
-  const _ContactRow({
-    required this.contact, required this.index, required this.t,
-    required this.onDelete, required this.onSetPrimary, required this.onEdit,
-  });
-
-  @override
-  State<_ContactRow> createState() => _ContactRowState();
-}
-
-class _ContactRowState extends State<_ContactRow> {
-  bool _hovered = false;
+// ── Mobile navigation bar ────────────────────────────────────
+class _MobileNavBar extends StatelessWidget {
+  final bool isDark;
+  final String title, subtitle;
+  final VoidCallback onBack;
+  final Widget? trailing;
+  const _MobileNavBar({required this.isDark, required this.title,
+    required this.subtitle, required this.onBack, this.trailing});
 
   @override
   Widget build(BuildContext context) {
-    final t       = widget.t;
-    final color   = _colorFor(widget.contact.relation);
-    final initial = widget.contact.name.isNotEmpty
-        ? widget.contact.name[0].toUpperCase() : '?';
+    final bg     = isDark ? _dSurface : _lSurface;
+    final label  = isDark ? _dLabel   : _lLabel;
+    final sep    = isDark ? _dSep     : _lSep.withOpacity(0.5);
+    final accent = isDark ? _red_D    : _red;
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => _hovered = true),
-      onExit:  (_) => setState(() => _hovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.all(14),
+    return Container(
+      decoration: BoxDecoration(
+          color: bg,
+          border: Border(bottom: BorderSide(color: sep, width: 0.5))),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      child: Row(children: [
+        // iOS-style back chevron + label
+        GestureDetector(
+          onTap: onBack,
+          behavior: HitTestBehavior.opaque,
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(Icons.chevron_left_rounded, color: accent, size: 28),
+            Text('Back', style: _t(15, FontWeight.w400, accent)),
+          ]),
+        ),
+        const Spacer(),
+        // Centre title
+        Column(children: [
+          Text(title, style: _t(15, FontWeight.w600, label, ls: -0.2)),
+          Text(subtitle, style: _t(11, FontWeight.w400, isDark ? _dLabel2 : _lLabel2)),
+        ]),
+        const Spacer(),
+        if (trailing != null) trailing!,
+      ]),
+    );
+  }
+}
+
+class _ContactCountBadge extends StatelessWidget {
+  final int count;
+  final bool hasPrimary, isDark;
+  const _ContactCountBadge({required this.count, required this.hasPrimary,
+    required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = hasPrimary ? (isDark ? _green_D : _green) : _orange;
+    return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: _hovered ? t.surfaceHi : t.surfaceUp,
+            color: color.withOpacity(0.10),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withOpacity(0.22), width: 0.5)),
+        child: Text('$count/5',
+            style: _t(11, FontWeight.w600, color)));
+  }
+}
+
+// ── Grouped section header — iOS style ───────────────────────
+class _GroupedSectionHeader extends StatelessWidget {
+  final String title;
+  final Widget? trailing;
+  final bool isDark;
+  const _GroupedSectionHeader({required this.title, this.trailing,
+    required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
+      child: Row(children: [
+        Text(title.toUpperCase(),
+            style: _t(11, FontWeight.w600,
+                isDark ? _dLabel3 : _lLabel3, ls: 0.5)),
+        const Spacer(),
+        if (trailing != null) trailing!,
+      ]),
+    );
+  }
+}
+
+class _WarningChip extends StatelessWidget {
+  final String label;
+  final bool isDark;
+  const _WarningChip({required this.label, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+          color: _orange.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _orange.withOpacity(0.22), width: 0.5)),
+      child: Text(label, style: _t(10, FontWeight.w600, _orange)));
+}
+
+// ── Empty state ───────────────────────────────────────────────
+class _EmptyContactsCard extends StatelessWidget {
+  final bool isDark;
+  const _EmptyContactsCard({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = isDark ? _dSurface : _lSurface;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+      decoration: BoxDecoration(
+          color: bg,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: widget.contact.isPrimary
-                ? _kCrimson.withOpacity(0.35)
-                : (_hovered ? t.borderBrt : t.border),
-            width: widget.contact.isPrimary ? 1.5 : 1.0,
+              color: Colors.black.withOpacity(isDark ? 0.0 : 0.04), width: 0.5),
+          boxShadow: [BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
+              blurRadius: 10, offset: const Offset(0, 3))]),
+      child: Column(children: [
+        Container(
+            width: 56, height: 56,
+            decoration: BoxDecoration(
+                color: (isDark ? _red_D : _red).withOpacity(0.10),
+                shape: BoxShape.circle),
+            child: Icon(Icons.person_add_rounded,
+                color: isDark ? _red_D : _red, size: 24)),
+        const SizedBox(height: 14),
+        Text('Add your first contact',
+            style: _t(16, FontWeight.w600, isDark ? _dLabel : _lLabel, ls: -0.2)),
+        const SizedBox(height: 6),
+        Text("They'll receive your SOS message\nwith your GPS location.",
+            textAlign: TextAlign.center,
+            style: _t(13, FontWeight.w400, isDark ? _dLabel2 : _lLabel2, h: 1.55)),
+      ]),
+    );
+  }
+}
+
+// ── Contact list (iOS grouped list cells) ────────────────────
+class _ContactList extends StatelessWidget {
+  final List<EmergencyContact> contacts;
+  final bool isDark;
+  final void Function(int) onDelete, onSetPrimary;
+  final void Function(EmergencyContact, int) onEdit;
+  const _ContactList({required this.contacts, required this.isDark,
+    required this.onDelete, required this.onSetPrimary, required this.onEdit});
+
+  @override
+  Widget build(BuildContext context) {
+    final bg  = isDark ? _dSurface  : _lSurface;
+    final sep = isDark ? _dSep      : _lSep.withOpacity(0.5);
+
+    return Container(
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: Colors.black.withOpacity(isDark ? 0.0 : 0.04), width: 0.5),
+          boxShadow: [BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
+              blurRadius: 10, offset: const Offset(0, 3))]),
+      child: Column(children: contacts.asMap().entries.map((e) {
+        final i    = e.key;
+        final c    = e.value;
+        final last = i == contacts.length - 1;
+        return Column(children: [
+          _ContactCell(
+              contact: c, index: i, isDark: isDark,
+              onDelete:     () => onDelete(i),
+              onSetPrimary: () => onSetPrimary(i),
+              onEdit:       () => onEdit(c, i)),
+          if (!last)
+            Divider(indent: 70, height: 0, thickness: 0.5,
+                color: sep),
+        ]);
+      }).toList()),
+    );
+  }
+}
+
+class _ContactCell extends StatefulWidget {
+  final EmergencyContact contact;
+  final int index;
+  final bool isDark;
+  final VoidCallback onDelete, onSetPrimary, onEdit;
+  const _ContactCell({required this.contact, required this.index,
+    required this.isDark, required this.onDelete,
+    required this.onSetPrimary, required this.onEdit});
+  @override
+  State<_ContactCell> createState() => _ContactCellState();
+}
+
+class _ContactCellState extends State<_ContactCell> {
+  @override
+  Widget build(BuildContext context) {
+    final c      = widget.contact;
+    final isDark = widget.isDark;
+    final accent = _accentFor(c.relation, isDark);
+    final label  = isDark ? _dLabel   : _lLabel;
+    final label2 = isDark ? _dLabel2  : _lLabel2;
+    final label3 = isDark ? _dLabel3  : _lLabel3;
+    final initial = c.name.isNotEmpty ? c.name[0].toUpperCase() : '?';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Row(children: [
+        // Avatar — iOS Contacts style
+        Stack(children: [
+          Container(
+            width: 46, height: 46,
+            decoration: BoxDecoration(
+                color: accent.withOpacity(0.12),
+                shape: BoxShape.circle),
+            child: Center(child: Text(initial,
+                style: _t(18, FontWeight.w700, accent))),
           ),
-        ),
-        child: Row(children: [
-          // Avatar with primary star
-          Stack(children: [
-            Container(
-              width: 44, height: 44,
+          if (c.isPrimary)
+            Positioned(right: 0, bottom: 0, child: Container(
+              width: 14, height: 14,
               decoration: BoxDecoration(
-                color: color.withOpacity(t.d ? 0.1 : 0.07),
-                shape: BoxShape.circle,
-                border: Border.all(color: color.withOpacity(0.25)),
-              ),
-              child: Center(child: Text(initial,
-                  style: TextStyle(color: color, fontWeight: FontWeight.w800, fontSize: 17))),
-            ),
-            if (widget.contact.isPrimary)
-              Positioned(right: 0, bottom: 0, child: Container(
-                width: 14, height: 14,
-                decoration: BoxDecoration(
-                  color: _kCrimson, shape: BoxShape.circle,
-                  border: Border.all(color: t.surface, width: 1.5),
-                ),
-                child: const Center(child: Icon(Icons.star_rounded, color: Colors.white, size: 8)),
-              )),
-          ]),
-
-          const SizedBox(width: 14),
-
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Text(widget.contact.name, style: TextStyle(
-                  color: t.textPri, fontWeight: FontWeight.w700, fontSize: 14)),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(t.d ? 0.1 : 0.07),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Text(widget.contact.relation, style: TextStyle(
-                    color: color, fontSize: 10, fontWeight: FontWeight.w600)),
-              ),
-            ]),
-            const SizedBox(height: 3),
-            Text(widget.contact.phone, style: TextStyle(
-                color: t.textSec, fontSize: 12,
-                fontFeatures: const [FontFeature.tabularFigures()])),
-          ])),
-
-          PopupMenuButton<String>(
-            color: t.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 16,
-            offset: const Offset(0, 8),
-            icon: Icon(Icons.more_vert_rounded,
-                color: _hovered ? t.textSec : t.textMuted, size: 18),
-            onSelected: (v) {
-              if (v == 'edit')    widget.onEdit();
-              if (v == 'primary') widget.onSetPrimary();
-              if (v == 'delete')  widget.onDelete();
-            },
-            itemBuilder: (_) => [
-              if (!widget.contact.isPrimary)
-                _menuItem(t, 'primary', '★  Set as primary', _kVioletLight),
-              _menuItem(t, 'edit',   '✎  Edit contact',  t.textPri),
-              _menuItem(t, 'delete', '✕  Remove',         _kCrimsonSoft),
-            ],
-          ),
+                  color: isDark ? _red_D : _red,
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: isDark ? _dSurface : _lSurface, width: 1.5)),
+              child: const Center(child: Icon(Icons.star_rounded,
+                  color: Colors.white, size: 8)),
+            )),
         ]),
-      ),
+        const SizedBox(width: 14),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Text(c.name, style: _t(15, FontWeight.w600, label, ls: -0.2)),
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+              decoration: BoxDecoration(
+                  color: accent.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(20)),
+              child: Text(c.relation, style: _t(10, FontWeight.w600, accent)),
+            ),
+          ]),
+          const SizedBox(height: 2),
+          Text(c.phone, style: _t(13, FontWeight.w400, label2)),
+        ])),
+        // iOS-style context menu trigger
+        PopupMenuButton<String>(
+          color: isDark ? _dSurface2 : _lSurface,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          elevation: 12,
+          offset: const Offset(0, 8),
+          icon: Icon(Icons.more_horiz_rounded, color: label3, size: 20),
+          onSelected: (v) {
+            if (v == 'edit')    widget.onEdit();
+            if (v == 'primary') widget.onSetPrimary();
+            if (v == 'delete')  widget.onDelete();
+          },
+          itemBuilder: (_) => [
+            if (!c.isPrimary)
+              _popupItem('primary', 'Set as Primary', Icons.star_rounded,
+                  isDark ? _blue_D : _blue, isDark),
+            _popupItem('edit', 'Edit Contact', Icons.edit_rounded,
+                isDark ? _dLabel : _lLabel, isDark),
+            _popupItem('delete', 'Remove', Icons.delete_rounded,
+                isDark ? _red_D : _red, isDark),
+          ],
+        ),
+      ]),
     );
   }
 
-  PopupMenuItem<String> _menuItem(_T t, String value, String label, Color color) =>
-      PopupMenuItem(value: value, height: 40,
-          child: Text(label, style: TextStyle(
-              color: color, fontSize: 13, fontWeight: FontWeight.w600)));
+  PopupMenuItem<String> _popupItem(String value, String label,
+      IconData icon, Color color, bool isDark) =>
+      PopupMenuItem(
+          value: value, height: 44,
+          child: Row(children: [
+            Icon(icon, color: color, size: 16),
+            const SizedBox(width: 10),
+            Text(label, style: _t(14, FontWeight.w500, color)),
+          ]));
 }
 
-// ─────────────────────────────────────────────
-//  ADD BUTTON
-// ─────────────────────────────────────────────
-
-class _AddButton extends StatefulWidget {
-  final _T t;
+// ── Add contact row ───────────────────────────────────────────
+class _AddContactRow extends StatefulWidget {
+  final bool isDark;
   final VoidCallback onTap;
-  const _AddButton({required this.t, required this.onTap});
+  const _AddContactRow({required this.isDark, required this.onTap});
+  @override
+  State<_AddContactRow> createState() => _AddContactRowState();
+}
+
+class _AddContactRowState extends State<_AddContactRow> {
+  bool _pressed = false;
 
   @override
-  State<_AddButton> createState() => _AddButtonState();
+  Widget build(BuildContext context) {
+    final bg     = widget.isDark ? _dSurface  : _lSurface;
+    final accent = widget.isDark ? _blue_D    : _blue;
+
+    return GestureDetector(
+      onTapDown:   (_) => setState(() => _pressed = true),
+      onTapUp:     (_) { setState(() => _pressed = false); widget.onTap(); },
+      onTapCancel: ()  => setState(() => _pressed = false),
+      child: AnimatedOpacity(
+        opacity: _pressed ? 0.6 : 1.0,
+        duration: const Duration(milliseconds: 80),
+        child: Container(
+          decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                  color: Colors.black.withOpacity(widget.isDark ? 0.0 : 0.04), width: 0.5),
+              boxShadow: [BoxShadow(
+                  color: Colors.black.withOpacity(widget.isDark ? 0.25 : 0.05),
+                  blurRadius: 10, offset: const Offset(0, 3))]),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(children: [
+            Container(
+                width: 30, height: 30,
+                decoration: BoxDecoration(
+                    color: accent, shape: BoxShape.circle),
+                child: const Icon(Icons.add_rounded, color: Colors.white, size: 18)),
+            const SizedBox(width: 14),
+            Text('Add Emergency Contact',
+                style: _t(15, FontWeight.w400, accent)),
+          ]),
+        ),
+      ),
+    );
+  }
 }
 
-class _AddButtonState extends State<_AddButton> {
+// ── Capabilities card (mobile) ───────────────────────────────
+class _MobileCapabilitiesCard extends StatelessWidget {
+  final bool isDark;
+  const _MobileCapabilitiesCard({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = PlatformHelper.isMobile;
+    final caps     = isMobile
+        ? [
+      (_red,    Icons.sms_rounded,           'Auto SMS',  'with GPS'),
+      (_indigo, Icons.vibration_rounded,     'Shake',     'double = SOS'),
+      (_teal,   Icons.location_on_rounded,   'GPS',       'precise'),
+      (_green,  Icons.notifications_rounded, 'Haptics',   'feedback'),
+    ]
+        : [
+      (_blue,   Icons.chat_bubble_rounded,    'WhatsApp', 'links open'),
+      (_teal,   Icons.location_on_rounded,    'GPS',      'if permitted'),
+      (_orange, Icons.content_copy_rounded,   'Copy',     'one tap'),
+      (_purple, Icons.link_rounded,           'Links',    'all contacts'),
+    ];
+
+    final bg    = isDark ? _dSurface  : _lSurface;
+    final label = isDark ? _dLabel    : _lLabel;
+    final sub   = isDark ? _dLabel2   : _lLabel2;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: Colors.black.withOpacity(isDark ? 0.0 : 0.04), width: 0.5),
+          boxShadow: [BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
+              blurRadius: 10, offset: const Offset(0, 3))]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(isMobile
+              ? Icons.smartphone_rounded : Icons.language_rounded,
+              color: isDark ? _blue_D : _blue, size: 14),
+          const SizedBox(width: 7),
+          Text(isMobile
+              ? 'Mobile SOS Capabilities' : 'Web SOS Capabilities',
+              style: _t(11, FontWeight.w600,
+                  isDark ? _blue_D : _blue, ls: 0.3)),
+        ]),
+        const SizedBox(height: 14),
+        Row(children: caps.asMap().entries.map((e) {
+          final i    = e.key; final c = e.value;
+          final last = i == caps.length - 1;
+          final accent = isDark ? _darkOf(c.$1) : c.$1;
+          return Expanded(child: Padding(
+            padding: EdgeInsets.only(right: last ? 0 : 8),
+            child: Column(children: [
+              Container(
+                  width: 42, height: 42,
+                  decoration: BoxDecoration(
+                      color: accent.withOpacity(0.10),
+                      borderRadius: BorderRadius.circular(12)),
+                  child: Icon(c.$2, color: accent, size: 18)),
+              const SizedBox(height: 6),
+              Text(c.$3, style: _t(10.5, FontWeight.w600, label)),
+              Text(c.$4, style: _t(9, FontWeight.w400, sub), textAlign: TextAlign.center),
+            ]),
+          ));
+        }).toList()),
+      ]),
+    );
+  }
+
+  Color _darkOf(Color c) {
+    if (c == _red)    return _red_D;
+    if (c == _indigo) return _indigo_D;
+    if (c == _teal)   return _teal_D;
+    if (c == _green)  return _green_D;
+    if (c == _blue)   return _blue_D;
+    if (c == _orange) return _orange_D;
+    if (c == _purple) return _purple_D;
+    return c;
+  }
+}
+
+// ── Shake info card ───────────────────────────────────────────
+class _ShakeInfoCard extends StatelessWidget {
+  final bool isDark;
+  const _ShakeInfoCard({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final bg     = isDark ? _dSurface  : _lSurface;
+    final label  = isDark ? _dLabel    : _lLabel;
+    final label2 = isDark ? _dLabel2   : _lLabel2;
+    final accent = isDark ? _indigo_D  : _indigo;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: Colors.black.withOpacity(isDark ? 0.0 : 0.04), width: 0.5),
+          boxShadow: [BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
+              blurRadius: 10, offset: const Offset(0, 3))]),
+      child: Row(children: [
+        Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(
+                color: accent.withOpacity(0.10),
+                borderRadius: BorderRadius.circular(12)),
+            child: Icon(Icons.vibration_rounded, color: accent, size: 18)),
+        const SizedBox(width: 14),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Shake-to-SOS active',
+              style: _t(13.5, FontWeight.w600, label, ls: -0.2)),
+          const SizedBox(height: 2),
+          Text('Shake your phone twice from any screen to trigger an alert.',
+              style: _t(12, FontWeight.w400, label2, h: 1.45)),
+        ])),
+      ]),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  WEB COMPONENTS
+// ══════════════════════════════════════════════════════════════
+
+class _WebPageHeader extends StatelessWidget {
+  final bool isDark;
+  final VoidCallback onBack;
+  const _WebPageHeader({required this.isDark, required this.onBack});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = isDark ? _blue_D : _blue;
+    final label  = isDark ? _dLabel  : _lLabel;
+    final label2 = isDark ? _dLabel2 : _lLabel2;
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      // Back link — macOS style
+      GestureDetector(
+        onTap: onBack,
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.chevron_left_rounded, color: accent, size: 20),
+          Text('Emergency', style: _t(14, FontWeight.w400, accent)),
+        ]),
+      ),
+      const SizedBox(height: 20),
+      Row(children: [
+        Container(
+          width: 48, height: 48,
+          decoration: BoxDecoration(
+              color: (isDark ? _red_D : _red).withOpacity(0.10),
+              borderRadius: BorderRadius.circular(14)),
+          child: Icon(Icons.contacts_rounded,
+              color: isDark ? _red_D : _red, size: 22)),
+        const SizedBox(width: 16),
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Emergency Contacts',
+              style: _t(22, FontWeight.w700, label, ls: -0.5)),
+          Text('Up to 5 people alerted during SOS',
+              style: _t(13, FontWeight.w400, label2)),
+        ]),
+      ]),
+    ]);
+  }
+}
+
+class _WebCapabilitiesCard extends StatelessWidget {
+  final bool isDark;
+  const _WebCapabilitiesCard({required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final isMobile = PlatformHelper.isMobile;
+    final features = isMobile
+        ? [
+      (Icons.sms_rounded,            'Auto SMS with GPS coordinates'),
+      (Icons.vibration_rounded,      'Shake phone to trigger instantly'),
+      (Icons.location_on_rounded,    'Precise location attached'),
+      (Icons.notifications_rounded,  'Vibration & sound feedback'),
+    ]
+        : [
+      (Icons.chat_bubble_rounded,    'WhatsApp + call links open'),
+      (Icons.location_on_rounded,    'Browser GPS when permitted'),
+      (Icons.content_copy_rounded,   'One-tap message copy'),
+      (Icons.link_rounded,           'All contacts shown at once'),
+    ];
+
+    final bg     = isDark ? _dSurface  : _lSurface;
+    final label2 = isDark ? _dLabel2   : _lLabel2;
+    final accent = isDark ? _blue_D    : _blue;
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: Colors.black.withOpacity(isDark ? 0.0 : 0.04), width: 0.5),
+          boxShadow: [BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
+              blurRadius: 10, offset: const Offset(0, 3))]),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(isMobile ? Icons.smartphone_rounded : Icons.language_rounded,
+              color: accent, size: 14),
+          const SizedBox(width: 7),
+          Text(isMobile ? 'Mobile Capabilities' : 'Web Capabilities',
+              style: _t(11, FontWeight.w600, accent, ls: 0.3)),
+        ]),
+        const SizedBox(height: 14),
+        ...features.map((f) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Row(children: [
+            Container(
+                width: 32, height: 32,
+                decoration: BoxDecoration(
+                    color: accent.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(9)),
+                child: Icon(f.$1, color: accent, size: 14)),
+            const SizedBox(width: 12),
+            Expanded(child: Text(f.$2,
+                style: _t(13, FontWeight.w400, label2, h: 1.4))),
+          ]),
+        )),
+      ]),
+    );
+  }
+}
+
+class _WebContactsPanel extends StatelessWidget {
+  final List<EmergencyContact> contacts;
+  final bool isDark;
+  final VoidCallback onAdd;
+  final void Function(int) onDelete, onSetPrimary;
+  final void Function(EmergencyContact, int) onEdit;
+  const _WebContactsPanel({required this.contacts, required this.isDark,
+    required this.onAdd, required this.onDelete,
+    required this.onSetPrimary, required this.onEdit});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPrimary = contacts.any((c) => c.isPrimary);
+    final label2     = isDark ? _dLabel2 : _lLabel2;
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      // Section header
+      Row(children: [
+        Text(contacts.isEmpty
+            ? 'No contacts yet'
+            : '${contacts.length} of 5 contacts',
+            style: _t(12, FontWeight.w600, label2, ls: 0.2)),
+        const Spacer(),
+        if (contacts.isNotEmpty)
+          _ContactCountBadge(
+              count: contacts.length, hasPrimary: hasPrimary, isDark: isDark),
+      ]),
+      const SizedBox(height: 12),
+
+      if (contacts.isEmpty)
+        _EmptyContactsCard(isDark: isDark)
+      else
+        _ContactList(
+          contacts: contacts, isDark: isDark,
+          onDelete:     onDelete,
+          onSetPrimary: onSetPrimary,
+          onEdit:       onEdit,
+        ),
+
+      const SizedBox(height: 8),
+      if (contacts.length < 5)
+        _WebAddButton(isDark: isDark, onTap: onAdd),
+    ]);
+  }
+}
+
+class _WebAddButton extends StatefulWidget {
+  final bool isDark;
+  final VoidCallback onTap;
+  const _WebAddButton({required this.isDark, required this.onTap});
+  @override
+  State<_WebAddButton> createState() => _WebAddButtonState();
+}
+
+class _WebAddButtonState extends State<_WebAddButton> {
   bool _hovered = false;
 
   @override
   Widget build(BuildContext context) {
-    final t = widget.t;
+    final accent = widget.isDark ? _blue_D : _blue;
+    final sep    = widget.isDark ? _dSep : _lSep.withOpacity(0.5);
+
     return MouseRegion(
       onEnter: (_) => setState(() => _hovered = true),
       onExit:  (_) => setState(() => _hovered = false),
+      cursor: SystemMouseCursors.click,
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
+          duration: const Duration(milliseconds: 140),
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           decoration: BoxDecoration(
-            color: _hovered ? _kViolet.withOpacity(t.d ? 0.08 : 0.05) : Colors.transparent,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-                color: _hovered ? _kViolet.withOpacity(0.4) : t.borderBrt),
-          ),
+              color: _hovered
+                  ? accent.withOpacity(0.06)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                  color: _hovered ? accent.withOpacity(0.30) : sep,
+                  width: 0.5)),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Icon(Icons.add_rounded,
-                color: _hovered ? _kVioletLight : t.textSec, size: 18),
+            Icon(Icons.add_rounded, color: accent, size: 18),
             const SizedBox(width: 8),
-            Text('Add emergency contact', style: TextStyle(
-                color: _hovered ? _kVioletLight : t.textSec,
-                fontSize: 13, fontWeight: FontWeight.w700)),
+            Text('Add Emergency Contact',
+                style: _t(14, FontWeight.w500, accent)),
           ]),
         ),
       ),
@@ -691,20 +997,19 @@ class _AddButtonState extends State<_AddButton> {
   }
 }
 
-// ─────────────────────────────────────────────
-//  CONTACT FORM DIALOG
-// ─────────────────────────────────────────────
-
-class _ContactFormDialog extends StatefulWidget {
+// ══════════════════════════════════════════════════════════════
+//  CONTACT FORM SHEET  — iOS action sheet / modal card
+// ══════════════════════════════════════════════════════════════
+class _ContactFormSheet extends StatefulWidget {
   final EmergencyContact? existing;
+  final bool isDark;
   final Function(EmergencyContact) onSave;
-  const _ContactFormDialog({this.existing, required this.onSave});
-
+  const _ContactFormSheet({this.existing, required this.isDark, required this.onSave});
   @override
-  State<_ContactFormDialog> createState() => _ContactFormDialogState();
+  State<_ContactFormSheet> createState() => _ContactFormSheetState();
 }
 
-class _ContactFormDialogState extends State<_ContactFormDialog> {
+class _ContactFormSheetState extends State<_ContactFormSheet> {
   final _formKey  = GlobalKey<FormState>();
   late final TextEditingController _nameCtrl;
   late final TextEditingController _phoneCtrl;
@@ -712,7 +1017,8 @@ class _ContactFormDialogState extends State<_ContactFormDialog> {
   bool   _saving   = false;
 
   static const _relations = [
-    'Family','Parent','Sibling','Spouse','Friend','Doctor','Caretaker','Other'
+    'Family', 'Parent', 'Sibling', 'Spouse',
+    'Friend', 'Doctor', 'Caretaker', 'Other',
   ];
 
   @override
@@ -728,80 +1034,70 @@ class _ContactFormDialogState extends State<_ContactFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final t      = _T(isDark);
+    final isDark = widget.isDark;
+    final bg     = isDark ? _dSurface  : _lSurface;
+    final label  = isDark ? _dLabel    : _lLabel;
+    final label2 = isDark ? _dLabel2   : _lLabel2;
+    final sep    = isDark ? _dSep      : _lSep.withOpacity(0.5);
+    final accent = isDark ? _blue_D    : _blue;
     final isEdit = widget.existing != null;
 
     return Dialog(
-      backgroundColor: t.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      backgroundColor: bg,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 440),
-        padding: const EdgeInsets.all(28),
+        constraints: const BoxConstraints(maxWidth: 420),
+        padding: const EdgeInsets.all(24),
         child: Form(
           key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+          child: Column(mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-              // Header
-              Row(children: [
-                Container(
-                  width: 38, height: 38,
-                  decoration: BoxDecoration(
-                    color: _kViolet.withOpacity(t.d ? 0.1 : 0.07),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _kViolet.withOpacity(0.2)),
-                  ),
-                  child: const Center(
-                      child: Icon(Icons.person_rounded, color: _kVioletLight, size: 18)),
-                ),
-                const SizedBox(width: 14),
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(isEdit ? 'Edit Contact' : 'New Contact', style: TextStyle(
-                      color: t.textPri, fontSize: 16, fontWeight: FontWeight.w800)),
-                  Text('Will be notified during SOS',
-                      style: TextStyle(color: t.textSec, fontSize: 11)),
-                ]),
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
+            // Header — iOS modal header with close
+            Row(children: [
+              Expanded(child: Text(isEdit ? 'Edit Contact' : 'New Contact',
+                  style: _t(17, FontWeight.w600, label, ls: -0.3))),
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                    width: 28, height: 28,
                     decoration: BoxDecoration(
-                        color: t.surfaceHi, borderRadius: BorderRadius.circular(8)),
-                    child: Icon(Icons.close_rounded, color: t.textSec, size: 16),
-                  ),
-                ),
-              ]),
+                        color: isDark ? _dFill : _lFill,
+                        shape: BoxShape.circle),
+                    child: Icon(Icons.close_rounded,
+                        color: label2, size: 14)),
+              ),
+            ]),
 
-              const SizedBox(height: 24),
-              _buildDivider(t),
-              const SizedBox(height: 24),
+            const SizedBox(height: 4),
+            Text('Will be notified during SOS alerts',
+                style: _t(13, FontWeight.w400, label2)),
 
-              // Name
-              _buildLabel('Full name', t),
-              const SizedBox(height: 6),
-              _buildTextField(t: t, controller: _nameCtrl, hint: 'e.g. Priya Sharma',
-                  validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Name is required' : null),
+            const SizedBox(height: 20),
+            Divider(height: 1, thickness: 0.5, color: sep),
+            const SizedBox(height: 20),
 
-              const SizedBox(height: 18),
+            // Full name field
+            _FieldLabel(text: 'Full Name', isDark: isDark),
+            const SizedBox(height: 6),
+            _AppleTextField(
+                controller: _nameCtrl, hint: 'e.g. Priya Sharma',
+                isDark: isDark,
+                validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Name is required' : null),
 
-              // Phone
-              _buildLabel('Phone number', t),
-              const SizedBox(height: 6),
-              _buildTextField(
-                t: t,
-                controller: _phoneCtrl,
-                hint: 'e.g. 9876543210',
+            const SizedBox(height: 16),
+
+            // Phone field
+            _FieldLabel(text: 'Phone Number', isDark: isDark),
+            const SizedBox(height: 6),
+            _AppleTextField(
+                controller: _phoneCtrl, hint: '9876543210',
                 keyboardType: TextInputType.phone,
-                prefix: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  child: Text('+91', style: TextStyle(
-                      color: _kVioletLight, fontSize: 13, fontWeight: FontWeight.w600)),
-                ),
+                isDark: isDark,
+                prefixText: '+91  ',
+                prefixColor: accent,
                 validator: (v) {
                   if (v == null || v.trim().isEmpty) return 'Phone is required';
                   final c = v.replaceAll(RegExp(r'[\s\-\(\)\+]'), '');
@@ -809,135 +1105,76 @@ class _ContactFormDialogState extends State<_ContactFormDialog> {
                     return 'Enter a valid 10-digit number';
                   }
                   return null;
-                },
-              ),
+                }),
 
-              const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
-              // Relation
-              _buildLabel('Relation', t),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8, runSpacing: 8,
+            // Relation chips
+            _FieldLabel(text: 'Relation', isDark: isDark),
+            const SizedBox(height: 10),
+            Wrap(spacing: 8, runSpacing: 8,
                 children: _relations.map((r) {
                   final selected = r == _relation;
-                  final color    = _colorFor(r);
+                  final chipAccent = _accentFor(r, isDark);
                   return GestureDetector(
                     onTap: () => setState(() => _relation = r),
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 140),
+                      duration: const Duration(milliseconds: 130),
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: selected
-                            ? color.withOpacity(t.d ? 0.12 : 0.08)
-                            : t.surfaceHi,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: selected ? color.withOpacity(0.45) : t.borderBrt,
-                          width: selected ? 1.5 : 1.0,
-                        ),
-                      ),
-                      child: Text(r, style: TextStyle(
-                        color: selected ? color : t.textSec,
-                        fontSize: 12,
-                        fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                      )),
+                          color: selected
+                              ? chipAccent.withOpacity(0.12)
+                              : (isDark ? _dFill : _lFill),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color: selected
+                                  ? chipAccent.withOpacity(0.40)
+                                  : Colors.transparent,
+                              width: selected ? 1.0 : 0.0)),
+                      child: Text(r, style: _t(12.5, FontWeight.w500,
+                          selected ? chipAccent : label2)),
                     ),
                   );
-                }).toList(),
-              ),
+                }).toList()),
 
-              const SizedBox(height: 28),
+            const SizedBox(height: 24),
 
-              // Buttons
-              Row(children: [
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: Container(
+            // Buttons — iOS modal action row
+            Row(children: [
+              // Cancel — text button
+              Expanded(child: GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    decoration: BoxDecoration(
+                        color: isDark ? _dFill : _lFill,
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Center(child: Text('Cancel',
+                        style: _t(15, FontWeight.w500, label2)))),
+              )),
+              const SizedBox(width: 12),
+              // Confirm — filled
+              Expanded(flex: 2, child: GestureDetector(
+                onTap: _saving ? null : _save,
+                child: AnimatedOpacity(
+                  opacity: _saving ? 0.6 : 1.0,
+                  duration: const Duration(milliseconds: 120),
+                  child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 13),
                       decoration: BoxDecoration(
-                        color: t.surfaceHi,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: t.borderBrt),
-                      ),
-                      child: Center(child: Text('Cancel', style: TextStyle(
-                          color: t.textSec, fontWeight: FontWeight.w600, fontSize: 13))),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: GestureDetector(
-                    onTap: _saving ? null : _save,
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(vertical: 13),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(colors: _saving
-                            ? [_kViolet.withOpacity(0.4), _kViolet.withOpacity(0.4)]
-                            : [_kViolet, const Color(0xFF5B21B6)]),
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: _saving ? [] : [BoxShadow(
-                            color: _kViolet.withOpacity(0.35),
-                            blurRadius: 16, offset: const Offset(0, 6))],
-                      ),
+                          color: accent,
+                          borderRadius: BorderRadius.circular(12)),
                       child: Center(child: _saving
-                          ? const SizedBox(width: 16, height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                          : Text(isEdit ? 'Save changes' : 'Add contact',
-                          style: const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13))),
-                    ),
-                  ),
+                          ? SizedBox(width: 16, height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                          : Text(isEdit ? 'Save Changes' : 'Add Contact',
+                          style: _t(15, FontWeight.w600, Colors.white)))),
                 ),
-              ]),
-            ],
-          ),
+              )),
+            ]),
+          ]),
         ),
-      ),
-    );
-  }
-
-  Widget _buildLabel(String text, _T t) => Text(text, style: TextStyle(
-      color: t.textSec, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: 0.8));
-
-  Widget _buildDivider(_T t) => Container(height: 1,
-      decoration: BoxDecoration(gradient: LinearGradient(colors: [
-        Colors.transparent, t.borderBrt, Colors.transparent])));
-
-  Widget _buildTextField({
-    required _T t,
-    required TextEditingController controller,
-    required String hint,
-    TextInputType keyboardType = TextInputType.text,
-    Widget? prefix,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      validator: validator,
-      style: TextStyle(color: t.textPri, fontSize: 14),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: t.textMuted, fontSize: 13),
-        prefixIcon: prefix,
-        filled: true,
-        fillColor: t.surfaceHi,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: t.border)),
-        enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: t.borderBrt)),
-        focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _kViolet, width: 1.5)),
-        errorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _kCrimson)),
-        focusedErrorBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: _kCrimson, width: 1.5)),
-        errorStyle: const TextStyle(color: _kCrimsonSoft, fontSize: 11),
       ),
     );
   }
@@ -946,124 +1183,142 @@ class _ContactFormDialogState extends State<_ContactFormDialog> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     widget.onSave(EmergencyContact(
-      name: _nameCtrl.text.trim(), phone: _phoneCtrl.text.trim(),
-      relation: _relation, isPrimary: widget.existing?.isPrimary ?? false,
+      name:      _nameCtrl.text.trim(),
+      phone:     _phoneCtrl.text.trim(),
+      relation:  _relation,
+      isPrimary: widget.existing?.isPrimary ?? false,
     ));
     if (mounted) Navigator.pop(context);
   }
 }
 
-// ─────────────────────────────────────────────
-//  CONFIRM DIALOG
-// ─────────────────────────────────────────────
+// ── Field label ───────────────────────────────────────────────
+class _FieldLabel extends StatelessWidget {
+  final String text;
+  final bool isDark;
+  const _FieldLabel({required this.text, required this.isDark});
+  @override
+  Widget build(BuildContext context) => Text(text,
+      style: _t(12, FontWeight.w600,
+          isDark ? _dLabel2 : _lLabel2, ls: 0.3));
+}
 
-class _ConfirmDialog extends StatelessWidget {
-  final String title, body, confirmLabel;
-  final Color confirmColor;
-  final VoidCallback onConfirm;
-
-  const _ConfirmDialog({
-    required this.title, required this.body, required this.confirmLabel,
-    required this.confirmColor, required this.onConfirm,
+// ── Apple-style text field ────────────────────────────────────
+class _AppleTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hint;
+  final TextInputType keyboardType;
+  final bool isDark;
+  final String? prefixText;
+  final Color? prefixColor;
+  final String? Function(String?)? validator;
+  const _AppleTextField({
+    required this.controller, required this.hint,
+    this.keyboardType = TextInputType.text,
+    required this.isDark, this.prefixText,
+    this.prefixColor, this.validator,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final t = _T(isDark);
+    final fill   = isDark ? _dFill.withOpacity(0.3) : _lFill.withOpacity(0.5);
+    final label  = isDark ? _dLabel   : _lLabel;
+    final label2 = isDark ? _dLabel2  : _lLabel2;
+    final accent = isDark ? _blue_D   : _blue;
+    final border = BorderRadius.circular(11);
 
-    return Dialog(
-      backgroundColor: t.surface,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 360),
-        padding: const EdgeInsets.all(24),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: TextStyle(
-                color: t.textPri, fontSize: 16, fontWeight: FontWeight.w800)),
-            const SizedBox(height: 10),
-            Text(body, style: TextStyle(color: t.textSec, fontSize: 13, height: 1.6)),
-            const SizedBox(height: 24),
-            Row(children: [
-              Expanded(child: TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Cancel', style: TextStyle(color: t.textSec)))),
-              const SizedBox(width: 8),
-              Expanded(child: GestureDetector(
-                onTap: () { Navigator.pop(context); onConfirm(); },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: confirmColor.withOpacity(t.d ? 0.12 : 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: confirmColor.withOpacity(0.3)),
-                  ),
-                  child: Center(child: Text(confirmLabel, style: TextStyle(
-                      color: confirmColor, fontWeight: FontWeight.w700, fontSize: 13))),
-                ),
-              )),
-            ]),
-          ],
-        ),
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      validator: validator,
+      style: _t(15, FontWeight.w400, label),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: _t(15, FontWeight.w400, label2),
+        prefixText: prefixText,
+        prefixStyle: prefixText != null
+            ? _t(15, FontWeight.w600, prefixColor ?? accent)
+            : null,
+        filled: true,
+        fillColor: fill,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        border: OutlineInputBorder(borderRadius: border,
+            borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: border,
+            borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(borderRadius: border,
+            borderSide: BorderSide(color: accent, width: 1.5)),
+        errorBorder: OutlineInputBorder(borderRadius: border,
+            borderSide: BorderSide(color: isDark ? _red_D : _red, width: 1.0)),
+        focusedErrorBorder: OutlineInputBorder(borderRadius: border,
+            borderSide: BorderSide(color: isDark ? _red_D : _red, width: 1.5)),
+        errorStyle: _t(11, FontWeight.w500, isDark ? _red_D : _red),
       ),
     );
   }
 }
 
-// ─────────────────────────────────────────────
-//  MOBILE CAPABILITIES STRIP
-//  Compact icon-grid showing what SOS can do on this device.
-//  Used only in the mobile shell — replaces desktop platform card.
-// ─────────────────────────────────────────────
-class _MobileCapStrip extends StatelessWidget {
-  final _T t;
-  final bool isDark;
-  const _MobileCapStrip({required this.t, required this.isDark});
+// ══════════════════════════════════════════════════════════════
+//  APPLE ALERT DIALOG  — replaces old _ConfirmDialog
+// ══════════════════════════════════════════════════════════════
+class _AppleAlertDialog extends StatelessWidget {
+  final String title, message, destructiveLabel;
+  final VoidCallback onDestructive;
+  const _AppleAlertDialog({
+    required this.title, required this.message,
+    required this.destructiveLabel, required this.onDestructive,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final caps = [
-      (Icons.sms_rounded,           'Auto SMS',  'GPS attached',       _kCrimson),
-      (Icons.vibration_rounded,     'Shake',     'Double = alert',     const Color(0xFF7C3AED)),
-      (Icons.location_on_rounded,   'GPS',       'Precise coords',     const Color(0xFF0891B2)),
-      (Icons.notifications_rounded, 'Haptics',   'Vibe feedback',      const Color(0xFF059669)),
-    ];
-    return Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-            color: t.surfaceUp,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: t.border)),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            const Icon(Icons.smartphone_rounded, color: _kVioletLight, size: 13),
-            const SizedBox(width: 7),
-            const Text('MOBILE SOS CAPABILITIES', style: TextStyle(
-                color: _kVioletLight, fontSize: 9.5,
-                fontWeight: FontWeight.w700, letterSpacing: 1.2)),
-          ]),
-          const SizedBox(height: 12),
-          Row(children: caps.asMap().entries.map((e) {
-            final c = e.value;
-            final isLast = e.key == caps.length - 1;
-            return Expanded(child: Container(
-                margin: EdgeInsets.only(right: isLast ? 0 : 8),
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg     = isDark ? _dSurface  : _lSurface;
+    final label  = isDark ? _dLabel    : _lLabel;
+    final label2 = isDark ? _dLabel2   : _lLabel2;
+    final sep    = isDark ? _dSep      : _lSep.withOpacity(0.5);
+    final dRed   = isDark ? _red_D     : _red;
+
+    return Dialog(
+      backgroundColor: bg,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 320),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+            child: Column(children: [
+              Text(title, textAlign: TextAlign.center,
+                  style: _t(17, FontWeight.w600, label, ls: -0.2)),
+              const SizedBox(height: 6),
+              Text(message, textAlign: TextAlign.center,
+                  style: _t(13, FontWeight.w400, label2, h: 1.5)),
+            ]),
+          ),
+          Divider(height: 1, thickness: 0.5, color: sep),
+          // Buttons row — iOS alert style
+          IntrinsicHeight(child: Row(children: [
+            Expanded(child: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 decoration: BoxDecoration(
-                    color: c.$4.withOpacity(isDark ? 0.07 : 0.05),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: c.$4.withOpacity(0.16))),
-                child: Column(children: [
-                  Icon(c.$1, color: c.$4, size: 18),
-                  const SizedBox(height: 5),
-                  Text(c.$2, textAlign: TextAlign.center, style: TextStyle(
-                      color: t.textPri, fontSize: 9.5, fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Text(c.$3, textAlign: TextAlign.center, style: TextStyle(
-                      color: t.textSec, fontSize: 8.5, height: 1.2)),
-                ])));
-          }).toList()),
-        ]));
+                    border: Border(right: BorderSide(color: sep, width: 0.5))),
+                child: Center(child: Text('Cancel',
+                    style: _t(17, FontWeight.w400,
+                        isDark ? _blue_D : _blue))),
+              ),
+            )),
+            Expanded(child: GestureDetector(
+              onTap: () { Navigator.pop(context); onDestructive(); },
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                child: Center(child: Text(destructiveLabel,
+                    style: _t(17, FontWeight.w600, dRed))),
+              ),
+            )),
+          ])),
+        ]),
+      ),
+    );
   }
 }
