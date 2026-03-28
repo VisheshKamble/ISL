@@ -1,25 +1,30 @@
-# Use a slim Python image for a smaller footprint
-FROM python:3.10-bullseye
+# Slim Debian base — ~130MB vs ~900MB for bullseye full
+FROM python:3.10-slim-bullseye
 
-# Install system dependencies for OpenCV and YOLO
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
+# libgl1 + libglib2.0 needed by opencv-python-headless
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
     libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Set the working directory
 WORKDIR /app
 
-# Copy requirements first to leverage Docker cache
+# Install dependencies before copying code (layer cache)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the application code
 COPY . .
 
-# Expose the port Railway uses
 EXPOSE 8000
 
-# Start the application using uvicorn
-# We use the $PORT variable which Railway provides automatically
 CMD uvicorn app:app --host 0.0.0.0 --port ${PORT:-8000}
+```
+
+**`requirements.txt`** — headless opencv, pin versions to avoid resolution thrash:
+```
+fastapi==0.111.0
+uvicorn[standard]==0.30.1
+ultralytics==8.2.18
+opencv-python-headless==4.9.0.80
+numpy==1.26.4
+python-multipart==0.0.9
