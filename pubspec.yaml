@@ -44,7 +44,7 @@ dependencies:
 
   # ── ISL Assistant ─────────────────────────
   # Voice input for ISL Assistant
-  speech_to_text: ^6.6.2
+  speech_to_text: ^7.3.0
 
 dev_dependencies:
   flutter_test:
