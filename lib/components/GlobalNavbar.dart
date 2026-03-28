@@ -123,8 +123,8 @@ class _Brand extends StatelessWidget {
             shaderCallback: (b) => LinearGradient(
               colors: [primary, const Color(0xFF9D8FFF)],
             ).createShader(b),
-            child: const Text(
-              'VANI',
+            child: Text(
+              AppLocalizations.of(ctx).t('app_title_short'),
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w900,
@@ -241,7 +241,7 @@ class _MobileActions extends StatelessWidget {
           color: const Color(0xFF22D3EE),
           bgColor: const Color(0xFF0891B2).withOpacity(activeRoute == 'bridge' ? 0.18 : 0.08),
           borderColor: const Color(0xFF0891B2).withOpacity(activeRoute == 'bridge' ? 0.55 : 0.2),
-          tooltip: 'Two-Way Bridge',
+          tooltip: l.t('bridge_screen_title'),
           onTap: () { if (activeRoute != 'bridge')
             _push(ctx, TwoWayScreen(toggleTheme: toggleTheme, setLocale: setLocale)); },
         ),
@@ -372,7 +372,7 @@ class _MobileSOSBtnState extends State<_MobileSOSBtn>
               blurRadius: 8, spreadRadius: 0)],
           ),
           child: Center(
-            child: Text('SOS',
+            child: Text(AppLocalizations.of(context).t('nav_emergency'),
               style: TextStyle(
                 color: c, fontSize: 8.5,
                 fontWeight: FontWeight.w900, letterSpacing: 1.0)),
@@ -529,6 +529,7 @@ class _EmergencyNavLinkState extends State<_EmergencyNavLink>
   @override
   Widget build(BuildContext context) {
     const crimson = Color(0xFFDC2626);
+    final l = AppLocalizations.of(context);
     return InkWell(
       onTap: widget.onTap,
       borderRadius: BorderRadius.circular(10),
@@ -555,8 +556,8 @@ class _EmergencyNavLinkState extends State<_EmergencyNavLink>
                   blurRadius: 5, spreadRadius: 1)]),
             )),
           const SizedBox(width: 6),
-          const Text('SOS',
-            style: TextStyle(color: crimson, fontWeight: FontWeight.w900,
+          Text(l.t('nav_emergency'),
+            style: const TextStyle(color: crimson, fontWeight: FontWeight.w900,
                 fontSize: 11, letterSpacing: 1.3)),
         ]),
       ),

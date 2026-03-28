@@ -184,27 +184,27 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             launchLabel: l.t('get_started'),
             onLaunch: () => _push(ctx, TranslateScreen(
                 toggleTheme: widget.toggleTheme, setLocale: widget.setLocale)),
-            bullets: const [
-              (Icons.crop_free_rounded,        'Live detection',      'Point at signing hands — works instantly'),
-              (Icons.lock_rounded,             'Private & on-device', 'Zero data leaves your phone, ever'),
-              (Icons.translate_rounded,        'Multi-language',      'Hindi, Marathi, Tamil, English output'),
-              (Icons.receipt_long_rounded,     'Saved transcript',    'Full session log stored locally'),
+            bullets: [
+              (Icons.crop_free_rounded,        l.t('home_terminal_b1_title'), l.t('home_terminal_b1_desc')),
+              (Icons.lock_rounded,             l.t('home_terminal_b2_title'), l.t('home_terminal_b2_desc')),
+              (Icons.translate_rounded,        l.t('home_terminal_b3_title'), l.t('home_terminal_b3_desc')),
+              (Icons.receipt_long_rounded,     l.t('home_terminal_b4_title'), l.t('home_terminal_b4_desc')),
             ]);
       case 2:
         return _FeatureDetail(
             isDark: isDark, l: l,
             icon: Icons.back_hand_rounded,
             title: l.t('nav_signs'),
-            subtitle: '64 ISL signs — browse, learn, flip cards',
+            subtitle: l.t('home_signs_sub'),
             accentLight: _teal,   accentDark: _teal_D,
             launchLabel: l.t('home_browse_signs'),
             onLaunch: () => _push(ctx, SignsPage(
                 toggleTheme: widget.toggleTheme, setLocale: widget.setLocale)),
-            bullets: const [
-              (Icons.grid_view_rounded,        '64 signs',         'Complete ISL vocabulary library'),
-              (Icons.flip_to_front_rounded,    'Flip cards',       'Hand shape & meaning on each card'),
-              (Icons.search_rounded,           'Instant search',   'Filter by name, meaning or category'),
-              (Icons.sort_rounded,             'Smart filters',    'Alphabet, numbers, common words'),
+            bullets: [
+              (Icons.grid_view_rounded,        l.t('home_signs_b1_title'), l.t('home_signs_b1_desc')),
+              (Icons.flip_to_front_rounded,    l.t('home_signs_b2_title'), l.t('home_signs_b2_desc')),
+              (Icons.search_rounded,           l.t('home_signs_b3_title'), l.t('home_signs_b3_desc')),
+              (Icons.sort_rounded,             l.t('home_signs_b4_title'), l.t('home_signs_b4_desc')),
             ]);
       case 3:
         return _FeatureDetail(
@@ -216,11 +216,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
             launchLabel: l.t('home_open_bridge'),
             onLaunch: () => _push(ctx, TwoWayScreen(
                 toggleTheme: widget.toggleTheme, setLocale: widget.setLocale)),
-            bullets: const [
-              (Icons.sign_language_rounded,    'Signs → text',     'Deaf person signs, app translates live'),
-              (Icons.keyboard_alt_rounded,     'Text → speech',    'Hearing person types or speaks back'),
-              (Icons.chat_bubble_outline_rounded,'Chat thread',    'Messenger-style conversation history'),
-              (Icons.flash_on_rounded,         'Quick phrases',    '12 ready-made professional phrases'),
+            bullets: [
+              (Icons.sign_language_rounded,      l.t('home_bridge_b1_title'), l.t('home_bridge_b1_desc')),
+              (Icons.keyboard_alt_rounded,       l.t('home_bridge_b2_title'), l.t('home_bridge_b2_desc')),
+              (Icons.chat_bubble_outline_rounded,l.t('home_bridge_b3_title'), l.t('home_bridge_b3_desc')),
+              (Icons.flash_on_rounded,           l.t('home_bridge_b4_title'), l.t('home_bridge_b4_desc')),
             ]);
       default: return const SizedBox.shrink();
     }
@@ -517,7 +517,7 @@ class _MobileNavBar extends StatelessWidget {
         // Logotype
         Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
-            Text('VANI', style: _t(26, FontWeight.w700, isDark ? _dLabel : _lLabel,
+            Text(l.t('app_title_short'), style: _t(26, FontWeight.w700, isDark ? _dLabel : _lLabel,
                 ls: 4.0)),
             const SizedBox(width: 8),
             AnimatedBuilder(
@@ -536,7 +536,7 @@ class _MobileNavBar extends StatelessWidget {
         const Spacer(),
         // Lang selector
         _LangButton(locale: locale, setLocale: setLocale,
-            isDark: isDark, accent: accent),
+          isDark: isDark, accent: accent, l: l),
         const SizedBox(width: 8),
         // Theme toggle — iOS-style filled circle button
         _IconPill(
@@ -574,15 +574,16 @@ class _LangButton extends StatelessWidget {
   final Function(Locale) setLocale;
   final bool isDark;
   final Color accent;
+  final AppLocalizations l;
   const _LangButton({required this.locale, required this.setLocale,
-    required this.isDark, required this.accent});
+    required this.isDark, required this.accent, required this.l});
 
   @override
   Widget build(BuildContext context) {
     final langs = [
-      {'code': 'en', 'flag': '🇬🇧', 'name': 'English'},
-      {'code': 'hi', 'flag': '🇮🇳', 'name': 'हिन्दी'},
-      {'code': 'mr', 'flag': '🇮🇳', 'name': 'मराठी'},
+      {'code': 'en', 'flag': '🇬🇧', 'name': l.t('lang_en')},
+      {'code': 'hi', 'flag': '🇮🇳', 'name': l.t('lang_hi')},
+      {'code': 'mr', 'flag': '🇮🇳', 'name': l.t('lang_mr')},
     ];
     final cur = langs.firstWhere(
             (l) => l['code'] == locale.languageCode, orElse: () => langs[0]);
@@ -718,22 +719,21 @@ class _MobileHeroCardState extends State<_MobileHeroCard>
           children: [
             // Badge
             _AppleBadge(
-                label: 'ISL · On-Device AI · Offline',
+              label: widget.l.t('home_mobile_badge'),
                 accent: widget.isDark ? _blue_D : _blue,
                 isDark: widget.isDark),
             const SizedBox(height: 16),
 
             // Headline — SF Display style
-            Text('Sign Language\nTo Text,', style: _t(
+            Text(widget.l.t('hero_title_line1'), style: _t(
                 34, FontWeight.w700, label, ls: -0.5, h: 1.08)),
             // Accent word in system blue
-            Text('Instantly.', style: _t(34, FontWeight.w700, accent, ls: -0.5, h: 1.08)),
+            Text(widget.l.t('hero_title_line2'), style: _t(34, FontWeight.w700, accent, ls: -0.5, h: 1.08)),
 
             const SizedBox(height: 12),
 
-            Text(
-                "Empowering India's 63M+ deaf & mute community —\nprivate, accurate, always offline.",
-                style: _t(14, FontWeight.w400, label2, ls: -0.2, h: 1.55)),
+            Text(widget.l.t('hero_sub'),
+              style: _t(14, FontWeight.w400, label2, ls: -0.2, h: 1.55)),
 
             const SizedBox(height: 22),
 
@@ -1106,10 +1106,7 @@ class _MobileMissionCard extends StatelessWidget {
         Text(l.t('vision_title'),
             style: _t(17, FontWeight.w700, label, ls: -0.3, h: 1.2)),
         const SizedBox(height: 8),
-        Text(
-            "With only 1 certified translator for every 33,000+ deaf individuals "
-                "in India, VANI bridges the gap — delivering real-time sign language "
-                "translation on your device, privately.",
+        Text(l.t('home_mission_body'),
             style: _t(13, FontWeight.w400, sub, ls: -0.1, h: 1.6)),
         const SizedBox(height: 14),
         Container(
@@ -1205,7 +1202,7 @@ class _FeatureDetail extends StatelessWidget {
               // "Inside" label — iOS grouped list header style
               Padding(
                 padding: const EdgeInsets.only(left: 4, bottom: 10),
-                child: Text("WHAT'S INSIDE",
+                child: Text(l.t('page_section_header'),
                     style: _t(11, FontWeight.w600,
                         isDark ? _dLabel3 : _lLabel3, ls: 0.6)),
               ),
@@ -1814,7 +1811,7 @@ class _WebVisionCard extends StatelessWidget {
                 Container(width: 6, height: 6,
                     decoration: const BoxDecoration(color: _red, shape: BoxShape.circle)),
                 const SizedBox(width: 8),
-                Text('1 translator : 33,000+ people',
+                Text(l.t('obj_crisis_stat'),
                     style: _t(12.5, FontWeight.w600, _red)),
               ])),
         ]));
@@ -1837,7 +1834,7 @@ class _WebFooter extends StatelessWidget {
           crossAxisAlignment: WrapCrossAlignment.center,
           spacing: 16, runSpacing: 6,
           children: [
-            Text('VANI', style: _t(12, FontWeight.w700,
+            Text(AppLocalizations.of(context).t('app_title_short'), style: _t(12, FontWeight.w700,
                 isDark ? _blue_D : _blue, ls: 4.0)),
             Container(width: 1, height: 11,
                 color: isDark ? _dSep : _lSep.withOpacity(0.5)),

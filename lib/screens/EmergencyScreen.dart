@@ -86,8 +86,8 @@ const List<_Scenario> _kScenarios = [
     icon: Icons.emergency_rounded,
     titleKey: 'sos_general_title',
     subtitleKey: 'sos_general_sub',
-    signHint: 'ISL: HELP',
-    helpline: '112', helplineName: 'Emergency',
+    signHint: 'sos_sign_help',
+    helpline: '112', helplineName: 'sos_helpline_emergency',
     accentLight: _red, accentDark: _red_D,
     smsTemplate:
     'URGENT — EMERGENCY ALERT\n\n'
@@ -100,8 +100,8 @@ const List<_Scenario> _kScenarios = [
     icon: Icons.medical_services_rounded,
     titleKey: 'sos_medical_title',
     subtitleKey: 'sos_medical_sub',
-    signHint: 'ISL: DOCTOR',
-    helpline: '108', helplineName: 'Ambulance',
+    signHint: 'sos_sign_doctor',
+    helpline: '108', helplineName: 'sos_helpline_ambulance',
     accentLight: _orange, accentDark: _orange_D,
     smsTemplate:
     'URGENT — MEDICAL EMERGENCY\n\n'
@@ -114,8 +114,8 @@ const List<_Scenario> _kScenarios = [
     icon: Icons.shield_rounded,
     titleKey: 'sos_police_title',
     subtitleKey: 'sos_police_sub',
-    signHint: 'ISL: STRONG',
-    helpline: '100', helplineName: 'Police',
+    signHint: 'sos_sign_strong',
+    helpline: '100', helplineName: 'sos_helpline_police',
     accentLight: _blue, accentDark: _blue_D,
     smsTemplate:
     'URGENT — SAFETY EMERGENCY\n\n'
@@ -128,8 +128,8 @@ const List<_Scenario> _kScenarios = [
     icon: Icons.local_fire_department_rounded,
     titleKey: 'sos_fire_title',
     subtitleKey: 'sos_fire_sub',
-    signHint: 'ISL: HELP + BAD',
-    helpline: '101', helplineName: 'Fire Brigade',
+    signHint: 'sos_sign_help_bad',
+    helpline: '101', helplineName: 'sos_helpline_fire',
     accentLight: _amber, accentDark: _amber_D,
     smsTemplate:
     'URGENT — FIRE / SMOKE EMERGENCY\n\n'
@@ -142,8 +142,8 @@ const List<_Scenario> _kScenarios = [
     icon: Icons.directions_car_rounded,
     titleKey: 'sos_accident_title',
     subtitleKey: 'sos_accident_sub',
-    signHint: 'ISL: BAD + SORRY',
-    helpline: '1033', helplineName: 'Highway',
+    signHint: 'sos_sign_bad_sorry',
+    helpline: '1033', helplineName: 'sos_helpline_highway',
     accentLight: _purple, accentDark: _purple_D,
     smsTemplate:
     'URGENT — ROAD ACCIDENT\n\n'
@@ -156,8 +156,8 @@ const List<_Scenario> _kScenarios = [
     icon: Icons.child_care_rounded,
     titleKey: 'sos_child_title',
     subtitleKey: 'sos_child_sub',
-    signHint: 'ISL: MOTHER',
-    helpline: '1098', helplineName: 'Childline',
+    signHint: 'sos_sign_mother',
+    helpline: '1098', helplineName: 'sos_helpline_childline',
     accentLight: _teal, accentDark: _teal_D,
     smsTemplate:
     'URGENT — CHILD SAFETY ALERT\n\n'
@@ -728,7 +728,7 @@ class _ScenarioCardState extends State<_ScenarioCard>
                         AnimatedOpacity(
                           opacity: widget.isAutoDetected ? 1.0 : hv,
                           duration: const Duration(milliseconds: 130),
-                          child: Text(s.signHint,
+                          child: Text(l.t(s.signHint),
                               style: _t(9, FontWeight.w600,
                                   accent.withOpacity(0.70), ls: 0.2)),
                         ),

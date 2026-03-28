@@ -207,7 +207,7 @@ class _ObjectivePageBaseState extends State<ObjectivePageBase>
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.chevron_left_rounded, color: blueA, size: 28),
-                    Text('Back', style: _t(15, FontWeight.w400, blueA)),
+                    Text(AppLocalizations.of(context).t('common_back'), style: _t(15, FontWeight.w400, blueA)),
                   ]),
                 ),
               ),
@@ -489,7 +489,7 @@ class _WebHeroHeader extends StatelessWidget {
               onTap: onBack,
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.chevron_left_rounded, color: blueA, size: 20),
-                Text('Back', style: _t(14, FontWeight.w400, blueA)),
+                Text(AppLocalizations.of(context).t('common_back'), style: _t(14, FontWeight.w400, blueA)),
               ]),
             ),
             const SizedBox(height: 24),
