@@ -158,12 +158,13 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ]),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 54),
+        padding: const EdgeInsets.only(bottom: 68),
         child: SOSFloatingButton(
           toggleTheme: widget.toggleTheme,
           setLocale: widget.setLocale,
         ),
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endDocked,
       bottomNavigationBar: _AppleTabBar(
         isDark: isDark,
         tab: _tab,
@@ -225,7 +226,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
               (Icons.flash_on_rounded,            l.t('home_bridge_b4_title'), l.t('home_bridge_b4_desc')),
             ]);
 
-      // ── NEW: Tab 4 — ISL Assistant ──────────────────────────
+    // ── NEW: Tab 4 — ISL Assistant ──────────────────────────
       case 4:
         return _FeatureDetail(
             isDark: isDark, l: l,
@@ -354,8 +355,8 @@ class _DotGridPainter extends CustomPainter {
       ..color = isDark ? Colors.white.withOpacity(0.035) : Colors.black.withOpacity(0.030);
     const step = 28.0;
     for (double x = step; x < size.width;  x += step)
-    for (double y = step; y < size.height; y += step)
-      canvas.drawCircle(Offset(x, y), 0.8, p);
+      for (double y = step; y < size.height; y += step)
+        canvas.drawCircle(Offset(x, y), 0.8, p);
   }
   @override
   bool shouldRepaint(_DotGridPainter o) => o.isDark != isDark;
@@ -567,28 +568,28 @@ class _MobileAssistantCardState extends State<_MobileAssistantCard>
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
               child: Row(children: [
                 Container(
-                  width: 48, height: 48,
-                  decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                          colors: [accent, _blue],
-                          begin: Alignment.topLeft, end: Alignment.bottomRight),
-                      borderRadius: BorderRadius.circular(14)),
-                  child: const Icon(Icons.sign_language_rounded, color: Colors.white, size: 22)),
+                    width: 48, height: 48,
+                    decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                            colors: [accent, _blue],
+                            begin: Alignment.topLeft, end: Alignment.bottomRight),
+                        borderRadius: BorderRadius.circular(14)),
+                    child: const Icon(Icons.sign_language_rounded, color: Colors.white, size: 22)),
                 const SizedBox(width: 14),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
                     Text(l.t('assistant_title'), style: _t(16, FontWeight.w700, label, ls: -0.2)),
                     const SizedBox(width: 8),
                     AnimatedBuilder(
-                      animation: _pulseAnim,
-                      builder: (_, __) => Container(width: 6, height: 6,
-                          decoration: BoxDecoration(shape: BoxShape.circle, color: accent,
-                              boxShadow: [BoxShadow(
-                                  color: accent.withOpacity(_pulseAnim.value * 0.6),
-                                  blurRadius: 5, spreadRadius: 1)]))),
+                        animation: _pulseAnim,
+                        builder: (_, __) => Container(width: 6, height: 6,
+                            decoration: BoxDecoration(shape: BoxShape.circle, color: accent,
+                                boxShadow: [BoxShadow(
+                                    color: accent.withOpacity(_pulseAnim.value * 0.6),
+                                    blurRadius: 5, spreadRadius: 1)]))),
                   ]),
                   const SizedBox(height: 3),
-                    Text(l.t('assistant_card_subtitle'),
+                  Text(l.t('assistant_card_subtitle'),
                       style: _t(12, FontWeight.w400, label2, ls: -0.1)),
                 ])),
                 Icon(Icons.chevron_right_rounded,
@@ -622,14 +623,14 @@ class _AssistantChip extends StatelessWidget {
   const _AssistantChip(this.label, this.icon, this.color, this.isDark);
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-    decoration: BoxDecoration(
-        color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.18), width: 0.5)),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 11, color: color), const SizedBox(width: 5),
-      Text(label, style: _t(10.5, FontWeight.w600, color)),
-    ]));
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+          color: color.withOpacity(0.08), borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color.withOpacity(0.18), width: 0.5)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 11, color: color), const SizedBox(width: 5),
+        Text(label, style: _t(10.5, FontWeight.w600, color)),
+      ]));
 }
 
 class _TopLogoutMenu extends StatelessWidget {
@@ -681,18 +682,18 @@ class _TopLogoutMenu extends StatelessWidget {
       onSelected: (value) {
         if (value == 'logout') {
           showDialog(context: context, builder: (_) => AlertDialog(
-            backgroundColor: bg, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text(l.t('menu_sign_out_confirm_title'), style: _t(17, FontWeight.w600, isDark ? _dLabel : _lLabel)),
-            content: Text(l.t('menu_sign_out_confirm_body'), style: _t(14, FontWeight.w400, label2)),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(context),
-                  child: Text(l.t('menu_cancel'), style: _t(15, FontWeight.w500, label2))),
-              TextButton(onPressed: () async {
-                    Navigator.pop(context);
-                    await _logout(context);
-                  },
-                  child: Text(l.t('menu_sign_out'), style: _t(15, FontWeight.w600, red))),
-            ]));
+              backgroundColor: bg, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              title: Text(l.t('menu_sign_out_confirm_title'), style: _t(17, FontWeight.w600, isDark ? _dLabel : _lLabel)),
+              content: Text(l.t('menu_sign_out_confirm_body'), style: _t(14, FontWeight.w400, label2)),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(context),
+                    child: Text(l.t('menu_cancel'), style: _t(15, FontWeight.w500, label2))),
+                TextButton(onPressed: () async {
+                  Navigator.pop(context);
+                  await _logout(context);
+                },
+                    child: Text(l.t('menu_sign_out'), style: _t(15, FontWeight.w600, red))),
+              ]));
         }
       },
     );
@@ -1458,32 +1459,32 @@ class _WebAssistantBannerState extends State<_WebAssistantBanner>
         // Text
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min, children: [
-          Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                  color: accent.withOpacity(0.10), borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: accent.withOpacity(0.22), width: 0.5)),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                Container(width: 5, height: 5,
-                    decoration: BoxDecoration(shape: BoxShape.circle, color: accent)),
-                const SizedBox(width: 6),
-                Text(l.t('assistant_banner_badge'),
-                    style: _t(10.5, FontWeight.w600, accent, ls: 0.1)),
-              ])),
-          const SizedBox(height: 14),
-          Text(l.t('assistant_banner_title'), style: _t(28, FontWeight.w700, label, ls: -0.5)),
-          const SizedBox(height: 8),
-          Text(l.t('assistant_banner_desc'),
-              style: _t(14.5, FontWeight.w400, label2, ls: -0.1, h: 1.6)),
-          const SizedBox(height: 18),
-          Wrap(spacing: 8, runSpacing: 8, children: [
-            _WebChip('🎙 ${l.t('assistant_banner_chip_voice_input')}', accent),
-            _WebChip('🔊 ${l.t('assistant_banner_chip_voice_output')}', accent),
-            _WebChip('🌐 ${l.t('assistant_banner_chip_languages')}', accent),
-            _WebChip('🤟 ${l.t('assistant_banner_chip_sign_guides')}', accent),
-            _WebChip('🚨 ${l.t('assistant_banner_chip_emergency')}', accent),
-          ]),
-        ])),
+              Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                      color: accent.withOpacity(0.10), borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: accent.withOpacity(0.22), width: 0.5)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Container(width: 5, height: 5,
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: accent)),
+                    const SizedBox(width: 6),
+                    Text(l.t('assistant_banner_badge'),
+                        style: _t(10.5, FontWeight.w600, accent, ls: 0.1)),
+                  ])),
+              const SizedBox(height: 14),
+              Text(l.t('assistant_banner_title'), style: _t(28, FontWeight.w700, label, ls: -0.5)),
+              const SizedBox(height: 8),
+              Text(l.t('assistant_banner_desc'),
+                  style: _t(14.5, FontWeight.w400, label2, ls: -0.1, h: 1.6)),
+              const SizedBox(height: 18),
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                _WebChip('🎙 ${l.t('assistant_banner_chip_voice_input')}', accent),
+                _WebChip('🔊 ${l.t('assistant_banner_chip_voice_output')}', accent),
+                _WebChip('🌐 ${l.t('assistant_banner_chip_languages')}', accent),
+                _WebChip('🤟 ${l.t('assistant_banner_chip_sign_guides')}', accent),
+                _WebChip('🚨 ${l.t('assistant_banner_chip_emergency')}', accent),
+              ]),
+            ])),
         const SizedBox(width: 32),
         // CTA
         _WebBannerCTA(accent: accent, hovered: _hovered),
