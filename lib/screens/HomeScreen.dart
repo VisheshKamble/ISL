@@ -839,6 +839,50 @@ class _MobileStatsStripState extends State<_MobileStatsStrip>
 // ─────────────────────────────────────────────
 //  QUICK ACCESS ROW  — iOS app-icon grid style
 // ─────────────────────────────────────────────
+// class _QuickAccessRow extends StatelessWidget {
+//   final bool isDark;
+//   final AppLocalizations l;
+//   final VoidCallback toggleTheme;
+//   final Function(Locale) setLocale;
+//   const _QuickAccessRow({required this.isDark, required this.l,
+//     required this.toggleTheme, required this.setLocale});
+
+//   @override
+//   Widget build(BuildContext ctx) {
+//     final cards = [
+//       (_teal,   _teal_D,   Icons.compare_arrows_rounded, l.t('nav_bridge'),    l.t('home_open_bridge'),
+//       TwoWayScreen(toggleTheme: toggleTheme, setLocale: setLocale)),
+//       (_red,    _red_D,    Icons.emergency_share_rounded, l.t('nav_emergency'),      l.t('sos_screen_title'),
+//       EmergencyScreen(toggleTheme: toggleTheme, setLocale: setLocale)),
+//       (_green,  _green_D,  Icons.back_hand_rounded,       l.t('nav_signs'),    l.t('home_browse_signs'),
+//       SignsPage(toggleTheme: toggleTheme, setLocale: setLocale)),
+//     ];
+
+//     return SizedBox(
+//       height: 108,
+//       child: ListView.builder(
+//           scrollDirection: Axis.horizontal,
+//           padding: const EdgeInsets.symmetric(horizontal: 16),
+//           physics: const BouncingScrollPhysics(),
+//           itemCount: cards.length,
+//           itemBuilder: (_, i) {
+//             final c = cards[i];
+//             return Padding(
+//                 padding: EdgeInsets.only(right: i < cards.length - 1 ? 12 : 0),
+//                 child: _QuickTile(
+//                     colorLight: c.$1, colorDark: c.$2,
+//                     icon: c.$3, label: c.$4, sub: c.$5,
+//                     isDark: isDark,
+//                     onTap: () => Navigator.push(ctx, PageRouteBuilder(
+//                         pageBuilder: (_, __, ___) => c.$6,
+//                         transitionsBuilder: (_, a, __, ch) =>
+//                             FadeTransition(opacity: a, child: ch),
+//                         transitionDuration: const Duration(milliseconds: 260)))));
+//           }),
+//     );
+//   }
+// }
+
 class _QuickAccessRow extends StatelessWidget {
   final bool isDark;
   final AppLocalizations l;
@@ -846,66 +890,80 @@ class _QuickAccessRow extends StatelessWidget {
   final Function(Locale) setLocale;
   const _QuickAccessRow({required this.isDark, required this.l,
     required this.toggleTheme, required this.setLocale});
-
+ 
   @override
   Widget build(BuildContext ctx) {
-    final cards = [
-      (_teal,   _teal_D,   Icons.compare_arrows_rounded, l.t('nav_bridge'),    l.t('home_open_bridge'),
-      TwoWayScreen(toggleTheme: toggleTheme, setLocale: setLocale)),
-      (_red,    _red_D,    Icons.emergency_share_rounded, l.t('nav_emergency'),      l.t('sos_screen_title'),
-      EmergencyScreen(toggleTheme: toggleTheme, setLocale: setLocale)),
-      (_green,  _green_D,  Icons.back_hand_rounded,       l.t('nav_signs'),    l.t('home_browse_signs'),
-      SignsPage(toggleTheme: toggleTheme, setLocale: setLocale)),
+    // accent colours: light / dark
+    const cards = [
+      // (accentLight, accentDark, icon, label, sub)
+      (_teal,   _teal_D,  Icons.compare_arrows_rounded, 'Bridge',  'Two-Way'),
+      (_red,    _red_D,   Icons.emergency_share_rounded, 'SOS',    'Emergency'),
+      (_green,  _green_D, Icons.back_hand_rounded,       'Signs',  'Library'),
     ];
-
-    return SizedBox(
-      height: 108,
-      child: ListView.builder(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          physics: const BouncingScrollPhysics(),
-          itemCount: cards.length,
-          itemBuilder: (_, i) {
-            final c = cards[i];
-            return Padding(
-                padding: EdgeInsets.only(right: i < cards.length - 1 ? 12 : 0),
-                child: _QuickTile(
-                    colorLight: c.$1, colorDark: c.$2,
-                    icon: c.$3, label: c.$4, sub: c.$5,
-                    isDark: isDark,
-                    onTap: () => Navigator.push(ctx, PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => c.$6,
-                        transitionsBuilder: (_, a, __, ch) =>
-                            FadeTransition(opacity: a, child: ch),
-                        transitionDuration: const Duration(milliseconds: 260)))));
-          }),
+ 
+    return Padding(
+      // same 16px horizontal padding as the rest of the feed
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: cards.asMap().entries.map((e) {
+          final i = e.key; final c = e.value;
+          final accent = isDark ? c.$2 : c.$1;
+ 
+          // destination widget
+          Widget dest() {
+            switch (i) {
+              case 0: return TwoWayScreen(toggleTheme: toggleTheme, setLocale: setLocale);
+              case 1: return EmergencyScreen(toggleTheme: toggleTheme, setLocale: setLocale);
+              default: return SignsPage(toggleTheme: toggleTheme, setLocale: setLocale);
+            }
+          }
+ 
+          return Expanded(
+            child: Padding(
+              // small gap between tiles; last tile has no trailing gap
+              padding: EdgeInsets.only(right: i < cards.length - 1 ? 10 : 0),
+              child: _QuickTile(
+                accent: accent, icon: c.$3,
+                label: c.$4, sub: c.$5,
+                isDark: isDark,
+                onTap: () => Navigator.push(ctx, PageRouteBuilder(
+                    pageBuilder: (_, __, ___) => dest(),
+                    transitionsBuilder: (_, a, __, ch) =>
+                        FadeTransition(opacity: a, child: ch),
+                    transitionDuration: const Duration(milliseconds: 260))),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 }
-
+ 
+// ── REPLACE your existing _QuickTile + _QuickTileState with this ──
+ 
 class _QuickTile extends StatefulWidget {
-  final Color colorLight, colorDark;
+  final Color accent;
   final IconData icon;
   final String label, sub;
   final bool isDark;
   final VoidCallback onTap;
-  const _QuickTile({required this.colorLight, required this.colorDark,
-    required this.icon, required this.label, required this.sub,
+  const _QuickTile({required this.accent, required this.icon,
+    required this.label, required this.sub,
     required this.isDark, required this.onTap});
   @override
   State<_QuickTile> createState() => _QuickTileState();
 }
-
+ 
 class _QuickTileState extends State<_QuickTile> {
   bool _pressed = false;
-  Color get _accent => widget.isDark ? widget.colorDark : widget.colorLight;
-
+ 
   @override
   Widget build(BuildContext context) {
-    final bg     = widget.isDark ? _dSurface  : _lSurface;
-    final label  = widget.isDark ? _dLabel    : _lLabel;
-    final label2 = widget.isDark ? _dLabel2   : _lLabel2;
-
+    final bg    = widget.isDark ? _dSurface : _lSurface;
+    final label = widget.isDark ? _dLabel   : _lLabel;
+    final sub   = widget.isDark ? _dLabel2  : _lLabel2;
+ 
     return GestureDetector(
       onTapDown:   (_) => setState(() => _pressed = true),
       onTapUp:     (_) { setState(() => _pressed = false); widget.onTap(); },
@@ -915,31 +973,104 @@ class _QuickTileState extends State<_QuickTile> {
         duration: const Duration(milliseconds: 80),
         curve: Curves.easeOutBack,
         child: Container(
-          width: 108,
-          decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                  color: _accent.withOpacity(0.18), width: 0.5),
-              boxShadow: [BoxShadow(
-                  color: Colors.black.withOpacity(widget.isDark ? 0.30 : 0.07),
-                  blurRadius: 14, offset: const Offset(0, 5))]),
-          child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-            Container(
-                width: 44, height: 44,
-                decoration: BoxDecoration(
-                    color: _accent.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(13)),
-                child: Icon(widget.icon, color: _accent, size: 20)),
-            const SizedBox(height: 8),
-            Text(widget.label, style: _t(11.5, FontWeight.w600, label)),
-            Text(widget.sub,   style: _t(10,   FontWeight.w400, label2)),
-          ]),
+          // aspect ratio drives height — tile is always square-ish
+          // regardless of screen width. Using AspectRatio here so
+          // the tile height adapts to whatever width Expanded gives it.
+          child: AspectRatio(
+            aspectRatio: 0.95,
+            child: Container(
+              decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                      color: widget.accent.withOpacity(0.18), width: 0.5),
+                  boxShadow: [BoxShadow(
+                      color: Colors.black.withOpacity(widget.isDark ? 0.28 : 0.07),
+                      blurRadius: 12, offset: const Offset(0, 4))]),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                      width: 42, height: 42,
+                      decoration: BoxDecoration(
+                          color: widget.accent.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(13)),
+                      child: Icon(widget.icon, color: widget.accent, size: 20)),
+                  const SizedBox(height: 8),
+                  Text(widget.label,
+                      style: _t(11.5, FontWeight.w700, label),
+                      textAlign: TextAlign.center),
+                  Text(widget.sub,
+                      style: _t(9.5, FontWeight.w400, sub),
+                      textAlign: TextAlign.center),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );
   }
 }
+ 
+
+// class _QuickTile extends StatefulWidget {
+//   final Color colorLight, colorDark;
+//   final IconData icon;
+//   final String label, sub;
+//   final bool isDark;
+//   final VoidCallback onTap;
+//   const _QuickTile({required this.colorLight, required this.colorDark,
+//     required this.icon, required this.label, required this.sub,
+//     required this.isDark, required this.onTap});
+//   @override
+//   State<_QuickTile> createState() => _QuickTileState();
+// }
+
+// class _QuickTileState extends State<_QuickTile> {
+//   bool _pressed = false;
+//   Color get _accent => widget.isDark ? widget.colorDark : widget.colorLight;
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final bg     = widget.isDark ? _dSurface  : _lSurface;
+//     final label  = widget.isDark ? _dLabel    : _lLabel;
+//     final label2 = widget.isDark ? _dLabel2   : _lLabel2;
+
+//     return GestureDetector(
+//       onTapDown:   (_) => setState(() => _pressed = true),
+//       onTapUp:     (_) { setState(() => _pressed = false); widget.onTap(); },
+//       onTapCancel: ()  => setState(() => _pressed = false),
+//       child: AnimatedScale(
+//         scale: _pressed ? 0.93 : 1.0,
+//         duration: const Duration(milliseconds: 80),
+//         curve: Curves.easeOutBack,
+//         child: Container(
+//           width: 108,
+//           decoration: BoxDecoration(
+//               color: bg,
+//               borderRadius: BorderRadius.circular(20),
+//               border: Border.all(
+//                   color: _accent.withOpacity(0.18), width: 0.5),
+//               boxShadow: [BoxShadow(
+//                   color: Colors.black.withOpacity(widget.isDark ? 0.30 : 0.07),
+//                   blurRadius: 14, offset: const Offset(0, 5))]),
+//           child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+//             Container(
+//                 width: 44, height: 44,
+//                 decoration: BoxDecoration(
+//                     color: _accent.withOpacity(0.12),
+//                     borderRadius: BorderRadius.circular(13)),
+//                 child: Icon(widget.icon, color: _accent, size: 20)),
+//             const SizedBox(height: 8),
+//             Text(widget.label, style: _t(11.5, FontWeight.w600, label)),
+//             Text(widget.sub,   style: _t(10,   FontWeight.w400, label2)),
+//           ]),
+//         ),
+//       ),
+//     );
+//   }
+// }
 
 // ─────────────────────────────────────────────
 //  OBJECTIVES HORIZONTAL SCROLL
