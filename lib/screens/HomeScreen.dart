@@ -169,8 +169,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         tab: _tab,
         onTap: _switchTab,
         l: l,
-        setLocale: widget.setLocale,
-        toggleTheme: widget.toggleTheme,
       ),
     );
   }
@@ -371,15 +369,11 @@ class _AppleTabBar extends StatelessWidget {
   final int  tab;
   final ValueChanged<int> onTap;
   final AppLocalizations l;
-  final Function(Locale) setLocale;
-  final VoidCallback toggleTheme;
   const _AppleTabBar({required this.isDark, required this.tab,
-    required this.onTap, required this.l,
-    required this.setLocale, required this.toggleTheme});
+    required this.onTap, required this.l});
 
   @override
   Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context);
     final accent = isDark ? _blue_D : _blue;
     // Tab 4 uses purple to visually distinguish the AI assistant
     final items = [
@@ -427,12 +421,6 @@ class _AppleTabBar extends StatelessWidget {
                     ]),
                   ));
                 }),
-                _ThreeDotMenu(
-                  isDark: isDark,
-                  locale: locale,
-                  setLocale: setLocale,
-                  toggleTheme: toggleTheme,
-                ),
               ]),
             ),
           ),
@@ -643,11 +631,9 @@ class _AssistantChip extends StatelessWidget {
     ]));
 }
 
-class _ThreeDotMenu extends StatelessWidget {
-  final bool isDark; final Locale locale;
-  final Function(Locale) setLocale; final VoidCallback toggleTheme;
-  const _ThreeDotMenu({required this.isDark, required this.locale,
-    required this.setLocale, required this.toggleTheme});
+class _TopLogoutMenu extends StatelessWidget {
+  final bool isDark;
+  const _TopLogoutMenu({required this.isDark});
 
   Future<void> _logout(BuildContext context) async {
     try {
@@ -673,44 +659,15 @@ class _ThreeDotMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label2 = isDark ? _dLabel2 : _lLabel2;
-    final accent = isDark ? _blue_D  : _blue;
     final red    = isDark ? _red_D   : _red;
     final bg     = isDark ? _dSurface2 : _lSurface;
-    final langs  = [
-      {'code':'en','flag':'🇬🇧','name':'English'},
-      {'code':'hi','flag':'🇮🇳','name':'हिन्दी'},
-      {'code':'mr','flag':'🇮🇳','name':'मराठी'},
-    ];
     return PopupMenuButton<String>(
-      offset: const Offset(0, -190),
+      offset: const Offset(0, 44),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       color: bg, elevation: 16,
       icon: Padding(padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Icon(Icons.more_horiz_rounded, color: label2, size: 20)),
+          child: Icon(Icons.more_vert_rounded, color: label2, size: 20)),
       itemBuilder: (_) => [
-        PopupMenuItem<String>(enabled: false, height: 28,
-            child: Text('LANGUAGE', style: _t(9.5, FontWeight.w600, label2, ls: 0.8))),
-        ...langs.map((lang) => PopupMenuItem<String>(
-            value: 'lang_${lang['code']}', height: 42,
-            child: Row(children: [
-              Text(lang['flag']!, style: const TextStyle(fontSize: 16)),
-              const SizedBox(width: 10),
-              Text(lang['name']!, style: _t(13.5, FontWeight.w500,
-                  lang['code'] == locale.languageCode ? accent
-                      : (isDark ? _dLabel : _lLabel))),
-              if (lang['code'] == locale.languageCode) ...[
-                const Spacer(), Icon(Icons.check_rounded, color: accent, size: 14)],
-            ]))),
-        const PopupMenuDivider(),
-        PopupMenuItem<String>(value: 'theme', height: 42,
-            child: Row(children: [
-              Icon(isDark ? Icons.wb_sunny_rounded : Icons.nightlight_round,
-                  color: label2, size: 17),
-              const SizedBox(width: 10),
-              Text(isDark ? 'Light Mode' : 'Dark Mode',
-                  style: _t(13.5, FontWeight.w500, isDark ? _dLabel : _lLabel)),
-            ])),
-        const PopupMenuDivider(),
         PopupMenuItem<String>(value: 'logout', height: 42,
             child: Row(children: [
               Icon(Icons.logout_rounded, color: red, size: 17),
@@ -719,18 +676,14 @@ class _ThreeDotMenu extends StatelessWidget {
             ])),
       ],
       onSelected: (value) {
-        if (value.startsWith('lang_')) {
-          setLocale(Locale(value.replaceFirst('lang_', '')));
-        } else if (value == 'theme') {
-          toggleTheme();
-        } else if (value == 'logout') {
+        if (value == 'logout') {
           showDialog(context: context, builder: (_) => AlertDialog(
             backgroundColor: bg, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             title: Text('Sign Out', style: _t(17, FontWeight.w600, isDark ? _dLabel : _lLabel)),
             content: Text('Are you sure?', style: _t(14, FontWeight.w400, label2)),
             actions: [
               TextButton(onPressed: () => Navigator.pop(context),
-                  child: Text('Cancel', style: _t(15, FontWeight.w500, accent))),
+                  child: Text('Cancel', style: _t(15, FontWeight.w500, label2))),
               TextButton(onPressed: () async {
                     Navigator.pop(context);
                     await _logout(context);
@@ -786,6 +739,8 @@ class _MobileNavBar extends StatelessWidget {
         _IconPill(
             icon: isDark ? Icons.wb_sunny_rounded : Icons.nightlight_round,
             isDark: isDark, onTap: toggleTheme),
+        const SizedBox(width: 6),
+        _TopLogoutMenu(isDark: isDark),
       ]),
     );
   }

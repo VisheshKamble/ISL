@@ -372,16 +372,19 @@ class _RootShellState extends State<RootShell> {
 
   @override
   Widget build(BuildContext context) {
+    final showShellFab = MediaQuery.of(context).size.width >= 700;
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: HomeScreen(
         toggleTheme: widget.toggleTheme,
         setLocale: widget.setLocale,
       ),
-      floatingActionButton: SOSFloatingButton(
-        toggleTheme: widget.toggleTheme,
-        setLocale: widget.setLocale,
-      ),
+      floatingActionButton: showShellFab
+          ? SOSFloatingButton(
+              toggleTheme: widget.toggleTheme,
+              setLocale: widget.setLocale,
+            )
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
