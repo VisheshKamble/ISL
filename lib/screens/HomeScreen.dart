@@ -158,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ]),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 64),
+        padding: const EdgeInsets.only(bottom: 54),
         child: SOSFloatingButton(
           toggleTheme: widget.toggleTheme,
           setLocale: widget.setLocale,
