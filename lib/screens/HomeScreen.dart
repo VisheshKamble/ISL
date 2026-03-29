@@ -158,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         ),
       ]),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 64),
+        padding: const EdgeInsets.only(bottom: 54),
         child: SOSFloatingButton(
           toggleTheme: widget.toggleTheme,
           setLocale: widget.setLocale,
@@ -230,16 +230,16 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
         return _FeatureDetail(
             isDark: isDark, l: l,
             icon: Icons.sign_language_rounded,
-            title: 'ISL Assistant',
-            subtitle: 'Multilingual AI powered by Gemini — voice input & output in Hindi, Marathi, Tamil, English and more',
+            title: l.t('assistant_title'),
+            subtitle: l.t('assistant_feature_sub'),
             accentLight: _purple, accentDark: _purple_D,
-            launchLabel: 'Open ISL Assistant',
+            launchLabel: l.t('assistant_open'),
             onLaunch: () => _push(ctx, ISLAssistantScreen(toggleTheme: widget.toggleTheme, setLocale: widget.setLocale)),
             bullets: [
-              (Icons.auto_awesome_rounded,   'Gemini 2.0 Flash',   'State-of-the-art AI with deep ISL knowledge'),
-              (Icons.mic_rounded,            'Voice input',        'Speak in Hindi, Marathi, Tamil or English'),
-              (Icons.record_voice_over_rounded, 'Voice output',    'Responses read aloud in your language'),
-              (Icons.front_hand_rounded,     'Step-by-step signs', 'Guides you through every ISL handshape & movement'),
+              (Icons.auto_awesome_rounded, l.t('assistant_bullet_ai_title'), l.t('assistant_bullet_ai_desc')),
+              (Icons.mic_rounded, l.t('assistant_bullet_voice_input_title'), l.t('assistant_bullet_voice_input_desc')),
+              (Icons.record_voice_over_rounded, l.t('assistant_bullet_voice_output_title'), l.t('assistant_bullet_voice_output_desc')),
+              (Icons.front_hand_rounded, l.t('assistant_bullet_sign_steps_title'), l.t('assistant_bullet_sign_steps_desc')),
             ]);
 
       default:
@@ -381,7 +381,7 @@ class _AppleTabBar extends StatelessWidget {
       (Icons.translate_rounded,      Icons.translate_outlined,      l.t('nav_terminal'), accent),
       (Icons.back_hand_rounded,      Icons.back_hand_outlined,      l.t('nav_signs'),    accent),
       (Icons.compare_arrows_rounded, Icons.compare_arrows_outlined, l.t('nav_bridge'),   accent),
-      (Icons.sign_language_rounded,  Icons.sign_language_outlined,  'Assistant',         isDark ? _purple_D : _purple),
+      (Icons.sign_language_rounded,  Icons.sign_language_outlined,  l.t('assistant_tab_label'), isDark ? _purple_D : _purple),
     ];
 
     return ClipRect(
@@ -533,6 +533,7 @@ class _MobileAssistantCardState extends State<_MobileAssistantCard>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final bg     = widget.isDark ? _dSurface : _lSurface;
     final label  = widget.isDark ? _dLabel   : _lLabel;
     final label2 = widget.isDark ? _dLabel2  : _lLabel2;
@@ -576,7 +577,7 @@ class _MobileAssistantCardState extends State<_MobileAssistantCard>
                 const SizedBox(width: 14),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [
-                    Text('ISL Assistant', style: _t(16, FontWeight.w700, label, ls: -0.2)),
+                    Text(l.t('assistant_title'), style: _t(16, FontWeight.w700, label, ls: -0.2)),
                     const SizedBox(width: 8),
                     AnimatedBuilder(
                       animation: _pulseAnim,
@@ -587,7 +588,7 @@ class _MobileAssistantCardState extends State<_MobileAssistantCard>
                                   blurRadius: 5, spreadRadius: 1)]))),
                   ]),
                   const SizedBox(height: 3),
-                  Text('Multilingual AI · Voice · Sign Guides',
+                    Text(l.t('assistant_card_subtitle'),
                       style: _t(12, FontWeight.w400, label2, ls: -0.1)),
                 ])),
                 Icon(Icons.chevron_right_rounded,
@@ -601,11 +602,11 @@ class _MobileAssistantCardState extends State<_MobileAssistantCard>
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
               child: Row(children: [
-                _AssistantChip('Voice I/O',    Icons.mic_rounded,          accent,    widget.isDark),
+                _AssistantChip(l.t('assistant_chip_voice_io'), Icons.mic_rounded, accent, widget.isDark),
                 const SizedBox(width: 8),
-                _AssistantChip('Sign Guides',  Icons.front_hand_rounded,   _teal,     widget.isDark),
+                _AssistantChip(l.t('assistant_chip_sign_guides'), Icons.front_hand_rounded, _teal, widget.isDark),
                 const SizedBox(width: 8),
-                _AssistantChip('3 Languages',  Icons.language_rounded,     _green,    widget.isDark),
+                _AssistantChip(l.t('assistant_chip_three_languages'), Icons.language_rounded, _green, widget.isDark),
               ]),
             ),
           ]),
@@ -646,9 +647,10 @@ class _TopLogoutMenu extends StatelessWidget {
     await Supabase.instance.client.auth.signOut();
 
     if (!context.mounted) return;
+    final l = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Signed out.'),
+        content: Text(l.t('menu_signed_out')),
         backgroundColor: Theme.of(context).colorScheme.primary,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -658,6 +660,7 @@ class _TopLogoutMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final label2 = isDark ? _dLabel2 : _lLabel2;
     final red    = isDark ? _red_D   : _red;
     final bg     = isDark ? _dSurface2 : _lSurface;
@@ -672,23 +675,23 @@ class _TopLogoutMenu extends StatelessWidget {
             child: Row(children: [
               Icon(Icons.logout_rounded, color: red, size: 17),
               const SizedBox(width: 10),
-              Text('Sign Out', style: _t(13.5, FontWeight.w500, red)),
+              Text(l.t('menu_sign_out'), style: _t(13.5, FontWeight.w500, red)),
             ])),
       ],
       onSelected: (value) {
         if (value == 'logout') {
           showDialog(context: context, builder: (_) => AlertDialog(
             backgroundColor: bg, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: Text('Sign Out', style: _t(17, FontWeight.w600, isDark ? _dLabel : _lLabel)),
-            content: Text('Are you sure?', style: _t(14, FontWeight.w400, label2)),
+            title: Text(l.t('menu_sign_out_confirm_title'), style: _t(17, FontWeight.w600, isDark ? _dLabel : _lLabel)),
+            content: Text(l.t('menu_sign_out_confirm_body'), style: _t(14, FontWeight.w400, label2)),
             actions: [
               TextButton(onPressed: () => Navigator.pop(context),
-                  child: Text('Cancel', style: _t(15, FontWeight.w500, label2))),
+                  child: Text(l.t('menu_cancel'), style: _t(15, FontWeight.w500, label2))),
               TextButton(onPressed: () async {
                     Navigator.pop(context);
                     await _logout(context);
                   },
-                  child: Text('Sign Out', style: _t(15, FontWeight.w600, red))),
+                  child: Text(l.t('menu_sign_out'), style: _t(15, FontWeight.w600, red))),
             ]));
         }
       },
@@ -1385,6 +1388,7 @@ class _WebAssistantBannerState extends State<_WebAssistantBanner>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final accent = widget.isDark ? _purple_D : _purple;
     final bg     = widget.isDark ? _dSurface  : _lSurface;
     final label  = widget.isDark ? _dLabel    : _lLabel;
@@ -1434,14 +1438,14 @@ class _WebAssistantBannerState extends State<_WebAssistantBanner>
             ),
           ),
           child: widget.isDesktop
-              ? _bannerDesktop(accent, label, label2)
-              : _bannerTablet(accent, label, label2),
+              ? _bannerDesktop(l, accent, label, label2)
+              : _bannerTablet(l, accent, label, label2),
         ),
       ),
     );
   }
 
-  Widget _bannerDesktop(Color accent, Color label, Color label2) =>
+  Widget _bannerDesktop(AppLocalizations l, Color accent, Color label, Color label2) =>
       Row(children: [
         // Icon
         Container(width: 80, height: 80,
@@ -1463,23 +1467,21 @@ class _WebAssistantBannerState extends State<_WebAssistantBanner>
                 Container(width: 5, height: 5,
                     decoration: BoxDecoration(shape: BoxShape.circle, color: accent)),
                 const SizedBox(width: 6),
-                Text('NEW · Gemini 2.0 Flash · Voice I/O · Multilingual',
+                Text(l.t('assistant_banner_badge'),
                     style: _t(10.5, FontWeight.w600, accent, ls: 0.1)),
               ])),
           const SizedBox(height: 14),
-          Text('ISL Assistant — Vani', style: _t(28, FontWeight.w700, label, ls: -0.5)),
+          Text(l.t('assistant_banner_title'), style: _t(28, FontWeight.w700, label, ls: -0.5)),
           const SizedBox(height: 8),
-          Text('Ask anything about Indian Sign Language — voice input and output '
-              'in Hindi, Marathi, Tamil, English and more. Step-by-step sign guides, '
-              'emergency phrases, and learning support powered by Gemini 2.0 Flash.',
+          Text(l.t('assistant_banner_desc'),
               style: _t(14.5, FontWeight.w400, label2, ls: -0.1, h: 1.6)),
           const SizedBox(height: 18),
           Wrap(spacing: 8, runSpacing: 8, children: [
-            _WebChip('🎙 Voice Input',   accent),
-            _WebChip('🔊 Voice Output',  accent),
-            _WebChip('🌐 8 Languages',   accent),
-            _WebChip('🤟 Sign Guides',   accent),
-            _WebChip('🚨 Emergency',     accent),
+            _WebChip('🎙 ${l.t('assistant_banner_chip_voice_input')}', accent),
+            _WebChip('🔊 ${l.t('assistant_banner_chip_voice_output')}', accent),
+            _WebChip('🌐 ${l.t('assistant_banner_chip_languages')}', accent),
+            _WebChip('🤟 ${l.t('assistant_banner_chip_sign_guides')}', accent),
+            _WebChip('🚨 ${l.t('assistant_banner_chip_emergency')}', accent),
           ]),
         ])),
         const SizedBox(width: 32),
@@ -1487,7 +1489,7 @@ class _WebAssistantBannerState extends State<_WebAssistantBanner>
         _WebBannerCTA(accent: accent, hovered: _hovered),
       ]);
 
-  Widget _bannerTablet(Color accent, Color label, Color label2) =>
+  Widget _bannerTablet(AppLocalizations l, Color accent, Color label, Color label2) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
           Container(width: 56, height: 56,
@@ -1498,20 +1500,19 @@ class _WebAssistantBannerState extends State<_WebAssistantBanner>
               child: const Icon(Icons.sign_language_rounded, color: Colors.white, size: 26)),
           const SizedBox(width: 16),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('ISL Assistant', style: _t(22, FontWeight.w700, label, ls: -0.4)),
-            Text('Vani · Gemini 2.0 Flash', style: _t(13, FontWeight.w400, label2)),
+            Text(l.t('assistant_title'), style: _t(22, FontWeight.w700, label, ls: -0.4)),
+            Text(l.t('assistant_banner_tablet_subtitle'), style: _t(13, FontWeight.w400, label2)),
           ])),
         ]),
         const SizedBox(height: 14),
-        Text('Ask anything in ISL — voice in & out, sign guides, emergency phrases, '
-            'and 8 Indian languages.',
+        Text(l.t('assistant_banner_tablet_desc'),
             style: _t(14, FontWeight.w400, label2, ls: -0.1, h: 1.6)),
         const SizedBox(height: 16),
         Wrap(spacing: 6, runSpacing: 6, children: [
-          _WebChip('🎙 Voice I/O',   accent),
-          _WebChip('🌐 8 Langs',    accent),
-          _WebChip('🤟 Sign Guides', accent),
-          _WebChip('🚨 Emergency',   accent),
+          _WebChip('🎙 ${l.t('assistant_banner_chip_voice_io')}', accent),
+          _WebChip('🌐 ${l.t('assistant_banner_chip_langs')}', accent),
+          _WebChip('🤟 ${l.t('assistant_banner_chip_sign_guides')}', accent),
+          _WebChip('🚨 ${l.t('assistant_banner_chip_emergency')}', accent),
         ]),
         const SizedBox(height: 20),
         _WebBannerCTA(accent: accent, hovered: _hovered),
@@ -1523,24 +1524,27 @@ class _WebBannerCTA extends StatelessWidget {
   final bool hovered;
   const _WebBannerCTA({required this.accent, required this.hovered});
   @override
-  Widget build(BuildContext context) => AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
-      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 15),
-      decoration: BoxDecoration(
-          gradient: LinearGradient(colors: [accent, _blue],
-              begin: Alignment.centerLeft, end: Alignment.centerRight),
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [BoxShadow(
-              color: accent.withOpacity(hovered ? 0.40 : 0.22),
-              blurRadius: hovered ? 28 : 14, offset: const Offset(0, 6))]),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Text('Open ISL Assistant', style: _t(14, FontWeight.w600, Colors.white, ls: -0.2)),
-        const SizedBox(width: 10),
-        AnimatedSlide(
-            offset: Offset(hovered ? 0.3 : 0, 0),
-            duration: const Duration(milliseconds: 150),
-            child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 15)),
-      ]));
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 15),
+        decoration: BoxDecoration(
+            gradient: LinearGradient(colors: [accent, _blue],
+                begin: Alignment.centerLeft, end: Alignment.centerRight),
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [BoxShadow(
+                color: accent.withOpacity(hovered ? 0.40 : 0.22),
+                blurRadius: hovered ? 28 : 14, offset: const Offset(0, 6))]),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Text(l.t('assistant_open'), style: _t(14, FontWeight.w600, Colors.white, ls: -0.2)),
+          const SizedBox(width: 10),
+          AnimatedSlide(
+              offset: Offset(hovered ? 0.3 : 0, 0),
+              duration: const Duration(milliseconds: 150),
+              child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 15)),
+        ]));
+  }
 }
 
 class _WebChip extends StatelessWidget {

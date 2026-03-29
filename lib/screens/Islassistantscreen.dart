@@ -25,7 +25,6 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../components/GlobalNavbar.dart';
 import '../l10n/AppLocalizations.dart';
 
@@ -66,9 +65,9 @@ TextStyle _t(double size, FontWeight w, Color c,
         fontSize: size, fontWeight: w, color: c, letterSpacing: ls, height: h);
 
 // ─────────────────────────────────────────────────────────────
-//  GEMINI CONFIG  — loaded from .env.local at runtime
+//  GEMINI CONFIG  — provided via --dart-define at build/run time
 // ─────────────────────────────────────────────────────────────
-String get _geminiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
+const String _geminiKey = String.fromEnvironment('GEMINI_API_KEY', defaultValue: '');
 const  _kModel = 'gemini-2.5-flash';
 String get _kUrl =>
     'https://generativelanguage.googleapis.com/v1beta/models/'
@@ -125,15 +124,15 @@ TONE:
 // ─────────────────────────────────────────────────────────────
 //  QUICK PROMPTS
 // ─────────────────────────────────────────────────────────────
-const _kQuickPrompts = [
-  ('How do I sign "Hello" in ISL?',          Icons.waving_hand_rounded),
-  ('Show me the sign for HELP',              Icons.front_hand_rounded),
-  ('What is the ISL sign for WATER?',        Icons.water_drop_rounded),
-  ('How to sign DOCTOR and HOSPITAL',        Icons.medical_services_rounded),
-  ('Emergency signs I must know',            Icons.emergency_rounded),
-  ('Explain ISL grammar rules',              Icons.menu_book_rounded),
-  ('Sign for THANK YOU in ISL',              Icons.volunteer_activism_rounded),
-  ('Rights of deaf people in India',         Icons.gavel_rounded),
+const _kQuickPromptKeys = [
+  ('isl_quick_1', Icons.waving_hand_rounded),
+  ('isl_quick_2', Icons.front_hand_rounded),
+  ('isl_quick_3', Icons.water_drop_rounded),
+  ('isl_quick_4', Icons.medical_services_rounded),
+  ('isl_quick_5', Icons.emergency_rounded),
+  ('isl_quick_6', Icons.menu_book_rounded),
+  ('isl_quick_7', Icons.volunteer_activism_rounded),
+  ('isl_quick_8', Icons.gavel_rounded),
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -200,6 +199,7 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
   // ── Animations ─────────────────────────────────────────────
   late AnimationController _typingCtrl;
   late Animation<double>   _typingAnim;
+  bool _didSeedWelcome = false;
 
   @override
   void initState() {
@@ -211,14 +211,14 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
     _initTts();
     _initSpeech();
 
-    // Welcome
-    _addAiMsg(
-      'नमस्ते! I\'m your ISL Assistant. 🤟\n\n'
-      'I can help you learn Indian Sign Language step by step, explain any sign\'s '
-      'handshape and movement, translate phrases, and connect you with resources for '
-      'India\'s deaf and mute community.\n\n'
-      'What would you like to learn today?',
-    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_didSeedWelcome) return;
+    _didSeedWelcome = true;
+    _addAiMsg(AppLocalizations.of(context).t('isl_welcome_msg'));
   }
 
   Future<void> _initTts() async {
@@ -313,7 +313,7 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
         _msgs.add(_Msg(
             id: '${DateTime.now().millisecondsSinceEpoch}',
             role: _Role.assistant,
-            text: 'Sorry, I couldn\'t connect right now. Please check your internet and try again.',
+        text: AppLocalizations.of(context).t('isl_connect_error'),
             status: _MsgStatus.error));
       });
       _scrollToBottom();
@@ -322,6 +322,10 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
 
   // ── Gemini API ─────────────────────────────────────────────
   Future<String> _callGemini(String userText) async {
+    if (_geminiKey.isEmpty) {
+      throw Exception('Missing GEMINI_API_KEY. Pass via --dart-define=GEMINI_API_KEY=...');
+    }
+
     // Build last 20 turns of context
     final history = _msgs.take(20).map((m) => {
       'role': m.role == _Role.user ? 'user' : 'model',
@@ -369,7 +373,7 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
 
     final json  = jsonDecode(resp.body) as Map<String, dynamic>;
     final parts = (json['candidates'] as List?)?.first['content']['parts'] as List?;
-    return parts?.first['text']?.toString() ?? 'No response received.';
+    return parts?.first['text']?.toString() ?? AppLocalizations.of(context).t('isl_no_response');
   }
 
   // ── Voice input ────────────────────────────────────────────
@@ -412,8 +416,14 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
     _tts.stop();
     setState(() {
       _msgs.clear();
-      _addAiMsg('Chat cleared. नमस्ते! How can I help you with ISL today? 🤟');
+      _addAiMsg(AppLocalizations.of(context).t('isl_chat_cleared'));
     });
+  }
+
+  String _askMoreSignPrompt(String sign) {
+    return AppLocalizations.of(context)
+        .t('isl_ask_more_sign')
+        .replaceAll('{sign}', sign);
   }
 
   // ══════════════════════════════════════════════════════════
@@ -432,6 +442,7 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
   //  MOBILE  (<700px)
   // ══════════════════════════════════════════════════════════
   Widget _buildMobile(BuildContext ctx, bool isDark) {
+    final l = AppLocalizations.of(ctx);
     final bg    = isDark ? _dBg     : _lBg;
     final navBg = isDark ? _dSurface : _lSurface;
     final sep   = isDark ? _dSep   : _lSep.withOpacity(0.5);
@@ -459,7 +470,7 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 6),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(Icons.chevron_left_rounded, color: accent, size: 28),
-                    Text('Back', style: _t(15, FontWeight.w400, accent)),
+                    Text(l.t('common_back'), style: _t(15, FontWeight.w400, accent)),
                   ]),
                 ),
               ),
@@ -475,7 +486,7 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
                         shape: BoxShape.circle),
                     child: const Icon(Icons.sign_language_rounded,
                         color: Colors.white, size: 16)),
-                Text('ISL Assistant', style: _t(11, FontWeight.w600, label)),
+                Text(l.t('assistant_title'), style: _t(11, FontWeight.w600, label)),
               ]),
               const Spacer(),
               // TTS toggle + options
@@ -518,7 +529,7 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
                         }
                         return _MsgBubble(
                           msg: _msgs[i], isDark: isDark,
-                          onTapSign: (sign) => _send('Tell me more about the ISL sign for $sign'),
+                          onTapSign: (sign) => _send(_askMoreSignPrompt(sign)),
                           onSpeak:   (text) async {
                             await _syncTtsLang();
                             await _tts.speak(_cleanForTts(text));
@@ -594,7 +605,7 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
         scrollCtrl: _scrollCtrl, inputCtrl: _inputCtrl,
         isListening: _isListening, speechOk: _speechOk,
         onSend: _send, onVoice: _toggleVoice,
-        onTapSign: (sign) => _send('Tell me more about the ISL sign for $sign'),
+        onTapSign: (sign) => _send(_askMoreSignPrompt(sign)),
         onSpeak: (text) async {
           await _syncTtsLang();
           await _tts.speak(_cleanForTts(text));
@@ -621,7 +632,7 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
         scrollCtrl: _scrollCtrl, inputCtrl: _inputCtrl,
         isListening: _isListening, speechOk: _speechOk,
         onSend: _send, onVoice: _toggleVoice,
-        onTapSign: (sign) => _send('Tell me more about the ISL sign for $sign'),
+        onTapSign: (sign) => _send(_askMoreSignPrompt(sign)),
         onSpeak: (text) async {
           await _syncTtsLang();
           await _tts.speak(_cleanForTts(text));
@@ -687,7 +698,7 @@ class _MsgBubble extends StatelessWidget {
                     child: const Icon(Icons.sign_language_rounded,
                         color: Colors.white, size: 11)),
                 const SizedBox(width: 6),
-                Text('ISL Assistant',
+                Text(AppLocalizations.of(context).t('assistant_title'),
                     style: _t(11, FontWeight.w600, isDark ? _dLabel2 : _lLabel2)),
               ]),
             ),
@@ -856,6 +867,7 @@ class _InputBarState extends State<_InputBar> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final bg     = widget.isDark ? _dSurface  : _lSurface;
     final sep    = widget.isDark ? _dSep      : _lSep.withOpacity(0.5);
     final fill   = widget.isDark ? _dFill.withOpacity(0.5) : _lFill;
@@ -905,7 +917,9 @@ class _InputBarState extends State<_InputBar> {
                   style: _t(15, FontWeight.w400,
                       widget.isDark ? _dLabel : _lLabel),
                   decoration: InputDecoration(
-                    hintText: widget.isListening ? 'Listening…' : 'Ask about ISL…',
+                    hintText: widget.isListening
+                      ? l.t('isl_input_listening')
+                      : l.t('isl_input_hint'),
                     hintStyle: _t(15, FontWeight.w400, label2),
                     border:         InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
@@ -953,6 +967,10 @@ class _QuickPromptsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final quickPrompts = _kQuickPromptKeys
+        .map((q) => (l.t(q.$1), q.$2))
+        .toList();
     final bg    = isDark ? _dSurface : _lSurface;
     final sep   = isDark ? _dSep : _lSep.withOpacity(0.5);
     final accent = isDark ? _purple_D : _purple;
@@ -966,9 +984,9 @@ class _QuickPromptsRow extends StatelessWidget {
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         physics: const BouncingScrollPhysics(),
-        itemCount: _kQuickPrompts.length,
+        itemCount: quickPrompts.length,
         itemBuilder: (_, i) {
-          final q = _kQuickPrompts[i];
+          final q = quickPrompts[i];
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: GestureDetector(
@@ -1004,6 +1022,7 @@ class _LangStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final accent = isDark ? _purple_D : _purple;
     final bg     = isDark ? _dSurface : _lSurface;
     final sep    = isDark ? _dSep : _lSep.withOpacity(0.5);
@@ -1015,7 +1034,7 @@ class _LangStrip extends StatelessWidget {
           border: Border(bottom: BorderSide(color: sep, width: 0.5))),
       child: Row(children: [
         const SizedBox(width: 12),
-        Text('Lang:', style: _t(11, FontWeight.w500,
+        Text(l.t('isl_lang_label'), style: _t(11, FontWeight.w500,
             isDark ? _dLabel3 : _lLabel3)),
         const SizedBox(width: 8),
         ..._kLangs.map((l) {
@@ -1063,6 +1082,10 @@ class _WebSidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final quickPrompts = _kQuickPromptKeys
+        .map((q) => (l.t(q.$1), q.$2))
+        .toList();
     final bg     = isDark ? _dSurface  : _lSurface;
     final sep    = isDark ? _dSep      : _lSep.withOpacity(0.5);
     final label  = isDark ? _dLabel    : _lLabel;
@@ -1089,9 +1112,9 @@ class _WebSidebar extends StatelessWidget {
                     borderRadius: BorderRadius.circular(13)),
                 child: const Icon(Icons.sign_language_rounded, color: Colors.white, size: 22)),
             const SizedBox(height: 12),
-            Text('ISL Assistant',
+            Text(l.t('assistant_title'),
                 style: _t(18, FontWeight.w700, label, ls: -0.3)),
-            Text('AI-Powered · ISL Expert',
+            Text(l.t('isl_sidebar_ai_tagline'),
                 style: _t(11.5, FontWeight.w400, label2)),
           ]),
         ),
@@ -1101,7 +1124,7 @@ class _WebSidebar extends StatelessWidget {
         // Language
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-          child: Text('LANGUAGE',
+          child: Text(l.t('isl_sidebar_language'),
               style: _t(10, FontWeight.w600, label3, ls: 0.8)),
         ),
         Padding(
@@ -1136,12 +1159,12 @@ class _WebSidebar extends StatelessWidget {
         // Settings
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
-          child: Text('SETTINGS',
+          child: Text(l.t('isl_sidebar_settings'),
               style: _t(10, FontWeight.w600, label3, ls: 0.8)),
         ),
         _SidebarToggle(
             icon: ttsEnabled ? Icons.volume_up_rounded : Icons.volume_off_rounded,
-            label: 'Read responses aloud',
+            label: l.t('isl_sidebar_read_aloud'),
             value: ttsEnabled, isDark: isDark, accent: accent,
             onTap: onTtsToggle),
 
@@ -1151,16 +1174,16 @@ class _WebSidebar extends StatelessWidget {
         // Quick prompts
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
-          child: Text('QUICK PROMPTS',
+          child: Text(l.t('isl_sidebar_quick_prompts'),
               style: _t(10, FontWeight.w600, label3, ls: 0.8)),
         ),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             physics: const BouncingScrollPhysics(),
-            itemCount: _kQuickPrompts.length,
+            itemCount: quickPrompts.length,
             itemBuilder: (_, i) {
-              final q = _kQuickPrompts[i];
+              final q = quickPrompts[i];
               return _SidebarPromptBtn(
                   icon: q.$2, label: q.$1, isDark: isDark,
                   accent: accent, onTap: () => onQuickPrompt(q.$1));
@@ -1178,7 +1201,7 @@ class _WebSidebar extends StatelessWidget {
               Icon(Icons.delete_sweep_rounded,
                   color: isDark ? _red_D : _red, size: 15),
               const SizedBox(width: 10),
-              Text('Clear conversation',
+              Text(l.t('isl_sidebar_clear_conversation'),
                   style: _t(13, FontWeight.w500, isDark ? _red_D : _red)),
             ]),
           ),
@@ -1392,6 +1415,7 @@ class _EmptyState extends StatelessWidget {
   const _EmptyState({required this.isDark});
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final accent = isDark ? _purple_D : _purple;
     final label  = isDark ? _dLabel   : _lLabel;
     final label2 = isDark ? _dLabel2  : _lLabel2;
@@ -1404,9 +1428,9 @@ class _EmptyState extends StatelessWidget {
               borderRadius: BorderRadius.circular(18)),
           child: const Icon(Icons.sign_language_rounded, color: Colors.white, size: 30)),
       const SizedBox(height: 16),
-      Text('ISL Assistant', style: _t(20, FontWeight.w700, label, ls: -0.3)),
+      Text(l.t('assistant_title'), style: _t(20, FontWeight.w700, label, ls: -0.3)),
       const SizedBox(height: 6),
-      Text('Ask anything about Indian Sign Language',
+      Text(l.t('isl_empty_subtitle'),
           style: _t(14, FontWeight.w400, label2)),
     ]));
   }
@@ -1417,6 +1441,10 @@ class _WebEmptyState extends StatelessWidget {
   const _WebEmptyState({required this.isDark});
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final quickPrompts = _kQuickPromptKeys
+        .map((q) => (l.t(q.$1), q.$2))
+        .toList();
     final accent = isDark ? _purple_D : _purple;
     final label  = isDark ? _dLabel   : _lLabel;
     final label2 = isDark ? _dLabel2  : _lLabel2;
@@ -1429,13 +1457,13 @@ class _WebEmptyState extends StatelessWidget {
               borderRadius: BorderRadius.circular(20)),
           child: const Icon(Icons.sign_language_rounded, color: Colors.white, size: 34)),
       const SizedBox(height: 20),
-      Text('VANI ISL Assistant', style: _t(26, FontWeight.w700, label, ls: -0.5)),
+          Text(l.t('isl_web_empty_title'), style: _t(26, FontWeight.w700, label, ls: -0.5)),
       const SizedBox(height: 8),
-      Text('Multilingual · Voice Input & Output · ISL Expert',
+          Text(l.t('isl_web_empty_subtitle'),
           style: _t(14, FontWeight.w400, label2, ls: 0.2)),
       const SizedBox(height: 24),
       Wrap(spacing: 10, runSpacing: 10,
-          children: _kQuickPrompts.take(4).map((q) =>
+            children: quickPrompts.take(4).map((q) =>
               GestureDetector(
                 onTap: () {},   // handled at screen level via sendPrompt
                 child: Container(
@@ -1466,6 +1494,7 @@ class _OptionsSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final label  = isDark ? _dLabel  : _lLabel;
     final label2 = isDark ? _dLabel2 : _lLabel2;
     final sep    = isDark ? _dSep : _lSep.withOpacity(0.5);
@@ -1477,20 +1506,20 @@ class _OptionsSheet extends StatelessWidget {
                 color: isDark ? _dFill : _lFill,
                 borderRadius: BorderRadius.circular(2))),
         const SizedBox(height: 16),
-        Text('Options', style: _t(17, FontWeight.w600, label, ls: -0.2)),
+        Text(l.t('isl_options_title'), style: _t(17, FontWeight.w600, label, ls: -0.2)),
         const SizedBox(height: 16),
         Divider(height: 1, color: sep),
         ListTile(
           leading: Icon(Icons.delete_sweep_rounded, color: isDark ? _red_D : _red),
-          title: Text('Clear Conversation',
+          title: Text(l.t('isl_options_clear_conversation'),
               style: _t(15, FontWeight.w500, isDark ? _red_D : _red)),
           onTap: () { Navigator.pop(context); onClear(); },
         ),
         ListTile(
           leading: Icon(Icons.info_outline_rounded, color: label2),
-          title: Text('About ISL Assistant',
+          title: Text(l.t('isl_options_about'),
               style: _t(15, FontWeight.w500, label2)),
-            subtitle: Text('AI-Powered · ISLRTC aligned',
+            subtitle: Text(l.t('isl_options_about_subtitle'),
               style: _t(12, FontWeight.w400, label2)),
           onTap: () => Navigator.pop(context),
         ),
