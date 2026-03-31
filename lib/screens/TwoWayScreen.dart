@@ -33,7 +33,8 @@ import '../l10n/AppLocalizations.dart';
 const String _kRailwayHost = 'isl-production-57d4.up.railway.app';
 const String _kWsPath = '/ws';
 const int _kFrameIntervalMs = 100;
-const bool _railwayWsEnabled = true;
+const bool _railwayWsEnabled = true; // Set to false to disable WebSocket connection (for testing without backend)
+//const bool _railwayWsEnabled = true; // Set to false to disable WebSocket connection (for testing without backend)
 
 String _getWebSocketUrl() {
   // Use wss (Secure) for all platforms in production.
@@ -249,6 +250,10 @@ class _TwoWayScreenState extends State<TwoWayScreen> with TickerProviderStateMix
   // ─────────────────────────────────────────
 
   void _connectWs() {
+    if (!_railwayWsEnabled) {
+      if (mounted) setState(() => _wsConnected = false);
+      return;
+    }
     if (_reconnectAttempts >= _maxReconnectAttempts) return;
     try {
       final url = _getWebSocketUrl();

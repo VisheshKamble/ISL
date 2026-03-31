@@ -2,7 +2,7 @@
 //
 // ╔══════════════════════════════════════════════════════════════════════╗
 // ║  VANI — Emergency Setup  · UX4G Redesign                          ║
-// ║  Font: Noto Sans (UX4G standard)                                  ║
+// ║  Font: Google Sans (UX4G standard)                                ║
 // ║  < 700px  → Mobile contacts manager                               ║
 // ║  ≥ 700px  → Web settings panel                                    ║
 // ║                                                                    ║
@@ -27,11 +27,8 @@ import '../utils/PlatformHelper.dart';
 // ─────────────────────────────────────────────────────────────────────
 //  UX4G DESIGN TOKENS  (same palette as EmergencyScreen + HomeScreen)
 // ─────────────────────────────────────────────────────────────────────
-const _fontFamily = 'Noto Sans';
+const _fontFamily = 'Google Sans';
 
-const _primary      = Color(0xFF1A56DB);
-const _primaryDark  = Color(0xFF4A8EFF);
-const _primaryLight = Color(0xFFE8F0FE);
 
 const _danger       = Color(0xFFB71C1C);
 const _dangerDark   = Color(0xFFEF5350);
@@ -47,7 +44,6 @@ const _successLight = Color(0xFFE6F4EC);
 
 const _info         = Color(0xFF0D47A1);
 const _infoDark     = Color(0xFF42A5F5);
-const _infoLight    = Color(0xFFE3F2FD);
 
 // Relation accent colors (all WCAG AA)
 const _relFamily    = Color(0xFF0D47A1); // info/blue
@@ -93,7 +89,6 @@ const _sp12 = 12.0;
 const _sp16 = 16.0;
 const _sp20 = 20.0;
 const _sp24 = 24.0;
-const _sp32 = 32.0;
 const _sp48 = 48.0;
 
 // ── Type helpers ──────────────────────────────────────────────────────
@@ -407,7 +402,6 @@ class _MobileNavBar extends StatelessWidget {
     final textClr = isDark ? _dText    : _lText;
     final subClr  = isDark ? _dTextSub : _lTextSub;
     final border  = isDark ? _dBorder  : _lBorder;
-    final accent  = isDark ? _dangerDark : _danger;
     final navBlue = isDark ? _infoDark   : _info;
 
     return Container(
@@ -673,7 +667,7 @@ class _ContactCell extends StatelessWidget {
 
           // Context menu — 3-dot
           PopupMenuButton<String>(
-            tooltip: 'Options',
+            tooltip: l.t('isl_options_title'),
             color: isDark ? _dSurface2 : _lSurface,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),

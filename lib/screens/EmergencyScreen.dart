@@ -2,7 +2,7 @@
 //
 // ╔══════════════════════════════════════════════════════════════════════╗
 // ║  VANI — Emergency Screen  · UX4G Redesign                         ║
-// ║  Font: Noto Sans (UX4G standard, Devanagari support)              ║
+// ║  Font: Google Sans (UX4G standard)                                ║
 // ║  < 700px  → Mobile emergency shell                                ║
 // ║  ≥ 700px  → Web/tablet emergency centre                           ║
 // ║                                                                    ║
@@ -31,17 +31,14 @@ import '../models/EmergencyContact.dart';
 // ─────────────────────────────────────────────────────────────────────
 //  UX4G DESIGN TOKENS  (shared with HomeScreen)
 // ─────────────────────────────────────────────────────────────────────
-const _fontFamily = 'Noto Sans';
+const _fontFamily = 'Google Sans';
 
 // Brand
-const _primary      = Color(0xFF1A56DB);
-const _primaryDark  = Color(0xFF4A8EFF);
 
 // Status / Semantic
 const _danger       = Color(0xFFB71C1C);
 const _dangerDark   = Color(0xFFEF5350);
 const _dangerLight  = Color(0xFFFFEBEE);
-const _dangerMid    = Color(0xFFE53935);
 
 const _warning      = Color(0xFF7A4800);
 const _warningDark  = Color(0xFFFFB300);
@@ -53,7 +50,6 @@ const _successLight = Color(0xFFE6F4EC);
 
 const _info         = Color(0xFF0D47A1);
 const _infoDark     = Color(0xFF42A5F5);
-const _infoLight    = Color(0xFFE3F2FD);
 
 // Scenario-specific (all WCAG AA on their light surfaces)
 const _scRed        = Color(0xFFB71C1C); // General / Emergency
@@ -95,7 +91,6 @@ const _sp12 = 12.0;
 const _sp16 = 16.0;
 const _sp20 = 20.0;
 const _sp24 = 24.0;
-const _sp32 = 32.0;
 const _sp48 = 48.0;
 
 // ── Text helpers ──────────────────────────────────────────────────────
@@ -596,7 +591,7 @@ class _MobileEmergencyBar extends StatelessWidget {
         const Spacer(),
         // Contacts icon — 40dp min
         Semantics(
-          label: 'Emergency contacts', button: true,
+          label: l.t('sos_setup_title'), button: true,
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: onContacts,
@@ -878,7 +873,7 @@ class _WebHelplinesCard extends StatelessWidget {
     final sub    = isDark ? _dTextSub  : _lTextSub;
 
     return Semantics(
-      label: 'Emergency helpline numbers',
+      label: l.t('sos_helpline_ref'),
       child: Container(
         padding: const EdgeInsets.all(_sp16),
         decoration: BoxDecoration(
@@ -932,7 +927,6 @@ class _AutoDetectBanner extends StatelessWidget {
     final accent = scenario.accent(isDark);
     final textClr = isDark ? _dText : _lText;
     final bg     = isDark ? _dSurface : _lSurface;
-    final border = isDark ? _dBorder  : _lBorder;
 
     return Semantics(
       label: l.t('sos_isl_detected').replaceAll('{sign}', signLabel),
@@ -1177,6 +1171,7 @@ class _MobileHelplinesRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final items = [
       ('112', 'Emergency', isDark ? _dangerDark  : _danger),
       ('108', 'Ambulance', isDark ? _scOrangeD   : _scOrange),
@@ -1189,7 +1184,7 @@ class _MobileHelplinesRow extends StatelessWidget {
     final sub    = isDark ? _dTextSub  : _lTextSub;
 
     return Semantics(
-      label: 'Emergency helpline numbers',
+      label: l.t('sos_helpline_ref'),
       child: Container(
         decoration: BoxDecoration(
             color: bg,

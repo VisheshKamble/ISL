@@ -1,19 +1,27 @@
 // lib/screens/TranslateScreen.dart
-// ─────────────────────────────────────────────
-//  APPLE-INSPIRED TRANSLATE SCREEN
-//  ALL functional logic preserved exactly:
-//   • SentenceBuilder (25 model words, all patterns)
-//   • AutoAddEngine (stability + cooldown)
-//   • WebSocket connection + frame capture
-//   • TTS, translation, transcript
 //
-//  Mobile  (<700px): Fullscreen camera + frosted bottom panel
-//  Web/Tab (≥700px): Side-by-side card layout + GlobalNavbar
-//
-//  UI: Google Sans (Nunito), iOS system colors, white cards,
-//      hairline borders, 44px touch targets, no ripple
-// ─────────────────────────────────────────────
-import 'dart:ui';
+// ╔══════════════════════════════════════════════════════════════════════╗
+// ║  VANI — Translate Screen  · UX4G Redesign                         ║
+// ║  Font: Google Sans (UX4G standard)                                ║
+// ║                                                                    ║
+// ║  ALL functional logic preserved exactly:                           ║
+// ║  • SentenceBuilder (25 model words, all patterns)                 ║
+// ║  • AutoAddEngine (stability + cooldown)                           ║
+// ║  • WebSocket connection + frame capture                           ║
+// ║  • TTS, translation, transcript                                   ║
+// ║  • Onboarding flow                                                ║
+// ║                                                                    ║
+// ║  UX4G Principles Applied:                                         ║
+// ║  • Mobile-first fullscreen camera with structured bottom panel    ║
+// ║  • Semantic status colors (live=success, error=danger, idle=info) ║
+// ║  • Google Sans typography — consistent with entire app            ║
+// ║  • 8dp spacing grid, min 48dp touch targets                       ║
+// ║  • Semantics() on all interactive elements                        ║
+// ║  • Solid surfaces — no frosted glass (UX4G clarity principle)     ║
+// ║  • WCAG AA contrast on all text pairs                             ║
+// ║  • Section labels uppercase with letterSpacing (UX4G pattern)    ║
+// ╚══════════════════════════════════════════════════════════════════════╝
+
 import 'dart:convert';
 import 'dart:async';
 import 'dart:math' as math;
@@ -27,104 +35,93 @@ import '../l10n/AppLocalizations.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_tts/flutter_tts.dart';
 
-class GoogleFonts {
-  static TextStyle nunito({
-    double? fontSize,
-    FontWeight? fontWeight,
-    Color? color,
-    double? letterSpacing,
-    double? height,
-    FontStyle? fontStyle,
-    TextDecoration? decoration,
-    Color? decorationColor,
-  }) {
-    return TextStyle(
-      fontFamily: 'Google Sans',
-      fontSize: fontSize,
-      fontWeight: fontWeight,
-      color: color,
-      letterSpacing: letterSpacing,
-      height: height,
-      fontStyle: fontStyle,
-      decoration: decoration,
-      decorationColor: decorationColor,
-    );
-  }
-}
+// ─────────────────────────────────────────────────────────────────────
+//  UX4G DESIGN TOKENS
+// ─────────────────────────────────────────────────────────────────────
+const _fontFamily = 'Google Sans';
 
-// ─────────────────────────────────────────────
-//  WEBSOCKET CONFIG  (unchanged)
-// ─────────────────────────────────────────────
-// const _kDefaultWsPort  = 8000;
-// const _kWsPath         = '/ws';
-// const _kFrameIntervalMs = 100;
+const _primary       = Color(0xFF1A56DB);
+const _primaryDark   = Color(0xFF4A8EFF);
 
-// String _getWebSocketUrl() {
-//   if (kIsWeb) {
-//     final scheme = Uri.base.scheme == 'https' ? 'wss' : 'ws';
-//     final host   = Uri.base.host.isNotEmpty ? Uri.base.host : '';
-//     return '$scheme://$host:$_kDefaultWsPort$_kWsPath';
-//   }
-//   if (defaultTargetPlatform == TargetPlatform.android) {
-//     return 'ws://10.0.2.2:$_kDefaultWsPort$_kWsPath';
-//   }
-//   return 'ws://127.0.0.1:$_kDefaultWsPort$_kWsPath';
-// }
+const _secondary     = Color(0xFF00796B);
+const _secondaryDark = Color(0xFF26A69A);
 
-// ─────────────────────────────────────────────
+const _purple        = Color(0xFF6200EA);
+const _purpleDark    = Color(0xFF9C6BFF);
+
+const _success       = Color(0xFF1B7340);
+const _successDark   = Color(0xFF27AE60);
+
+const _warning       = Color(0xFF7A4800);
+const _warningDark   = Color(0xFFFFB300);
+const _warningLight  = Color(0xFFFFF3E0);
+
+const _danger        = Color(0xFFB71C1C);
+const _dangerDark    = Color(0xFFEF5350);
+const _dangerLight   = Color(0xFFFFEBEE);
+
+const _info          = Color(0xFF0D47A1);
+const _infoDark      = Color(0xFF42A5F5);
+const _infoLight     = Color(0xFFE3F2FD);
+
+// Neutral surfaces
+const _lBg           = Color(0xFFF5F7FA);
+const _lSurface      = Color(0xFFFFFFFF);
+const _lSurface2     = Color(0xFFF0F4F8);
+const _lBorder       = Color(0xFFCDD5DF);
+const _lBorderSub    = Color(0xFFE4E9F0);
+const _lText         = Color(0xFF111827);
+const _lTextSub      = Color(0xFF374151);
+const _lTextMuted    = Color(0xFF6B7280);
+
+const _dBg           = Color(0xFF0D1117);
+const _dSurface      = Color(0xFF161B22);
+const _dSurface2     = Color(0xFF21262D);
+const _dBorder       = Color(0xFF30363D);
+const _dBorderSub    = Color(0xFF21262D);
+const _dText         = Color(0xFFE6EDF3);
+const _dTextSub      = Color(0xFFB0BEC5);
+const _dTextMuted    = Color(0xFF8B949E);
+
+const _sp4  = 4.0;
+const _sp8  = 8.0;
+const _sp12 = 12.0;
+const _sp16 = 16.0;
+const _sp20 = 20.0;
+const _sp24 = 24.0;
+const _sp32 = 32.0;
+
+TextStyle _display(double size, Color c) => TextStyle(
+    fontFamily: _fontFamily, fontSize: size, fontWeight: FontWeight.w700,
+    color: c, height: 1.2, letterSpacing: -0.5);
+
+TextStyle _heading(double size, Color c, {FontWeight w = FontWeight.w600}) =>
+    TextStyle(fontFamily: _fontFamily, fontSize: size, fontWeight: w,
+        color: c, height: 1.3, letterSpacing: -0.2);
+
+TextStyle _body(double size, Color c, {FontWeight w = FontWeight.w400}) =>
+    TextStyle(fontFamily: _fontFamily, fontSize: size, fontWeight: w,
+        color: c, height: 1.6);
+
+TextStyle _txtLabel(double size, Color c, {FontWeight w = FontWeight.w500}) =>
+    TextStyle(fontFamily: _fontFamily, fontSize: size, fontWeight: w,
+        color: c, height: 1.4, letterSpacing: 0.1);
+
+// ─────────────────────────────────────────────────────────────────────
 //  WEBSOCKET CONFIG (Railway Production)
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────
+const String _kRailwayHost  = 'isl-production-57d4.up.railway.app';
+const String _kWsPath       = '/ws';
+const int    _kFrameIntervalMs = 100;
+const bool _railwayWsEnabled = true; // Set to false to disable WebSocket connection (for testing without backend)
+//const bool _railwayWsEnabled = true; // Set to false to disable WebSocket connection (for testing without backend)
 
-// Change this to your actual Railway domain without the 'https://'
-const String _kRailwayHost = 'isl-production-57d4.up.railway.app';
-const String _kWsPath = '/ws';
-const int _kFrameIntervalMs = 100;
-const bool _railwayWsEnabled = true;
 
-String _getWebSocketUrl() {
-  // For Production on Railway, we always use 'wss' (Secure WebSocket)
-  // regardless of the platform.
-  return 'wss://$_kRailwayHost$_kWsPath';
-}
+String _getWebSocketUrl() => 'wss://$_kRailwayHost$_kWsPath';
 
-// ─────────────────────────────────────────────
-//  APPLE DESIGN TOKENS
-// ─────────────────────────────────────────────
-class _A {
-  // Light
-  static const lBg       = Color(0xFFF2F2F7);
-  static const lSurface  = Color(0xFFFFFFFF);
-  static const lSurface2 = Color(0xFFF2F2F7);
-  static const lSep      = Color(0xFFC6C6C8);
-  // Dark
-  static const dBg       = Color(0xFF000000);
-  static const dSurface  = Color(0xFF1C1C1E);
-  static const dSurface2 = Color(0xFF2C2C2E);
-  static const dSep      = Color(0xFF38383A);
-  // System accents
-  static const indigo    = Color(0xFF5856D6);
-  static const green     = Color(0xFF34C759);
-  static const orange    = Color(0xFFFF9500);
-  static const red       = Color(0xFFFF3B30);
-  static const purple    = Color(0xFFAF52DE);
-  static const teal      = Color(0xFF5AC8FA);
-
-  static Color bg(bool d)       => d ? dBg       : lBg;
-  static Color surface(bool d)  => d ? dSurface  : lSurface;
-  static Color surface2(bool d) => d ? dSurface2 : lSurface2;
-  static Color sep(bool d)      => d ? dSep      : lSep;
-  static Color label(bool d)    => d ? Colors.white : Colors.black;
-  static Color label2(bool d)   => d
-      ? const Color(0xFFEBEBF5).withOpacity(0.60)
-      : const Color(0xFF3C3C43).withOpacity(0.60);
-  static Color label3(bool d)   => d
-      ? const Color(0xFFEBEBF5).withOpacity(0.30)
-      : const Color(0xFF3C3C43).withOpacity(0.30);
-}
-
-// ─────────────────────────────────────────────
-//  25 MODEL WORDS — exact labels (DO NOT CHANGE)
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────
+//  25 MODEL WORDS
+// ─────────────────────────────────────────────────────────────────────
 const Set<String> _kModelWords = {
   'hello', 'how are you', 'i', 'please', 'today', 'time',
   'what', 'name', 'quiet', 'yes', 'thankyou', 'namaste',
@@ -132,9 +129,9 @@ const Set<String> _kModelWords = {
   'brother', 'love', 'good', 'bad', 'sorry', 'sleeping', 'water',
 };
 
-// ─────────────────────────────────────────────
-//  SENTENCE BUILDER  (all patterns preserved)
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────
+//  SENTENCE BUILDER (all patterns preserved exactly)
+// ─────────────────────────────────────────────────────────────────────
 class SentenceBuilder {
   static const Map<String, String> _solo = {
     'hello': 'Hello!', 'how are you': 'How are you?', 'i': 'I...',
@@ -220,9 +217,7 @@ class SentenceBuilder {
       final key = '${words[0]}|${words[1]}';
       if (_pairs.containsKey(key)) return _pairs[key]!;
     }
-    if (words.length == 1) {
-      return _solo[words[0]] ?? _capitalise('${words[0]}.');
-    }
+    if (words.length == 1) return _solo[words[0]] ?? _cap('${words[0]}.');
     return _buildLong(words);
   }
 
@@ -238,23 +233,23 @@ class SentenceBuilder {
         final pk = '${words[i]}|${words[i+1]}';
         if (_pairs.containsKey(pk)) { parts.add(_pairs[pk]!); i += 2; continue; }
       }
-      parts.add(_solo[words[i]] ?? _capitalise('${words[i]}.'));
+      parts.add(_solo[words[i]] ?? _cap('${words[i]}.'));
       i++;
     }
     return parts.map((p) => p.trimRight()).join(' ');
   }
 
-  static String _capitalise(String s) =>
-    s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+  static String _cap(String s) =>
+      s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }
 
-// ─────────────────────────────────────────────
-//  AUTO-ADD ENGINE  (unchanged logic)
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────
+//  AUTO-ADD ENGINE (unchanged logic)
+// ─────────────────────────────────────────────────────────────────────
 class _AutoAddEngine {
-  static const int _stabilityMs      = 800;
-  static const int _sameWordCooldown  = 3000;
-  static const int _anyWordCooldown   = 600;
+  static const int _stabilityMs     = 800;
+  static const int _sameWordCooldown = 3000;
+  static const int _anyWordCooldown  = 600;
 
   String   _stableLabel  = '';
   DateTime _stableStart  = DateTime(0);
@@ -276,7 +271,7 @@ class _AutoAddEngine {
         final sinceSame = now.difference(_lastAddedAt).inMilliseconds;
         if (sinceAny  < _anyWordCooldown)  return null;
         if (lbl == _lastAdded && sinceSame < _sameWordCooldown) return null;
-        _lastAdded  = lbl; _lastAddedAt  = now; _lastAnyAdded = now;
+        _lastAdded = lbl; _lastAddedAt = now; _lastAnyAdded = now;
         _stableStart = now.add(const Duration(milliseconds: _sameWordCooldown));
         return lbl;
       }
@@ -299,9 +294,9 @@ class _AutoAddEngine {
   }
 }
 
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────
 //  MODELS
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────
 enum _SessionState { idle, connecting, running, stopping, error }
 
 class _GestureToken {
@@ -310,9 +305,9 @@ class _GestureToken {
   _GestureToken({required this.label, required this.confidence});
 }
 
-// ─────────────────────────────────────────────
-//  ONBOARDING FLOW  (Apple sheet design)
-// ─────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────
+//  ONBOARDING FLOW — UX4G redesign (clean cards, no glass)
+// ─────────────────────────────────────────────────────────────────────
 class _OnboardingFlow extends StatefulWidget {
   final bool d;
   final VoidCallback onComplete;
@@ -320,44 +315,46 @@ class _OnboardingFlow extends StatefulWidget {
   @override State<_OnboardingFlow> createState() => _OnboardingFlowState();
 }
 
-class _OnboardingFlowState extends State<_OnboardingFlow> with TickerProviderStateMixin {
+class _OnboardingFlowState extends State<_OnboardingFlow>
+    with TickerProviderStateMixin {
   int    _phase = 0;
   int    _step  = 0;
   Timer? _timer;
 
-  late AnimationController _loaderCtrl, _fadeCtrl, _sheetCtrl;
-  late Animation<double>   _loaderAnim, _fadeAnim, _sheetScale, _sheetFade;
+  late AnimationController _loaderCtrl, _fadeCtrl, _cardCtrl;
+  late Animation<double>   _loaderAnim, _fadeAnim, _cardSlide;
 
   static const _steps = [
-    (icon: Icons.camera_alt_outlined,    color: _A.indigo, titleKey: 'translate_onboard_title_1', bodyKey: 'translate_onboard_body_1'),
-    (icon: Icons.back_hand_outlined,     color: _A.green,  titleKey: 'translate_onboard_title_2', bodyKey: 'translate_onboard_body_2'),
-    (icon: Icons.wb_sunny_outlined,      color: _A.orange, titleKey: 'translate_onboard_title_3', bodyKey: 'translate_onboard_body_3'),
-    (icon: Icons.auto_awesome_outlined,  color: _A.purple, titleKey: 'translate_onboard_title_4', bodyKey: 'translate_onboard_body_4'),
-    (icon: Icons.translate_outlined,     color: _A.teal,   titleKey: 'translate_onboard_title_5', bodyKey: 'translate_onboard_body_5'),
+    (icon: Icons.camera_alt_outlined,   color: _primary,    titleKey: 'translate_onboard_title_1', bodyKey: 'translate_onboard_body_1'),
+    (icon: Icons.back_hand_outlined,    color: _success,    titleKey: 'translate_onboard_title_2', bodyKey: 'translate_onboard_body_2'),
+    (icon: Icons.wb_sunny_outlined,     color: _warning,    titleKey: 'translate_onboard_title_3', bodyKey: 'translate_onboard_body_3'),
+    (icon: Icons.auto_awesome_outlined, color: _purple,     titleKey: 'translate_onboard_title_4', bodyKey: 'translate_onboard_body_4'),
+    (icon: Icons.translate_outlined,    color: _secondary,  titleKey: 'translate_onboard_title_5', bodyKey: 'translate_onboard_body_5'),
   ];
 
   @override
   void initState() {
     super.initState();
-    _loaderCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 2800));
+    _loaderCtrl = AnimationController(vsync: this,
+        duration: const Duration(milliseconds: 2800));
     _loaderAnim = CurvedAnimation(parent: _loaderCtrl, curve: Curves.easeInOut);
-    _fadeCtrl   = AnimationController(vsync: this, duration: const Duration(milliseconds: 340));
-    _fadeAnim   = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
-    _sheetCtrl  = AnimationController(vsync: this, duration: const Duration(milliseconds: 380));
-    _sheetScale = Tween<double>(begin: 0.92, end: 1.0)
-      .animate(CurvedAnimation(parent: _sheetCtrl, curve: Curves.easeOutBack));
-    _sheetFade  = CurvedAnimation(parent: _sheetCtrl, curve: Curves.easeOut);
+    _fadeCtrl = AnimationController(vsync: this,
+        duration: const Duration(milliseconds: 300));
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+    _cardCtrl = AnimationController(vsync: this,
+        duration: const Duration(milliseconds: 350));
+    _cardSlide = Tween<double>(begin: 0.03, end: 0.0)
+        .animate(CurvedAnimation(parent: _cardCtrl, curve: Curves.easeOut));
 
     _loaderCtrl.forward();
     _fadeCtrl.forward();
-
     _timer = Timer(const Duration(milliseconds: 3100), () {
       if (!mounted) return;
       _fadeCtrl.reverse().then((_) {
         if (!mounted) return;
         setState(() => _phase = 1);
         _fadeCtrl.forward();
-        _sheetCtrl.forward();
+        _cardCtrl.forward();
       });
     });
   }
@@ -365,7 +362,7 @@ class _OnboardingFlowState extends State<_OnboardingFlow> with TickerProviderSta
   @override
   void dispose() {
     _timer?.cancel();
-    _loaderCtrl.dispose(); _fadeCtrl.dispose(); _sheetCtrl.dispose();
+    _loaderCtrl.dispose(); _fadeCtrl.dispose(); _cardCtrl.dispose();
     super.dispose();
   }
 
@@ -377,49 +374,53 @@ class _OnboardingFlowState extends State<_OnboardingFlow> with TickerProviderSta
 
   @override
   Widget build(BuildContext context) {
-    final d = widget.d;
+    final bg = widget.d ? _dBg : _lBg;
     return Material(
-      color: _A.bg(d),
+      color: bg,
       child: FadeTransition(
         opacity: _fadeAnim,
-        child: _phase == 0 ? _buildLoader(d) : _buildSteps(d)));
+        child: _phase == 0 ? _buildLoader() : _buildSteps(),
+      ),
+    );
   }
 
-  Widget _buildLoader(bool d) {
-    final l = AppLocalizations.of(context);
-    return Center(
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        SizedBox(
-          width: 88, height: 88,
+  Widget _buildLoader() {
+    final l      = AppLocalizations.of(context);
+    final textClr = widget.d ? _dText    : _lText;
+    final subClr  = widget.d ? _dTextSub : _lTextSub;
+
+    return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      // Progress ring
+      SizedBox(width: 80, height: 80,
           child: AnimatedBuilder(
             animation: _loaderAnim,
             builder: (_, __) => CustomPaint(
-              painter: _RingPainter(
-                progress: _loaderAnim.value,
-                color:    _A.indigo,
-                track:    _A.sep(d))))),
-        const SizedBox(height: 28),
-        Text(l.t('app_title_short'), style: GoogleFonts.nunito(
-          fontSize: 28, fontWeight: FontWeight.w800,
-          color: _A.label(d), letterSpacing: 8)),
-        const SizedBox(height: 6),
-        Text(l.t('translate_screen_title'), style: GoogleFonts.nunito(
-          fontSize: 13, color: _A.label2(d), letterSpacing: 0.5)),
-        const SizedBox(height: 44),
-        SizedBox(width: 200, child: AnimatedBuilder(
-          animation: _loaderAnim,
-          builder: (_, __) => Column(children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(3),
+                painter: _RingPainter(
+                    progress: _loaderAnim.value,
+                    color: _primary,
+                    track: widget.d ? _dBorder : _lBorder)),
+          )),
+      const SizedBox(height: _sp24),
+      Text(l.t('app_title_short'),
+          style: _display(26, textClr).copyWith(letterSpacing: 6)),
+      const SizedBox(height: _sp4),
+      Text(l.t('translate_screen_title'),
+          style: _txtLabel(12, subClr, w: FontWeight.w400)),
+      const SizedBox(height: _sp32),
+      SizedBox(width: 200, child: AnimatedBuilder(
+        animation: _loaderAnim,
+        builder: (_, __) => Column(children: [
+          ClipRRect(borderRadius: BorderRadius.circular(2),
               child: LinearProgressIndicator(
-                value:    _loaderAnim.value, minHeight: 3,
-                backgroundColor: _A.sep(d),
-                valueColor: const AlwaysStoppedAnimation(_A.indigo))),
-            const SizedBox(height: 10),
-            Text(_loaderLabel(_loaderAnim.value, l), style: GoogleFonts.nunito(
-              fontSize: 12, color: _A.label2(d))),
-          ]))),
-      ]));
+                  value: _loaderAnim.value, minHeight: 3,
+                  backgroundColor: widget.d ? _dBorder : _lBorder,
+                  valueColor: const AlwaysStoppedAnimation(_primary))),
+          const SizedBox(height: _sp8),
+          Text(_loaderLabel(_loaderAnim.value, l),
+              style: _body(12, subClr)),
+        ]),
+      )),
+    ]));
   }
 
   String _loaderLabel(double v, AppLocalizations l) {
@@ -428,176 +429,196 @@ class _OnboardingFlowState extends State<_OnboardingFlow> with TickerProviderSta
     return l.t('translate_loader_calibrate');
   }
 
-  Widget _buildSteps(bool d) {
+  Widget _buildSteps() {
     final l    = AppLocalizations.of(context);
     final step = _steps[_step];
     final last = _step == _steps.length - 1;
+    final bg   = widget.d ? _dSurface  : _lSurface;
+    final bord = widget.d ? _dBorder   : _lBorder;
+    final textClr = widget.d ? _dText : _lText;
+    final subClr  = widget.d ? _dTextSub : _lTextSub;
+    final mutedClr = widget.d ? _dTextMuted : _lTextMuted;
 
-    return Stack(children: [
-      Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: ScaleTransition(
-            scale: _sheetScale,
-            child: FadeTransition(
-              opacity: _sheetFade,
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 440),
-                decoration: BoxDecoration(
-                  color: _A.surface(d),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(
-                    color: Colors.black.withOpacity(d ? 0.40 : 0.12),
-                    blurRadius: 40, offset: const Offset(0, 12))]),
-                child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  // Color bar
-                  Container(height: 4,
-                    decoration: BoxDecoration(
-                      color: step.color,
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)))),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-                    child: Column(children: [
-                      Row(children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: _A.indigo.withOpacity(d ? 0.15 : 0.08),
-                            borderRadius: BorderRadius.circular(8)),
-                          child: Text(l.t('translate_how_to_use'), style: GoogleFonts.nunito(
-                            fontSize: 10, fontWeight: FontWeight.w700,
-                            color: _A.indigo, letterSpacing: 1.5))),
-                        const Spacer(),
-                        Text('${_step + 1} / ${_steps.length}', style: GoogleFonts.nunito(
-                          fontSize: 12, color: _A.label2(d))),
-                      ]),
-                      const SizedBox(height: 24),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        child: Container(
-                          key: ValueKey(_step),
-                          width: 68, height: 68,
-                          decoration: BoxDecoration(
-                            color: step.color.withOpacity(d ? 0.15 : 0.08),
-                            shape: BoxShape.circle),
-                          child: Icon(step.icon, color: step.color, size: 30))),
-                      const SizedBox(height: 18),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 160),
-                        child: Text(l.t(step.titleKey), key: ValueKey('t$_step'),
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.nunito(fontSize: 19, fontWeight: FontWeight.w800,
-                            color: _A.label(d), letterSpacing: -0.3))),
-                      const SizedBox(height: 8),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 160),
-                        child: Text(l.t(step.bodyKey), key: ValueKey('b$_step'),
-                          textAlign: TextAlign.center,
-                          style: GoogleFonts.nunito(fontSize: 14, color: _A.label2(d), height: 1.6))),
-                      const SizedBox(height: 22),
-                      // Step dots
-                      Row(mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(_steps.length, (i) => AnimatedContainer(
-                          duration: const Duration(milliseconds: 220),
-                          margin: const EdgeInsets.symmetric(horizontal: 3),
-                          width: i == _step ? 20 : 6, height: 6,
-                          decoration: BoxDecoration(
-                            color: i == _step ? _A.indigo : _A.sep(d),
-                            borderRadius: BorderRadius.circular(3))))),
-                      const SizedBox(height: 22),
-                      Row(children: [
-                        if (_step > 0) ...[
-                          Expanded(child: _OButton(label: l.t('translate_back'),
-                            icon: Icons.chevron_left_rounded, d: d, onTap: _prev)),
-                          const SizedBox(width: 10),
-                        ],
-                        Expanded(flex: 2,
-                          child: _PButton(
-                            label: last ? l.t('translate_lets_begin') : l.t('translate_next'),
-                            icon: last ? Icons.play_arrow_rounded : Icons.chevron_right_rounded,
-                            onTap: _next)),
-                      ]),
-                      if (!last) ...[
-                        const SizedBox(height: 14),
-                        GestureDetector(
-                          onTap: widget.onComplete,
-                          child: Text(l.t('translate_skip_tutorial'),
-                            style: GoogleFonts.nunito(fontSize: 13, color: _A.label2(d),
-                              decoration: TextDecoration.underline,
-                              decorationColor: _A.label2(d)))),
-                      ],
-                    ]),
+    // Dark-mode accent mapping
+    Color accentResolved = widget.d
+        ? (step.color == _primary ? _primaryDark
+        : step.color == _success ? _successDark
+        : step.color == _warning ? _warningDark
+        : step.color == _purple  ? _purpleDark
+        : _secondaryDark)
+        : step.color;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: _sp20),
+        child: SlideTransition(
+          position: _cardSlide.drive(Tween(
+              begin: const Offset(0, 0.03), end: Offset.zero)),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 440),
+            decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: bord, width: 1)),
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              // Accent top bar
+              Container(height: 4,
+                  decoration: BoxDecoration(
+                      color: accentResolved,
+                      borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(16)))),
+              Padding(
+                padding: const EdgeInsets.all(_sp24),
+                child: Column(children: [
+                  // Step header
+                  Row(children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: _sp8, vertical: _sp4),
+                      decoration: BoxDecoration(
+                          color: accentResolved.withOpacity(0.10),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                              color: accentResolved.withOpacity(0.25), width: 1)),
+                      child: Text(l.t('translate_how_to_use').toUpperCase(),
+                          style: _txtLabel(10, accentResolved, w: FontWeight.w700)),
+                    ),
+                    const Spacer(),
+                    Text('${_step + 1} / ${_steps.length}',
+                        style: _txtLabel(12, mutedClr, w: FontWeight.w400)),
+                  ]),
+                  const SizedBox(height: _sp24),
+
+                  // Icon
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Container(
+                        key: ValueKey(_step),
+                        width: 68, height: 68,
+                        decoration: BoxDecoration(
+                            color: accentResolved.withOpacity(0.10),
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                                color: accentResolved.withOpacity(0.25), width: 1)),
+                        child: Icon(step.icon, color: accentResolved, size: 30)),
                   ),
+                  const SizedBox(height: _sp16),
+
+                  // Title
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 160),
+                    child: Text(l.t(step.titleKey), key: ValueKey('t$_step'),
+                        textAlign: TextAlign.center,
+                        style: _heading(19, textClr)),
+                  ),
+                  const SizedBox(height: _sp8),
+
+                  // Body
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 160),
+                    child: Text(l.t(step.bodyKey), key: ValueKey('b$_step'),
+                        textAlign: TextAlign.center,
+                        style: _body(14, subClr)),
+                  ),
+                  const SizedBox(height: _sp20),
+
+                  // Step dots
+                  Row(mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(_steps.length, (i) =>
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: const EdgeInsets.symmetric(horizontal: 3),
+                            width: i == _step ? 20 : 6, height: 6,
+                            decoration: BoxDecoration(
+                                color: i == _step
+                                    ? accentResolved
+                                    : (widget.d ? _dBorder : _lBorder),
+                                borderRadius: BorderRadius.circular(3)),
+                          ))),
+                  const SizedBox(height: _sp20),
+
+                  // Action buttons
+                  Row(children: [
+                    if (_step > 0) ...[
+                      Expanded(child: OutlinedButton.icon(
+                        onPressed: _prev,
+                        icon: const Icon(Icons.chevron_left_rounded, size: 16),
+                        label: Text(l.t('translate_back')),
+                        style: OutlinedButton.styleFrom(
+                            minimumSize: const Size(0, 48),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8)),
+                            side: BorderSide(color: bord)),
+                      )),
+                      const SizedBox(width: _sp12),
+                    ],
+                    Expanded(flex: 2, child: ElevatedButton.icon(
+                      onPressed: _next,
+                      icon: Icon(last
+                          ? Icons.play_arrow_rounded
+                          : Icons.chevron_right_rounded, size: 16),
+                      label: Text(last
+                          ? l.t('translate_lets_begin')
+                          : l.t('translate_next')),
+                      style: ElevatedButton.styleFrom(
+                          minimumSize: const Size(0, 48),
+                          backgroundColor: accentResolved,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8))),
+                    )),
+                  ]),
+
+                  if (!last) ...[
+                    const SizedBox(height: _sp16),
+                    TextButton(
+                      onPressed: widget.onComplete,
+                      child: Text(l.t('translate_skip_tutorial'),
+                          style: _body(13, mutedClr,
+                              w: FontWeight.w500)),
+                    ),
+                  ],
                 ]),
-              ))))),
-    ]);
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
   }
 }
 
-class _PButton extends StatelessWidget {
-  final String label; final IconData icon; final VoidCallback onTap;
-  const _PButton({required this.label, required this.icon, required this.onTap});
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        color: _A.indigo, borderRadius: BorderRadius.circular(13),
-        boxShadow: [BoxShadow(color: _A.indigo.withOpacity(0.28),
-          blurRadius: 14, offset: const Offset(0, 5))]),
-      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Text(label, style: GoogleFonts.nunito(fontSize: 15, fontWeight: FontWeight.w700,
-          color: Colors.white)),
-        const SizedBox(width: 4),
-        Icon(icon, size: 16, color: Colors.white),
-      ])));
-}
-
-class _OButton extends StatelessWidget {
-  final String label; final IconData icon; final bool d; final VoidCallback onTap;
-  const _OButton({required this.label, required this.icon, required this.d, required this.onTap});
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: _A.sep(d))),
-      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(icon, size: 16, color: _A.label2(d)),
-        const SizedBox(width: 4),
-        Text(label, style: GoogleFonts.nunito(fontSize: 15, fontWeight: FontWeight.w600,
-          color: _A.label2(d))),
-      ])));
-}
-
 class _RingPainter extends CustomPainter {
-  final double progress; final Color color; final Color track;
-  const _RingPainter({required this.progress, required this.color, required this.track});
+  final double progress;
+  final Color color, track;
+  const _RingPainter({required this.progress, required this.color,
+    required this.track});
   @override
   void paint(Canvas canvas, Size size) {
     final c = Offset(size.width / 2, size.height / 2);
     final r = size.width / 2 - 3;
-    canvas.drawArc(Rect.fromCircle(center: c, radius: r), 0, math.pi * 2, false,
-      Paint()..color = track..strokeWidth = 2..style = PaintingStyle.stroke);
-    if (progress > 0)
+    canvas.drawArc(Rect.fromCircle(center: c, radius: r),
+        0, math.pi * 2, false,
+        Paint()..color = track..strokeWidth = 2..style = PaintingStyle.stroke);
+    if (progress > 0) {
       canvas.drawArc(Rect.fromCircle(center: c, radius: r),
-        -math.pi / 2, 2 * math.pi * progress, false,
-        Paint()..color = color..strokeWidth = 2.5
-          ..style = PaintingStyle.stroke..strokeCap = StrokeCap.round);
+          -math.pi / 2, 2 * math.pi * progress, false,
+          Paint()..color = color..strokeWidth = 2.5
+            ..style = PaintingStyle.stroke..strokeCap = StrokeCap.round);
+    }
   }
   @override bool shouldRepaint(_RingPainter o) => o.progress != progress;
 }
 
-// ═════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════
 //  TRANSLATE SCREEN
-// ═════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════
 class TranslateScreen extends StatefulWidget {
   final VoidCallback     toggleTheme;
   final Function(Locale) setLocale;
-  const TranslateScreen({super.key, required this.toggleTheme, required this.setLocale});
+  const TranslateScreen({super.key, required this.toggleTheme,
+    required this.setLocale});
   @override State<TranslateScreen> createState() => _TranslateScreenState();
 }
 
@@ -607,12 +628,12 @@ class _TranslateScreenState extends State<TranslateScreen>
   bool _onboardingDone = false;
 
   // Camera
-  CameraController?      _cam;
+  CameraController?        _cam;
   List<CameraDescription>? _cameras;
-  int  _camIndex    = 0;
+  int _camIndex = 0;
 
   // WebSocket
-  WebSocketChannel? _channel;
+  WebSocketChannel?   _channel;
   StreamSubscription? _wsSub;
   bool _wsOk = false;
 
@@ -654,8 +675,8 @@ class _TranslateScreenState extends State<TranslateScreen>
 
   // TTS
   final FlutterTts _tts = FlutterTts();
-  bool   _ttsSpeaking  = false;
-  String _ttsTag       = '';
+  bool   _ttsSpeaking = false;
+  String _ttsTag = '';
 
   // Pulse anim
   late AnimationController _pulseCtrl;
@@ -666,10 +687,10 @@ class _TranslateScreenState extends State<TranslateScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _setupCameras();
-    _pulseCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1400))
-      ..repeat(reverse: true);
+    _pulseCtrl = AnimationController(vsync: this,
+        duration: const Duration(milliseconds: 1400))..repeat(reverse: true);
     _pulseAnim = Tween<double>(begin: 0.4, end: 1.0)
-      .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
+        .animate(CurvedAnimation(parent: _pulseCtrl, curve: Curves.easeInOut));
   }
 
   @override
@@ -681,9 +702,11 @@ class _TranslateScreenState extends State<TranslateScreen>
   Future<String> _translate(String text, String code) async {
     try {
       final url = 'https://translate.googleapis.com/translate_a/single'
-        '?client=gtx&sl=en&tl=$code&dt=t&q=${Uri.encodeComponent(text)}';
+          '?client=gtx&sl=en&tl=$code&dt=t&q=${Uri.encodeComponent(text)}';
       final res = await http.get(Uri.parse(url));
-      if (res.statusCode == 200) return jsonDecode(res.body)[0][0][0] as String;
+      if (res.statusCode == 200) {
+        return jsonDecode(res.body)[0][0][0] as String;
+      }
     } catch (_) {}
     return text;
   }
@@ -696,7 +719,8 @@ class _TranslateScreenState extends State<TranslateScreen>
     if (_cameras == null || _cameras!.isEmpty) return false;
     try {
       _cam = CameraController(_cameras![_camIndex], ResolutionPreset.medium,
-        enableAudio: false, imageFormatGroup: kIsWeb ? null : ImageFormatGroup.jpeg);
+          enableAudio: false,
+          imageFormatGroup: kIsWeb ? null : ImageFormatGroup.jpeg);
       await _cam!.initialize();
       if (!mounted) return false;
       setState(() {});
@@ -707,19 +731,25 @@ class _TranslateScreenState extends State<TranslateScreen>
   Future<void> _disposeCamera() async {
     final c = _cam; _cam = null;
     try {
-      if (!kIsWeb && c != null && c.value.isInitialized && c.value.isStreamingImages)
+      if (!kIsWeb && c != null && c.value.isInitialized
+          && c.value.isStreamingImages) {
         await c.stopImageStream();
+      }
       await c?.dispose();
     } catch (_) {}
   }
 
   Future<bool> _connectWs() async {
-
+    if (!_railwayWsEnabled) {
+      _wsOk = false;
+      return false;
+    }
     try {
       _channel = WebSocketChannel.connect(Uri.parse(_getWebSocketUrl()));
       await _channel!.ready.timeout(const Duration(seconds: 3));
       _wsOk = true; _reconnects = 0;
-      _wsSub = _channel!.stream.listen(_onMsg, onError: _onErr, onDone: _onDone, cancelOnError: false);
+      _wsSub = _channel!.stream.listen(_onMsg,
+          onError: _onErr, onDone: _onDone, cancelOnError: false);
       return true;
     } catch (_) { _wsOk = false; return false; }
   }
@@ -731,7 +761,11 @@ class _TranslateScreenState extends State<TranslateScreen>
       final type = data['type'] as String? ?? 'prediction';
       if (type == 'ping') { _channel?.sink.add('__PING__'); return; }
       if (type == 'error') {
-        setState(() { _state = _SessionState.error; _error = data['message'] as String? ?? 'Error'; });
+        final l = AppLocalizations.of(context);
+        setState(() {
+          _state = _SessionState.error;
+          _error = data['message'] as String? ?? l.t('common_error');
+        });
         return;
       }
       if (type == 'prediction') {
@@ -741,17 +775,27 @@ class _TranslateScreenState extends State<TranslateScreen>
         final toAdd = _engine.update(lbl, conf);
         if (toAdd != null) _addToken(toAdd, conf, fromAuto: true);
         _translate(lbl, _langCodes[_lang]!)
-          .then((t) { if (mounted) setState(() => _regional = t); });
+            .then((t) { if (mounted) setState(() => _regional = t); });
       }
     } catch (_) {}
   }
 
-  void _onErr(Object _) { _wsOk = false; if (_state == _SessionState.running) _tryReconnect(); }
-  void _onDone()        { _wsOk = false; if (_state == _SessionState.running) _tryReconnect(); }
+  void _onErr(Object _) {
+    _wsOk = false;
+    if (_state == _SessionState.running) _tryReconnect();
+  }
+  void _onDone() {
+    _wsOk = false;
+    if (_state == _SessionState.running) _tryReconnect();
+  }
 
   void _tryReconnect() {
     if (_reconnects >= _kMaxReconnects) {
-      if (mounted) setState(() { _state = _SessionState.error; _error = 'Connection lost. Please restart.'; });
+      final l = AppLocalizations.of(context);
+      if (mounted) setState(() {
+        _state = _SessionState.error;
+        _error = l.t('translate_connection_lost_restart');
+      });
       return;
     }
     _reconnects++;
@@ -765,13 +809,18 @@ class _TranslateScreenState extends State<TranslateScreen>
   Future<void> _closeWs() async {
     _reconnectTimer?.cancel();
     await _wsSub?.cancel(); _wsSub = null;
-    try { _channel?.sink.add('__STOP__'); await Future.delayed(const Duration(milliseconds: 150)); await _channel?.sink.close(); } catch (_) {}
+    try {
+      _channel?.sink.add('__STOP__');
+      await Future.delayed(const Duration(milliseconds: 150));
+      await _channel?.sink.close();
+    } catch (_) {}
     _channel = null; _wsOk = false;
   }
 
   void _startFrameTimer() {
     _frameTimer?.cancel(); _capturing = false;
-    _frameTimer = Timer.periodic(Duration(milliseconds: _kFrameIntervalMs), (_) => _captureFrame());
+    _frameTimer = Timer.periodic(
+        Duration(milliseconds: _kFrameIntervalMs), (_) => _captureFrame());
   }
 
   Future<void> _captureFrame() async {
@@ -784,28 +833,41 @@ class _TranslateScreenState extends State<TranslateScreen>
     } catch (_) {} finally { _capturing = false; }
   }
 
-  void _stopFrameTimer() { _frameTimer?.cancel(); _frameTimer = null; _capturing = false; }
+  void _stopFrameTimer() {
+    _frameTimer?.cancel(); _frameTimer = null; _capturing = false;
+  }
 
   void _startStabilityTimer() {
     _stabilityTimer?.cancel();
     _stabilityTimer = Timer.periodic(const Duration(milliseconds: 16), (_) {
       if (!mounted) return;
-      setState(() { _stability = _engine.stabilityProgress(_label.toLowerCase().trim()); });
+      setState(() {
+        _stability = _engine.stabilityProgress(_label.toLowerCase().trim());
+      });
     });
   }
 
-  void _stopStabilityTimer() { _stabilityTimer?.cancel(); _stabilityTimer = null; _stability = 0; }
+  void _stopStabilityTimer() {
+    _stabilityTimer?.cancel(); _stabilityTimer = null; _stability = 0;
+  }
 
   Future<void> _startSession() async {
+    final l = AppLocalizations.of(context);
     if (_state != _SessionState.idle && _state != _SessionState.error) return;
-    setState(() { _state = _SessionState.connecting; _error = null; _label = '—'; _conf = 0; _frames = 0; });
+    setState(() {
+      _state = _SessionState.connecting;
+      _error = null; _label = '—'; _conf = 0; _frames = 0;
+    });
     if (!await _initCamera()) {
-      setState(() { _state = _SessionState.error; _error = 'Camera unavailable'; });
+      setState(() { _state = _SessionState.error; _error = l.t('translate_camera_error'); });
       return;
     }
     if (!await _connectWs()) {
       await _disposeCamera();
-      setState(() { _state = _SessionState.error; _error = 'Cannot connect to inference server.\nEnsure backend is running.'; });
+      setState(() {
+        _state = _SessionState.error;
+        _error = l.t('translate_backend_unreachable');
+      });
       return;
     }
     _engine.reset();
@@ -836,7 +898,10 @@ class _TranslateScreenState extends State<TranslateScreen>
   void _addToken(String lbl, double conf, {bool fromAuto = false}) {
     final n = lbl.toLowerCase().trim();
     if (!_kModelWords.contains(n)) return;
-    setState(() { _tokens.add(_GestureToken(label: n, confidence: conf)); _rebuildSentence(); });
+    setState(() {
+      _tokens.add(_GestureToken(label: n, confidence: conf));
+      _rebuildSentence();
+    });
     if (fromAuto) HapticFeedback.lightImpact();
   }
 
@@ -846,9 +911,13 @@ class _TranslateScreenState extends State<TranslateScreen>
     _engine.reset();
   }
 
-  void _removeToken(int i) { setState(() { _tokens.removeAt(i); _rebuildSentence(); }); }
-  void _removeLast()       { if (_tokens.isEmpty) return; setState(() { _tokens.removeLast(); _rebuildSentence(); }); }
-
+  void _removeToken(int i) {
+    setState(() { _tokens.removeAt(i); _rebuildSentence(); });
+  }
+  void _removeLast() {
+    if (_tokens.isEmpty) return;
+    setState(() { _tokens.removeLast(); _rebuildSentence(); });
+  }
   void _clearBuilder() {
     setState(() { _tokens.clear(); _sentence = ''; _sentenceRegional = ''; });
   }
@@ -857,7 +926,7 @@ class _TranslateScreenState extends State<TranslateScreen>
     _sentence = SentenceBuilder.build(_tokens.map((t) => t.label).toList());
     if (_sentence.isNotEmpty) {
       _translate(_sentence, _langCodes[_lang]!)
-        .then((t) { if (mounted) setState(() => _sentenceRegional = t); });
+          .then((t) { if (mounted) setState(() => _sentenceRegional = t); });
     } else { _sentenceRegional = ''; }
   }
 
@@ -866,7 +935,7 @@ class _TranslateScreenState extends State<TranslateScreen>
     final t = _transcriptCtrl.text;
     _transcriptCtrl.text = t.isEmpty ? _sentence : '$t\n$_sentence';
     _transcriptCtrl.selection = TextSelection.fromPosition(
-      TextPosition(offset: _transcriptCtrl.text.length));
+        TextPosition(offset: _transcriptCtrl.text.length));
     _clearBuilder();
   }
 
@@ -878,15 +947,12 @@ class _TranslateScreenState extends State<TranslateScreen>
       return;
     }
     await _tts.stop();
-    // Try to set language, fallback to English if not available
     try {
       final result = await _tts.setLanguage(langCode);
       if (result == null || (result is bool && !result)) {
         await _tts.setLanguage('en-US');
       }
-    } catch (_) {
-      await _tts.setLanguage('en-US');
-    }
+    } catch (_) { await _tts.setLanguage('en-US'); }
     await _tts.setSpeechRate(0.45);
     await _tts.setPitch(1.0);
     setState(() { _ttsSpeaking = true; _ttsTag = tag; });
@@ -897,8 +963,10 @@ class _TranslateScreenState extends State<TranslateScreen>
   }
 
   String _ttsCode(String lang) {
-    const m = {'Hindi':'hi-IN','Marathi':'mr-IN','Gujarati':'gu-IN',
-      'Tamil':'ta-IN','Telugu':'te-IN','Kannada':'kn-IN','Bengali':'bn-IN'};
+    const m = {
+      'Hindi':'hi-IN','Marathi':'mr-IN','Gujarati':'gu-IN',
+      'Tamil':'ta-IN','Telugu':'te-IN','Kannada':'kn-IN','Bengali':'bn-IN',
+    };
     return m[lang] ?? 'hi-IN';
   }
 
@@ -907,17 +975,19 @@ class _TranslateScreenState extends State<TranslateScreen>
     final l = AppLocalizations.of(context);
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Row(children: [
-        const Icon(Icons.check_circle, color: _A.green, size: 15),
-        const SizedBox(width: 8),
-        Text(l.t('common_copied_clipboard'), style: GoogleFonts.nunito(
-          fontSize: 13, color: Colors.white)),
-      ]),
-      behavior: SnackBarBehavior.floating,
-      backgroundColor: const Color(0xFF1C1C1E),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-      duration: const Duration(seconds: 2)));
+        content: Row(children: [
+          const Icon(Icons.check_circle_rounded,
+              color: Colors.white, size: 16),
+          const SizedBox(width: _sp8),
+          Text(l.t('common_copied_clipboard'),
+              style: _body(13, Colors.white)),
+        ]),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: _success,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8)),
+        margin: const EdgeInsets.fromLTRB(_sp16, 0, _sp16, _sp24),
+        duration: const Duration(seconds: 2)));
   }
 
   @override
@@ -936,16 +1006,17 @@ class _TranslateScreenState extends State<TranslateScreen>
 
     if (!_onboardingDone) {
       return _OnboardingFlow(d: d,
-        onComplete: () { if (mounted) setState(() => _onboardingDone = true); });
+          onComplete: () {
+            if (mounted) setState(() => _onboardingDone = true);
+          });
     }
-
     if (mob) return _buildMobile(context, d);
     return _buildWeb(context, d, w > 900);
   }
 
-  // ══════════════════════════════════════════════
-  //  MOBILE — fullscreen camera + frosted bottom panel
-  // ══════════════════════════════════════════════
+  // ════════════════════════════════════════════════════════════════════
+  //  MOBILE — fullscreen camera + structured bottom panel
+  // ════════════════════════════════════════════════════════════════════
   Widget _buildMobile(BuildContext context, bool d) {
     final l       = AppLocalizations.of(context);
     final running = _state == _SessionState.running;
@@ -955,518 +1026,602 @@ class _TranslateScreenState extends State<TranslateScreen>
       extendBodyBehindAppBar: true,
       body: Stack(fit: StackFit.expand, children: [
 
-        // Camera
+        // Camera feed
         if (running && _cam != null && _cam!.value.isInitialized)
           CameraPreview(_cam!)
         else
-          _MobileCamPlaceholder(d: d, state: _state),
+          _CamPlaceholder(d: d, state: _state),
 
-        // Corner brackets overlay
-        IgnorePointer(child: CustomPaint(
-          painter: _CornerPainter(
-            color: _A.indigo.withOpacity(running ? 0.65 : 0.28)))),
-
-        // Scanlines (subtle)
-        if (running)
-          IgnorePointer(child: CustomPaint(painter: _ScanlinePainter())),
+        // Corner brackets — UX4G: shows active scanning area
+        IgnorePointer(child: CustomPaint(painter: _CornerPainter(
+            color: _primary.withOpacity(running ? 0.7 : 0.3)))),
 
         // Top bar
         Positioned(top: 0, left: 0, right: 0,
-          child: SafeArea(bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Row(children: [
-                _CamIconBtn(icon: Icons.chevron_left_rounded,
-                  onTap: () => Navigator.pop(context)),
-                const Spacer(),
-                _MobileStatusPill(state: _state),
-                const SizedBox(width: 10),
-                _CamIconBtn(icon: Icons.flip_camera_ios_rounded,
-                  onTap: _switchCamera),
-              ])))),
+            child: SafeArea(bottom: false,
+                child: _MobileTopBar(
+                    d: d, state: _state, l: l,
+                    onBack: () => Navigator.pop(context),
+                    onFlip: _switchCamera,
+                    pulse: _pulseAnim))),
 
-        // Live badge
-        if (running)
-          Positioned(top: 72, left: 16,
-            child: _LiveBadge(pulse: _pulseAnim)),
-
-        // Label overlay
+        // Label overlay — shown when actively detecting
         if (running && _conf > 0.15)
           Positioned(top: 72, left: 0, right: 0,
-            child: Center(child: _LabelOverlay(
-              label: _label, confidence: _conf,
-              stability: _stability))),
+              child: Center(child: _LabelOverlay(
+                  label: _label, confidence: _conf,
+                  stability: _stability, d: d))),
 
-        // Overlays
+        // State overlays
         if (_state == _SessionState.connecting)
           _ConnectingOverlay(d: d),
         if (_state == _SessionState.error)
           _ErrorOverlay(d: d),
         if (_state == _SessionState.error && _error != null)
-          Positioned(bottom: 260, left: 20, right: 20,
-            child: _ErrorBanner(msg: _error!, d: d)),
+          Positioned(bottom: 300, left: _sp16, right: _sp16,
+              child: _ErrorBanner(msg: _error!, d: d)),
 
-        // Bottom panel
+        // Bottom panel — solid surface (UX4G: no blur)
         Positioned(bottom: 0, left: 0, right: 0,
-          child: _MobileBottomPanel(
-            d: d, state: _state, label: _label, conf: _conf,
-            regional: _regional, selectedLang: _lang, langCodes: _langCodes,
-            tokens: _tokens, sentence: _sentence, sentenceRegional: _sentenceRegional,
-            stability: _stability, ttsSpeaking: _ttsSpeaking, ttsTag: _ttsTag,
-            transcriptCtrl: _transcriptCtrl,
-            onStart: _startSession, onStop: _stopSession,
-            onAddManual: _addCurrentManually, onRemoveLast: _removeLast,
-            onClearAll: _clearBuilder, onCommit: _commitToTranscript,
-            onRemoveToken: _removeToken,
-            onLangChanged: (v) { if (v != null && mounted) setState(() => _lang = v); },
-            onCopy: _copy, onSpeak: _speak, ttsCode: _ttsCode, l: l)),
-      ]));
+            child: _MobileBottomPanel(
+              d: d, state: _state, label: _label, conf: _conf,
+              regional: _regional, selectedLang: _lang,
+              langCodes: _langCodes,
+              tokens: _tokens, sentence: _sentence,
+              sentenceRegional: _sentenceRegional,
+              stability: _stability,
+              ttsSpeaking: _ttsSpeaking, ttsTag: _ttsTag,
+              transcriptCtrl: _transcriptCtrl,
+              onStart: _startSession, onStop: _stopSession,
+              onAddManual: _addCurrentManually,
+              onRemoveLast: _removeLast,
+              onClearAll: _clearBuilder,
+              onCommit: _commitToTranscript,
+              onRemoveToken: _removeToken,
+              onLangChanged: (v) {
+                if (v != null && mounted) setState(() => _lang = v);
+              },
+              onCopy: _copy, onSpeak: _speak, ttsCode: _ttsCode, l: l,
+            )),
+      ]),
+    );
   }
 
-  // ══════════════════════════════════════════════
+  // ════════════════════════════════════════════════════════════════════
   //  WEB — card layout with GlobalNavbar
-  // ══════════════════════════════════════════════
+  // ════════════════════════════════════════════════════════════════════
   Widget _buildWeb(BuildContext context, bool d, bool wide) {
     return Scaffold(
-      backgroundColor: _A.bg(d),
-      body: SafeArea(
-        child: Column(children: [
-          GlobalNavbar(toggleTheme: widget.toggleTheme,
+      backgroundColor: d ? _dBg : _lBg,
+      body: SafeArea(child: Column(children: [
+        GlobalNavbar(toggleTheme: widget.toggleTheme,
             setLocale: widget.setLocale, activeRoute: 'translate'),
-          Expanded(child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
-            child: wide ? _webWide(d) : _webNarrow(d))),
-        ])));
+        Expanded(child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(_sp24, _sp16, _sp24, _sp32),
+          child: wide ? _webWide(d) : _webNarrow(d),
+        )),
+      ])),
+    );
   }
 
-  Widget _webWide(bool d) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+  Widget _webWide(bool d) => Row(
+      crossAxisAlignment: CrossAxisAlignment.start, children: [
     Expanded(flex: 6, child: _webCamera(d)),
-    const SizedBox(width: 18),
+    const SizedBox(width: _sp16),
     Expanded(flex: 5, child: Column(children: [
-      _webDetection(d), const SizedBox(height: 14),
-      _webBuilder(d),   const SizedBox(height: 14),
+      _webDetection(d), const SizedBox(height: _sp16),
+      _webBuilder(d),   const SizedBox(height: _sp16),
       _webTranscript(d),
     ])),
   ]);
 
   Widget _webNarrow(bool d) => Column(children: [
-    _webCamera(d), const SizedBox(height: 14),
-    _webDetection(d), const SizedBox(height: 14),
-    _webBuilder(d),   const SizedBox(height: 14),
+    _webCamera(d),    const SizedBox(height: _sp16),
+    _webDetection(d), const SizedBox(height: _sp16),
+    _webBuilder(d),   const SizedBox(height: _sp16),
     _webTranscript(d),
   ]);
 
-  // ── Web: Camera card ──
+  // ── Web: Camera card ─────────────────────────────────────────────────
   Widget _webCamera(bool d) {
     final l       = AppLocalizations.of(context);
     final running = _state == _SessionState.running;
-    return _WebCard(d: d, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    final accent  = d ? _primaryDark : _primary;
+    final border  = d ? _dBorder   : _lBorder;
+    final textClr = d ? _dText     : _lText;
+    final subClr  = d ? _dTextSub  : _lTextSub;
+
+    return _UX4GCard(d: d, child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start, children: [
+
+      // Card header
       Row(children: [
-        _WebIconBadge(icon: Icons.sensors_rounded, color: _A.indigo, d: d),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(l.t('translate_vision_title'), style: GoogleFonts.nunito(
-            fontSize: 15, fontWeight: FontWeight.w700, color: _A.label(d))),
-          Text(l.t('translate_vision_sub'), style: GoogleFonts.nunito(
-            fontSize: 12, color: _A.label2(d))),
+        _IconBadge(icon: Icons.sensors_rounded, color: accent, d: d),
+        const SizedBox(width: _sp12),
+        Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l.t('translate_vision_title'),
+              style: _heading(15, textClr)),
+          Text(l.t('translate_vision_sub'),
+              style: _body(12, subClr)),
         ])),
-        _WebStatusChip(state: _state, d: d),
+        _SessionStatusChip(state: _state, d: d),
       ]),
-      const SizedBox(height: 16),
+      const SizedBox(height: _sp16),
+
+      // Camera view
       AspectRatio(aspectRatio: 16 / 10,
-        child: ClipRRect(borderRadius: BorderRadius.circular(14),
-          child: Container(
-            color: const Color(0xFF0A0A0A),
-            child: Stack(fit: StackFit.expand, children: [
-              if (running && _cam != null && _cam!.value.isInitialized)
-                CameraPreview(_cam!)
-              else
-                _WebCamPlaceholder(d: d),
-              if (running) IgnorePointer(child: CustomPaint(painter: _ScanlinePainter())),
-              if (running) Positioned(top: 10, left: 10,
-                child: _LiveBadge(pulse: _pulseAnim)),
-              if (running && _conf > 0.15)
-                Positioned(bottom: 10, left: 10, right: 10,
-                  child: _LabelOverlay(label: _label, confidence: _conf, stability: _stability)),
-              if (_state == _SessionState.connecting) _ConnectingOverlay(d: d),
-              if (_state == _SessionState.error) _ErrorOverlay(d: d),
-            ])))),
-      const SizedBox(height: 14),
+          child: ClipRRect(borderRadius: BorderRadius.circular(8),
+              child: Container(
+                color: const Color(0xFF0A0A0A),
+                child: Stack(fit: StackFit.expand, children: [
+                  if (running && _cam != null && _cam!.value.isInitialized)
+                    CameraPreview(_cam!)
+                  else
+                    _WebCamPlaceholder(d: d),
+                  if (running)
+                    IgnorePointer(child: CustomPaint(
+                        painter: _CornerPainter(
+                            color: _primary.withOpacity(0.6)))),
+                  if (running)
+                    Positioned(top: _sp8, left: _sp8,
+                        child: _LiveBadge(pulse: _pulseAnim, d: d)),
+                  if (running && _conf > 0.15)
+                    Positioned(bottom: _sp8, left: _sp8, right: _sp8,
+                        child: _LabelOverlay(
+                            label: _label, confidence: _conf,
+                            stability: _stability, d: d)),
+                  if (_state == _SessionState.connecting)
+                    _ConnectingOverlay(d: d),
+                  if (_state == _SessionState.error)
+                    _ErrorOverlay(d: d),
+                ]),
+              ))),
+      const SizedBox(height: _sp12),
+
       Row(children: [
-        _WebOutlineBtn(icon: Icons.flip_camera_android_rounded,
-          label: l.t('translate_switch'), d: d, onTap: _switchCamera),
-        const SizedBox(width: 10),
-        Expanded(child: _WebSessionBtn(state: _state, d: d,
-          onStart: _startSession, onStop: _stopSession)),
+        OutlinedButton.icon(
+          onPressed: _switchCamera,
+          icon: const Icon(Icons.flip_camera_android_rounded, size: 14),
+          label: Text(l.t('translate_switch')),
+          style: OutlinedButton.styleFrom(
+              side: BorderSide(color: border),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8))),
+        ),
+        const SizedBox(width: _sp12),
+        Expanded(child: _WebSessionButton(
+            state: _state, d: d,
+            onStart: _startSession, onStop: _stopSession)),
       ]),
+
       if (_state == _SessionState.error && _error != null) ...[
-        const SizedBox(height: 10), _ErrorBanner(msg: _error!, d: d)],
+        const SizedBox(height: _sp12),
+        _ErrorBanner(msg: _error!, d: d),
+      ],
     ]));
   }
 
-  // ── Web: Detection card ──
+  // ── Web: Detection card ───────────────────────────────────────────────
   Widget _webDetection(bool d) {
     final l      = AppLocalizations.of(context);
     final active = _state == _SessionState.running;
-    return _WebCard(d: d, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    final textClr = d ? _dText    : _lText;
+    final subClr  = d ? _dTextSub : _lTextSub;
+    final mutedClr = d ? _dTextMuted : _lTextMuted;
+
+    return _UX4GCard(d: d, child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        _WebIconBadge(icon: Icons.translate_rounded, color: _A.green, d: d),
-        const SizedBox(width: 10),
-        Expanded(child: Text(l.t('translate_prediction'), style: GoogleFonts.nunito(
-          fontSize: 14, fontWeight: FontWeight.w700, color: _A.label(d)))),
-        _LangDropdown(value: _lang, options: _langCodes.keys.toList(), d: d,
-          onChanged: (v) { if (v != null) setState(() => _lang = v); }),
+        _IconBadge(icon: Icons.translate_rounded,
+            color: d ? _successDark : _success, d: d),
+        const SizedBox(width: _sp12),
+        Expanded(child: Text(l.t('translate_prediction'),
+            style: _heading(14, textClr))),
+        _LangDropdownWeb(value: _lang,
+            options: _langCodes.keys.toList(), d: d,
+            onChanged: (v) { if (v != null) setState(() => _lang = v); }),
       ]),
-      const SizedBox(height: 14),
+      const SizedBox(height: _sp16),
+
       // EN detection
-      Row(children: [
-        Expanded(child: _DetectionCard(code: 'EN', color: _A.indigo, d: d,
-          text: active ? _label : l.t('translate_waiting'), isActive: active)),
-        const SizedBox(width: 8),
-        _TtsButton(color: _A.indigo, speaking: _ttsSpeaking && _ttsTag == 'en',
-          onTap: active ? () => _speak(_label, 'en-US', 'en') : null),
-      ]),
-      const SizedBox(height: 8),
+      _WebDetectionRow(
+          code: 'EN', color: d ? _primaryDark : _primary, d: d,
+          text: active ? _label : l.t('translate_waiting'),
+          isActive: active,
+          speaking: _ttsSpeaking && _ttsTag == 'en',
+          onSpeak: active
+              ? () => _speak(_label, 'en-US', 'en') : null),
+      const SizedBox(height: _sp8),
+
       // Regional detection
-      Row(children: [
-        Expanded(child: _DetectionCard(
-          code: _lang.substring(0, 2).toUpperCase(), color: _A.green, d: d,
-          text: active ? (_regional.isNotEmpty ? _regional : '…') : l.t('translate_waiting'),
-          isActive: active)),
-        const SizedBox(width: 8),
-        _TtsButton(color: _A.green, speaking: _ttsSpeaking && _ttsTag == 'regional',
-          onTap: active && _regional.isNotEmpty
-            ? () => _speak(_regional, _ttsCode(_lang), 'regional') : null),
-      ]),
-      const SizedBox(height: 14),
+      _WebDetectionRow(
+          code: _lang.substring(0, 2).toUpperCase(),
+          color: d ? _successDark : _success, d: d,
+          text: active
+              ? (_regional.isNotEmpty ? _regional : '…')
+              : l.t('translate_waiting'),
+          isActive: active,
+          speaking: _ttsSpeaking && _ttsTag == 'regional',
+          onSpeak: active && _regional.isNotEmpty
+              ? () => _speak(_regional, _ttsCode(_lang), 'regional')
+              : null),
+
+      const SizedBox(height: _sp16),
+
       // Confidence
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(l.t('obj_page_confidence'), style: GoogleFonts.nunito(
-          fontSize: 10, fontWeight: FontWeight.w600,
-          color: _A.label3(d), letterSpacing: 1.2)),
+        Text(l.t('obj_page_confidence').toUpperCase(),
+            style: _txtLabel(10, mutedClr, w: FontWeight.w700)),
         Text(active ? '${(_conf * 100).toStringAsFixed(0)}%' : '—',
-          style: GoogleFonts.nunito(fontSize: 12, color: _A.label2(d), fontWeight: FontWeight.w600)),
+            style: _txtLabel(12, subClr)),
       ]),
-      const SizedBox(height: 6),
-      _ConfidenceBar(value: active ? _conf : 0),
+      const SizedBox(height: _sp8),
+      _ConfBar(value: active ? _conf : 0, d: d),
+
       if (active && _stability > 0) ...[
-        const SizedBox(height: 8),
+        const SizedBox(height: _sp12),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text('${l.t('translate_frames')}: $_frames', style: GoogleFonts.nunito(
-            fontSize: 11, color: _A.label3(d))),
+          Text('${l.t('translate_frames')}: $_frames',
+              style: _body(11, mutedClr)),
           Row(children: [
-            SizedBox(width: 64, height: 3,
-              child: ClipRRect(borderRadius: BorderRadius.circular(2),
-                child: LinearProgressIndicator(value: _stability,
-                  backgroundColor: _A.sep(d),
-                  valueColor: AlwaysStoppedAnimation(
-                    _stability >= 1.0 ? _A.green : _A.orange)))),
-            const SizedBox(width: 6),
-            Text(_stability >= 1.0 ? l.t('translate_adding') : l.t('translate_hold_sign'),
-              style: GoogleFonts.nunito(fontSize: 11, fontWeight: FontWeight.w600,
-                color: _stability >= 1.0 ? _A.green : _A.orange)),
+            SizedBox(width: 72, height: 3,
+                child: ClipRRect(borderRadius: BorderRadius.circular(2),
+                    child: LinearProgressIndicator(
+                        value: _stability,
+                        backgroundColor: d ? _dBorder : _lBorder,
+                        valueColor: AlwaysStoppedAnimation(
+                            _stability >= 1.0
+                                ? (d ? _successDark : _success)
+                                : (d ? _warningDark : _warning))))),
+            const SizedBox(width: _sp8),
+            Text(_stability >= 1.0
+                ? l.t('translate_adding')
+                : l.t('translate_hold_sign'),
+                style: _txtLabel(11,
+                    _stability >= 1.0
+                        ? (d ? _successDark : _success)
+                        : (d ? _warningDark : _warning),
+                    w: FontWeight.w700)),
           ]),
         ]),
       ],
     ]));
   }
 
-  // ── Web: Sentence builder card ──
+  // ── Web: Sentence builder card ────────────────────────────────────────
   Widget _webBuilder(bool d) {
     final l = AppLocalizations.of(context);
-    return _WebCard(d: d, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    final accent = d ? _purpleDark : _purple;
+    final textClr = d ? _dText    : _lText;
+    final subClr  = d ? _dTextSub : _lTextSub;
+    final mutedClr = d ? _dTextMuted : _lTextMuted;
+
+    return _UX4GCard(d: d, child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        _WebIconBadge(icon: Icons.auto_awesome_outlined, color: _A.purple, d: d),
-        const SizedBox(width: 10),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(l.t('translate_sentence_builder'), style: GoogleFonts.nunito(
-            fontSize: 14, fontWeight: FontWeight.w700, color: _A.label(d))),
-          Text(l.t('translate_auto_chain_subtitle'), style: GoogleFonts.nunito(
-            fontSize: 11.5, color: _A.label2(d))),
+        _IconBadge(icon: Icons.auto_awesome_outlined, color: accent, d: d),
+        const SizedBox(width: _sp12),
+        Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(l.t('translate_sentence_builder'), style: _heading(14, textClr)),
+          Text(l.t('translate_auto_chain_subtitle'), style: _body(11.5, subClr)),
         ])),
-        GestureDetector(onTap: _addCurrentManually,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: _A.indigo.withOpacity(d ? 0.15 : 0.08),
-              borderRadius: BorderRadius.circular(10)),
-            child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.add_rounded, color: _A.indigo, size: 14),
-              const SizedBox(width: 4),
-              Text(l.t('translate_add_sign'), style: GoogleFonts.nunito(
-                color: _A.indigo, fontSize: 12, fontWeight: FontWeight.w700)),
-            ]))),
+        Semantics(
+          label: l.t('translate_add_sign'), button: true,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(8),
+            onTap: _addCurrentManually,
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: _sp12, vertical: _sp8),
+              decoration: BoxDecoration(
+                  color: accent.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: accent.withOpacity(0.25), width: 1)),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.add_rounded, color: accent, size: 14),
+                const SizedBox(width: _sp4),
+                Text(l.t('translate_add_sign'),
+                    style: _txtLabel(12, accent, w: FontWeight.w700)),
+              ]),
+            ),
+          ),
+        ),
       ]),
-      const SizedBox(height: 14),
-      // Info
+      const SizedBox(height: _sp16),
+
+      // Info box (UX4G: info color)
       Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        padding: const EdgeInsets.symmetric(
+            horizontal: _sp12, vertical: _sp8),
         decoration: BoxDecoration(
-          color: _A.surface2(d), borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _A.sep(d), width: 0.5)),
+            color: d ? _infoDark.withOpacity(0.10) : _infoLight,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+                color: d ? _infoDark.withOpacity(0.25)
+                    : _info.withOpacity(0.25), width: 1)),
         child: Row(children: [
-          Icon(Icons.info_outline_rounded, size: 13, color: _A.label3(d)),
-          const SizedBox(width: 8),
+          Icon(Icons.info_outline_rounded, size: 14,
+              color: d ? _infoDark : _info),
+          const SizedBox(width: _sp8),
           Expanded(child: Text(l.t('translate_builder_info'),
-            style: GoogleFonts.nunito(fontSize: 12, color: _A.label2(d), height: 1.4))),
-        ])),
-      const SizedBox(height: 14),
+              style: _body(12, d ? _infoDark : _info))),
+        ]),
+      ),
+      const SizedBox(height: _sp16),
+
       // Tokens
       if (_tokens.isEmpty)
-        _WebEmptyBuilder(d: d)
+        _EmptyBuilderWeb(d: d)
       else
-        Wrap(spacing: 7, runSpacing: 7,
-          children: _tokens.asMap().entries.map((e) => _TokenChip(
-            index: e.key + 1, token: e.value,
-            isLast: e.key == _tokens.length - 1,
-            d: d, onRemove: () => _removeToken(e.key))).toList()),
+        Wrap(spacing: _sp8, runSpacing: _sp8,
+            children: _tokens.asMap().entries.map((e) =>
+                _TokenChip(index: e.key + 1, token: e.value,
+                    isLast: e.key == _tokens.length - 1, d: d,
+                    onRemove: () => _removeToken(e.key))).toList()),
+
       // Generated sentence
       if (_tokens.isNotEmpty) ...[
-        const SizedBox(height: 14),
+        const SizedBox(height: _sp16),
         Row(children: [
-          Icon(Icons.arrow_downward_rounded, size: 12, color: _A.label3(d)),
-          const SizedBox(width: 5),
-          Text(l.t('translate_generated_sentence'), style: GoogleFonts.nunito(
-            fontSize: 11, fontWeight: FontWeight.w600, color: _A.label3(d), letterSpacing: 0.5)),
+          Icon(Icons.arrow_downward_rounded, size: 12,
+              color: d ? _dTextMuted : _lTextMuted),
+          const SizedBox(width: _sp4),
+          Text(l.t('translate_generated_sentence').toUpperCase(),
+              style: _txtLabel(10, d ? _dTextMuted : _lTextMuted,
+                  w: FontWeight.w700)),
         ]),
-        const SizedBox(height: 8),
+        const SizedBox(height: _sp8),
         Container(
-          width: double.infinity, padding: const EdgeInsets.all(14),
+          width: double.infinity, padding: const EdgeInsets.all(_sp16),
           decoration: BoxDecoration(
-            color: _A.surface2(d), borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _A.purple.withOpacity(0.30))),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              color: accent.withOpacity(0.06),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                  color: accent.withOpacity(0.25), width: 1)),
+          child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
-              _LangTag(code: 'EN', color: _A.purple),
-              const SizedBox(width: 8),
-              Expanded(child: Text(_sentence.isNotEmpty ? _sentence : '…',
-                style: GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w700,
-                  color: _A.label(d), height: 1.35))),
-              _IconBtn(icon: Icons.copy_outlined, color: _A.label3(d),
-                onTap: () => _copy(_sentence)),
-              const SizedBox(width: 2),
-              _IconBtn(
-                icon: _ttsSpeaking && _ttsTag == 'sentence_en'
-                  ? Icons.stop_rounded : Icons.volume_up_rounded,
-                color: _A.purple.withOpacity(0.7),
-                onTap: () => _speak(_sentence, 'en-US', 'sentence_en')),
+              _LangBadge(code: 'EN', color: accent),
+              const SizedBox(width: _sp8),
+              Expanded(child: Text(
+                  _sentence.isNotEmpty ? _sentence : '…',
+                  style: _heading(16, textClr))),
+              _ActionIconBtn(
+                  icon: Icons.copy_outlined, color: mutedClr,
+                  tooltip: l.t('common_copy'), onTap: () => _copy(_sentence)),
+              _ActionIconBtn(
+                  icon: _ttsSpeaking && _ttsTag == 'sentence_en'
+                      ? Icons.stop_rounded : Icons.volume_up_rounded,
+                  color: accent, tooltip: l.t('common_speak'),
+                  onTap: () => _speak(_sentence, 'en-US', 'sentence_en')),
             ]),
             if (_sentenceRegional.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Divider(height: 0.5, color: _A.sep(d)),
-              const SizedBox(height: 8),
+              const SizedBox(height: _sp12),
+              Divider(height: 1, thickness: 1,
+                  color: d ? _dBorderSub : _lBorderSub),
+              const SizedBox(height: _sp12),
               Row(children: [
-                _LangTag(code: _lang.substring(0,2).toUpperCase(), color: _A.green),
-                const SizedBox(width: 8),
+                _LangBadge(code: _lang.substring(0, 2).toUpperCase(),
+                    color: d ? _successDark : _success),
+                const SizedBox(width: _sp8),
                 Expanded(child: Text(_sentenceRegional,
-                  style: GoogleFonts.nunito(fontSize: 16, fontWeight: FontWeight.w700,
-                    color: _A.green, height: 1.35))),
-                _IconBtn(icon: Icons.copy_outlined, color: _A.label3(d),
-                  onTap: () => _copy(_sentenceRegional)),
-                const SizedBox(width: 2),
-                _IconBtn(
-                  icon: _ttsSpeaking && _ttsTag == 'sentence_reg'
-                    ? Icons.stop_rounded : Icons.volume_up_rounded,
-                  color: _A.green.withOpacity(0.7),
-                  onTap: () => _speak(_sentenceRegional, _ttsCode(_lang), 'sentence_reg')),
+                    style: _heading(16, d ? _successDark : _success))),
+                _ActionIconBtn(
+                    icon: Icons.copy_outlined, color: mutedClr,
+                  tooltip: l.t('common_copy'),
+                    onTap: () => _copy(_sentenceRegional)),
+                _ActionIconBtn(
+                    icon: _ttsSpeaking && _ttsTag == 'sentence_reg'
+                        ? Icons.stop_rounded : Icons.volume_up_rounded,
+                    color: d ? _successDark : _success,
+                  tooltip: l.t('common_speak'),
+                    onTap: () => _speak(
+                        _sentenceRegional, _ttsCode(_lang), 'sentence_reg')),
               ]),
             ],
-          ])),
-        const SizedBox(height: 12),
+          ]),
+        ),
+        const SizedBox(height: _sp12),
         Row(children: [
-          Expanded(child: GestureDetector(onTap: _commitToTranscript,
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                color: _A.indigo.withOpacity(d ? 0.14 : 0.08),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: _A.indigo.withOpacity(0.25))),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(Icons.save_alt_rounded, color: _A.indigo, size: 14),
-                const SizedBox(width: 6),
-                Text(l.t('translate_save_transcript'), style: GoogleFonts.nunito(
-                  color: _A.indigo, fontSize: 13, fontWeight: FontWeight.w700)),
-              ])))),
-          const SizedBox(width: 8),
-          _SmallIconBtn(icon: Icons.backspace_outlined, color: _A.orange,
-            tooltip: l.t('translate_remove_last'), onTap: _removeLast),
-          const SizedBox(width: 6),
-          _SmallIconBtn(icon: Icons.delete_sweep_outlined, color: _A.red,
-            tooltip: l.t('translate_clear_all'), onTap: _clearBuilder),
+          Expanded(child: OutlinedButton.icon(
+            onPressed: _commitToTranscript,
+            icon: const Icon(Icons.save_alt_rounded, size: 14),
+            label: Text(l.t('translate_save_transcript')),
+            style: OutlinedButton.styleFrom(
+                minimumSize: const Size(0, 44),
+                foregroundColor: d ? _primaryDark : _primary,
+                side: BorderSide(
+                    color: (d ? _primaryDark : _primary).withOpacity(0.35)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8))),
+          )),
+          const SizedBox(width: _sp8),
+          Tooltip(message: l.t('translate_remove_last'),
+              child: IconButton(
+                onPressed: _removeLast,
+                icon: const Icon(Icons.backspace_outlined),
+                color: d ? _warningDark : _warning,
+                style: IconButton.styleFrom(
+                    backgroundColor:
+                    (d ? _warningDark : _warning).withOpacity(0.10),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8))),
+              )),
+          const SizedBox(width: _sp8),
+          Tooltip(message: l.t('translate_clear_all'),
+              child: IconButton(
+                onPressed: _clearBuilder,
+                icon: const Icon(Icons.delete_sweep_outlined),
+                color: d ? _dangerDark : _danger,
+                style: IconButton.styleFrom(
+                    backgroundColor:
+                    (d ? _dangerDark : _danger).withOpacity(0.10),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8))),
+              )),
         ]),
       ],
     ]));
   }
 
-  // ── Web: Transcript card ──
+  // ── Web: Transcript card ──────────────────────────────────────────────
   Widget _webTranscript(bool d) {
     final l = AppLocalizations.of(context);
-    return _WebCard(d: d, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    final accent  = d ? _primaryDark : _primary;
+    final textClr = d ? _dText    : _lText;
+    final bg2     = d ? _dSurface2 : _lSurface2;
+    final border  = d ? _dBorder   : _lBorder;
+
+    return _UX4GCard(d: d, child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        _WebIconBadge(icon: Icons.article_outlined, color: _A.orange, d: d),
-        const SizedBox(width: 10),
-        Expanded(child: Text(l.t('translate_transcription'), style: GoogleFonts.nunito(
-          fontSize: 14, fontWeight: FontWeight.w700, color: _A.label(d)))),
+        _IconBadge(icon: Icons.article_outlined,
+            color: d ? _warningDark : _warning, d: d),
+        const SizedBox(width: _sp12),
+        Text(l.t('translate_transcription'), style: _heading(14, textClr)),
       ]),
-      const SizedBox(height: 12),
+      const SizedBox(height: _sp12),
       Container(
         decoration: BoxDecoration(
-          color: _A.surface2(d), borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _A.sep(d), width: 0.5)),
+            color: bg2,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: border, width: 1)),
         child: TextField(
           controller: _transcriptCtrl, maxLines: 5,
-          style: GoogleFonts.nunito(fontSize: 14, color: _A.label(d), height: 1.6),
+          style: _body(14, textClr),
           decoration: InputDecoration(
-            hintText: l.t('translate_hint'),
-            hintStyle: GoogleFonts.nunito(color: _A.label3(d), fontSize: 13),
-            contentPadding: const EdgeInsets.all(14), border: InputBorder.none))),
-      const SizedBox(height: 10),
+              hintText: l.t('translate_hint'),
+              hintStyle: _body(13, d ? _dTextMuted : _lTextMuted),
+              contentPadding: const EdgeInsets.all(_sp16),
+              border: InputBorder.none),
+        ),
+      ),
+      const SizedBox(height: _sp12),
       Row(children: [
-        _SmallIconBtn(icon: Icons.copy_outlined, color: _A.indigo,
-          tooltip: l.t('translate_copy_transcript'), onTap: () => _copy(_transcriptCtrl.text)),
-        const SizedBox(width: 6),
-        _SmallIconBtn(icon: Icons.delete_outline_rounded, color: _A.red,
-          tooltip: l.t('common_clear'), onTap: _transcriptCtrl.clear),
+        OutlinedButton.icon(
+          onPressed: () => _copy(_transcriptCtrl.text),
+          icon: const Icon(Icons.copy_outlined, size: 14),
+          label: Text(l.t('translate_copy_transcript')),
+          style: OutlinedButton.styleFrom(
+              foregroundColor: accent,
+              side: BorderSide(color: accent.withOpacity(0.35)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8))),
+        ),
+        const SizedBox(width: _sp8),
+        OutlinedButton.icon(
+          onPressed: _transcriptCtrl.clear,
+          icon: const Icon(Icons.delete_outline_rounded, size: 14),
+          label: Text(l.t('common_clear')),
+          style: OutlinedButton.styleFrom(
+              foregroundColor: d ? _dangerDark : _danger,
+              side: BorderSide(
+                  color: (d ? _dangerDark : _danger).withOpacity(0.35)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8))),
+        ),
       ]),
     ]));
   }
 }
 
-// ══════════════════════════════════════════════
-//  MOBILE-ONLY WIDGETS
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════
+//  MOBILE COMPONENTS
+// ══════════════════════════════════════════════════════════════════════
 
-class _MobileCamPlaceholder extends StatelessWidget {
-  final bool d; final _SessionState state;
-  const _MobileCamPlaceholder({required this.d, required this.state});
+class _MobileTopBar extends StatelessWidget {
+  final bool d;
+  final _SessionState state;
+  final AppLocalizations l;
+  final Animation<double> pulse;
+  final VoidCallback onBack, onFlip;
+  const _MobileTopBar({required this.d, required this.state, required this.l,
+    required this.pulse, required this.onBack, required this.onFlip});
+
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    return Container(
-    color: const Color(0xFF080810),
-    child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Container(width: 80, height: 80,
-        decoration: BoxDecoration(shape: BoxShape.circle,
-          color: Colors.white.withOpacity(0.05)),
-        child: const Icon(Icons.videocam_off_rounded, color: Colors.white24, size: 36)),
-      const SizedBox(height: 16),
-      Text(state == _SessionState.error ? l.t('translate_camera_error') : l.t('translate_tap_start'),
-        style: GoogleFonts.nunito(color: Colors.white38, fontSize: 14)),
-    ])));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(_sp16, _sp8, _sp16, 0),
+      child: Row(children: [
+        Semantics(
+          label: l.t('common_back'), button: true,
+          child: _CamOverlayBtn(icon: Icons.arrow_back_rounded, onTap: onBack),
+        ),
+        const Spacer(),
+        _StatusPillOverlay(state: state, pulse: pulse, l: l),
+        const Spacer(),
+        Semantics(
+          label: l.t('translate_switch'), button: true,
+          child: _CamOverlayBtn(
+              icon: Icons.flip_camera_ios_rounded, onTap: onFlip),
+        ),
+      ]),
+    );
   }
 }
 
-class _CamIconBtn extends StatelessWidget {
-  final IconData icon; final VoidCallback onTap;
-  const _CamIconBtn({required this.icon, required this.onTap});
+class _CamOverlayBtn extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _CamOverlayBtn({required this.icon, required this.onTap});
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(width: 40, height: 40,
-      decoration: BoxDecoration(color: Colors.black.withOpacity(0.48),
-        shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withOpacity(0.14))),
-      child: Icon(icon, color: Colors.white, size: 20)));
+      onTap: onTap,
+      child: Container(width: 40, height: 40,
+          decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.45),
+              shape: BoxShape.circle,
+              border: Border.all(
+                  color: Colors.white.withOpacity(0.15), width: 1)),
+          child: Icon(icon, color: Colors.white, size: 20)));
 }
 
-class _MobileStatusPill extends StatelessWidget {
+class _StatusPillOverlay extends StatelessWidget {
   final _SessionState state;
-  const _MobileStatusPill({required this.state});
+  final Animation<double> pulse;
+  final AppLocalizations l;
+  const _StatusPillOverlay({required this.state, required this.pulse,
+    required this.l});
+
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     Color c; String t;
     switch (state) {
-      case _SessionState.running:    c = _A.green;  t = l10n.t('common_live'); break;
-      case _SessionState.connecting: c = _A.orange; t = l10n.t('common_connecting'); break;
-      case _SessionState.error:      c = _A.red;    t = l10n.t('common_error'); break;
-      default:                       c = Colors.white54; t = l10n.t('common_ready');
+      case _SessionState.running:    c = _successDark; t = l.t('common_live'); break;
+      case _SessionState.connecting: c = _warningDark; t = l.t('common_connecting'); break;
+      case _SessionState.error:      c = _dangerDark;  t = l.t('common_error'); break;
+      default:                       c = Colors.white54; t = l.t('common_ready');
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(color: Colors.black.withOpacity(0.50),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: c.withOpacity(0.40))),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 5, height: 5,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: c)),
-        const SizedBox(width: 6),
-        Text(t, style: GoogleFonts.nunito(color: c, fontSize: 11, fontWeight: FontWeight.w700)),
-      ]));
-  }
-}
-
-class _LabelOverlay extends StatelessWidget {
-  final String label; final double confidence, stability;
-  const _LabelOverlay({required this.label, required this.confidence, required this.stability});
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    if (label == '—' || label.isEmpty) return const SizedBox.shrink();
-    final confC = confidence > 0.75 ? _A.green : _A.orange;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(color: Colors.black.withOpacity(0.55),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(0.08))),
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Row(mainAxisSize: MainAxisSize.min, children: [
-          Text(label, style: GoogleFonts.nunito(
-            color: Colors.white, fontWeight: FontWeight.w800, fontSize: 22)),
-          const SizedBox(width: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-            decoration: BoxDecoration(color: confC.withOpacity(0.22),
-              borderRadius: BorderRadius.circular(6)),
-            child: Text('${(confidence * 100).toStringAsFixed(0)}%',
-              style: GoogleFonts.nunito(color: confC, fontSize: 11, fontWeight: FontWeight.w800))),
+    return AnimatedBuilder(
+      animation: pulse,
+      builder: (_, __) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: _sp12, vertical: _sp4),
+        decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.48),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: c.withOpacity(0.40), width: 1)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 6, height: 6,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: c,
+                  boxShadow: [BoxShadow(
+                      color: c.withOpacity(pulse.value * 0.6),
+                      blurRadius: 5)])),
+          const SizedBox(width: _sp8),
+          Text(t, style: _txtLabel(11, c, w: FontWeight.w700)),
         ]),
-        if (stability > 0) ...[
-          const SizedBox(height: 6),
-          SizedBox(width: 150, child: ClipRRect(borderRadius: BorderRadius.circular(2),
-            child: LinearProgressIndicator(value: stability, minHeight: 3,
-              backgroundColor: Colors.white.withOpacity(0.12),
-              valueColor: AlwaysStoppedAnimation(stability >= 1.0 ? _A.green : Colors.white54)))),
-          const SizedBox(height: 3),
-          Text(stability >= 1.0 ? l.t('translate_adding') : l.t('translate_hold_steady'),
-            style: GoogleFonts.nunito(
-              color: stability >= 1.0 ? _A.green : Colors.white54,
-              fontSize: 10, fontWeight: FontWeight.w600)),
-        ],
-      ]));
+      ),
+    );
   }
 }
 
-class _CornerPainter extends CustomPainter {
-  final Color color;
-  const _CornerPainter({required this.color});
-  @override
-  void paint(Canvas canvas, Size size) {
-    final p = Paint()..color = color..strokeWidth = 2.5
-      ..style = PaintingStyle.stroke..strokeCap = StrokeCap.round;
-    const l = 26.0; const m = 18.0;
-    canvas.drawPath(Path()..moveTo(m, m+l)..lineTo(m, m)..lineTo(m+l, m), p);
-    canvas.drawPath(Path()..moveTo(size.width-m-l, m)..lineTo(size.width-m, m)..lineTo(size.width-m, m+l), p);
-    canvas.drawPath(Path()..moveTo(m, size.height-m-l)..lineTo(m, size.height-m)..lineTo(m+l, size.height-m), p);
-    canvas.drawPath(Path()..moveTo(size.width-m-l, size.height-m)..lineTo(size.width-m, size.height-m)..lineTo(size.width-m, size.height-m-l), p);
-  }
-  @override bool shouldRepaint(_CornerPainter o) => o.color != color;
-}
-
-class _ScanlinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final sl = Paint()..color = Colors.white.withOpacity(0.012)..strokeWidth = 1;
-    for (double y = 0; y < size.height; y += 4)
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), sl);
-  }
-  @override bool shouldRepaint(_) => false;
-}
-
-// ── Mobile bottom panel (frosted glass) ───────
+// ── Mobile bottom panel — solid (UX4G: clarity over aesthetics) ───────
 class _MobileBottomPanel extends StatefulWidget {
-  final bool d; final _SessionState state;
+  final bool d;
+  final _SessionState state;
   final String label, regional, selectedLang, sentence, sentenceRegional;
   final double conf, stability;
   final Map<String, String> langCodes;
@@ -1482,14 +1637,16 @@ class _MobileBottomPanel extends StatefulWidget {
   final AppLocalizations l;
 
   const _MobileBottomPanel({
-    required this.d, required this.state, required this.label, required this.conf,
-    required this.regional, required this.selectedLang, required this.langCodes,
-    required this.tokens, required this.sentence, required this.sentenceRegional,
-    required this.stability, required this.ttsSpeaking, required this.ttsTag,
+    required this.d, required this.state, required this.label,
+    required this.conf, required this.regional, required this.selectedLang,
+    required this.langCodes, required this.tokens, required this.sentence,
+    required this.sentenceRegional, required this.stability,
+    required this.ttsSpeaking, required this.ttsTag,
     required this.transcriptCtrl, required this.onStart, required this.onStop,
     required this.onAddManual, required this.onRemoveLast, required this.onClearAll,
     required this.onCommit, required this.onRemoveToken, required this.onLangChanged,
-    required this.onCopy, required this.onSpeak, required this.ttsCode, required this.l});
+    required this.onCopy, required this.onSpeak, required this.ttsCode, required this.l,
+  });
 
   @override State<_MobileBottomPanel> createState() => _MobileBottomPanelState();
 }
@@ -1499,676 +1656,529 @@ class _MobileBottomPanelState extends State<_MobileBottomPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final l = widget.l;
-    final d = widget.d;
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-        child: Container(
-          decoration: BoxDecoration(
-            color: d ? const Color(0xFF1C1C1E).withOpacity(0.90) : Colors.white.withOpacity(0.92),
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
-            border: Border(top: BorderSide(color: _A.sep(d), width: 0.5))),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            // Drag handle
-            Padding(padding: const EdgeInsets.only(top: 8, bottom: 4),
-              child: Container(width: 34, height: 4,
+    final l   = widget.l;
+    final d   = widget.d;
+    final bg  = d ? _dSurface  : _lSurface;
+    final brd = d ? _dBorder   : _lBorder;
+
+    return Container(
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+          border: Border(top: BorderSide(color: brd, width: 1))),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        // Drag handle
+        Padding(padding: const EdgeInsets.only(top: _sp8, bottom: _sp4),
+            child: Container(width: 36, height: 4,
                 decoration: BoxDecoration(
-                  color: d ? Colors.white.withOpacity(0.20) : Colors.black.withOpacity(0.14),
-                  borderRadius: BorderRadius.circular(2)))),
-            // Session + lang row
-            Padding(
-              padding: const EdgeInsets.fromLTRB(14, 4, 14, 10),
-              child: Row(children: [
-                Expanded(child: _MobileSessionBtn(state: widget.state, d: d,
-                  onStart: widget.onStart, onStop: widget.onStop)),
-                const SizedBox(width: 10),
-                _MobileLangPill(value: widget.selectedLang,
-                  options: widget.langCodes.keys.toList(), d: d,
-                  onChanged: widget.onLangChanged),
-              ])),
-            // Tabs
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              child: Row(children: [
-                _PanelTab(label: l.t('common_output'), icon: Icons.translate_rounded,
-                  active: _tab == 0, d: d, onTap: () => setState(() => _tab = 0)),
-                const SizedBox(width: 8),
-                _PanelTab(label: l.t('common_builder'), icon: Icons.auto_awesome_outlined,
-                  active: _tab == 1, d: d, onTap: () => setState(() => _tab = 1),
-                  badge: widget.tokens.length),
-                const SizedBox(width: 8),
-                _PanelTab(label: l.t('common_transcript'), icon: Icons.article_outlined,
-                  active: _tab == 2, d: d, onTap: () => setState(() => _tab = 2)),
-              ])),
-            const SizedBox(height: 12),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: KeyedSubtree(key: ValueKey(_tab),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 0),
-                  child: _tab == 0
-                    ? _MobileOutputTab(widget: widget, d: d)
-                    : _tab == 1
-                    ? _MobileBuilderTab(widget: widget, d: d)
-                    : _MobileTranscriptTab(widget: widget, d: d)))),
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+                    color: d ? _dBorder : _lBorder,
+                    borderRadius: BorderRadius.circular(2)))),
+
+        // Session row
+        Padding(
+          padding: const EdgeInsets.fromLTRB(_sp16, _sp4, _sp16, _sp12),
+          child: Row(children: [
+            Expanded(child: _MobileSessionBtn(state: widget.state, d: d,
+                onStart: widget.onStart, onStop: widget.onStop)),
+            const SizedBox(width: _sp12),
+            _LangDropdownMobile(value: widget.selectedLang,
+                options: widget.langCodes.keys.toList(), d: d,
+                onChanged: widget.onLangChanged),
           ]),
         ),
-      ),
+
+        // Tab bar
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _sp16),
+          child: Row(children: [
+            _MobileTab(label: l.t('common_output'),
+                icon: Icons.translate_rounded,
+                active: _tab == 0, d: d, onTap: () => setState(() => _tab = 0)),
+            const SizedBox(width: _sp8),
+            _MobileTab(label: l.t('common_builder'),
+                icon: Icons.auto_awesome_outlined,
+                active: _tab == 1, d: d, badge: widget.tokens.length,
+                onTap: () => setState(() => _tab = 1)),
+            const SizedBox(width: _sp8),
+            _MobileTab(label: l.t('common_transcript'),
+                icon: Icons.article_outlined,
+                active: _tab == 2, d: d, onTap: () => setState(() => _tab = 2)),
+          ]),
+        ),
+        const SizedBox(height: _sp12),
+
+        // Tab content
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: KeyedSubtree(key: ValueKey(_tab),
+              child: Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                      _sp16, 0, _sp16, 0),
+                  child: _tab == 0
+                      ? _MobileOutputTab(widget: widget, d: d)
+                      : _tab == 1
+                      ? _MobileBuilderTab(widget: widget, d: d)
+                      : _MobileTranscriptTab(widget: widget, d: d))),
+        ),
+        SizedBox(height: MediaQuery.of(context).padding.bottom + _sp8),
+      ]),
     );
   }
 }
 
-// Mobile session button
+class _MobileTab extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool active, d;
+  final VoidCallback onTap;
+  final int badge;
+  const _MobileTab({required this.label, required this.icon,
+    required this.active, required this.d, required this.onTap, this.badge = 0});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent  = d ? _primaryDark : _primary;
+    final mutedClr = d ? _dTextMuted : _lTextMuted;
+    return Expanded(child: Semantics(
+      selected: active, button: true, label: label,
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(
+              horizontal: _sp8, vertical: _sp8),
+          decoration: BoxDecoration(
+              color: active ? accent.withOpacity(0.10) : Colors.transparent,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                  color: active ? accent.withOpacity(0.30) : Colors.transparent,
+                  width: 1)),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min, children: [
+            Icon(icon, size: 12,
+                color: active ? accent : mutedClr),
+            const SizedBox(width: _sp4),
+            Text(label, style: _txtLabel(11,
+                active ? accent : mutedClr,
+                w: active ? FontWeight.w700 : FontWeight.w400)),
+            if (badge > 0) ...[
+              const SizedBox(width: _sp4),
+              Container(width: 16, height: 16,
+                  decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                  child: Center(child: Text('$badge', style: _txtLabel(9, Colors.white,
+                      w: FontWeight.w700)))),
+            ],
+          ]),
+        ),
+      ),
+    ));
+  }
+}
+
 class _MobileSessionBtn extends StatefulWidget {
-  final _SessionState state; final bool d;
+  final _SessionState state;
+  final bool d;
   final VoidCallback onStart, onStop;
   const _MobileSessionBtn({required this.state, required this.d,
     required this.onStart, required this.onStop});
   @override State<_MobileSessionBtn> createState() => _MobileSessionBtnState();
 }
+
 class _MobileSessionBtnState extends State<_MobileSessionBtn> {
-  bool _p = false;
+  bool _pressed = false;
+
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
+    final l       = AppLocalizations.of(context);
     final running = widget.state == _SessionState.running;
     final loading = widget.state == _SessionState.connecting
-                 || widget.state == _SessionState.stopping;
+        || widget.state == _SessionState.stopping;
     final err     = widget.state == _SessionState.error;
-    final c   = running ? _A.red : err ? _A.orange : _A.indigo;
-    final lbl = loading
-      ? (widget.state == _SessionState.connecting ? l.t('common_connecting') : l.t('common_stopping'))
-      : running ? l.t('common_stop') : err ? l.t('common_retry') : l.t('common_start');
-    final ico = loading ? Icons.hourglass_empty_rounded
-      : running ? Icons.stop_rounded
-      : err ? Icons.refresh_rounded : Icons.videocam_rounded;
 
-    return GestureDetector(
-      onTapDown:   (_) => setState(() => _p = true),
-      onTapUp:     (_) { setState(() => _p = false);
-        if (!loading) (running ? widget.onStop : widget.onStart)(); },
-      onTapCancel: ()  => setState(() => _p = false),
-      child: AnimatedScale(scale: _p ? 0.96 : 1.0,
-        duration: const Duration(milliseconds: 80),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 13),
-          decoration: BoxDecoration(
-            color: (running || err) ? c.withOpacity(0.10) : c,
-            borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: (running || err) ? c.withOpacity(0.35) : Colors.transparent),
-            boxShadow: (running || err || loading) ? [] : [BoxShadow(
-              color: c.withOpacity(0.30), blurRadius: 12, offset: const Offset(0, 4))]),
-          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            if (loading)
-              SizedBox(width: 14, height: 14,
-                child: CircularProgressIndicator(strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation(c)))
-            else
-              Icon(ico, color: (running || err) ? c : Colors.white, size: 16),
-            const SizedBox(width: 7),
-            Text(lbl, style: GoogleFonts.nunito(
-              color: (running || err) ? c : Colors.white,
-              fontSize: 13, fontWeight: FontWeight.w700)),
-          ]))));
+    final Color bgColor;
+    final Color textColor;
+    final String lbl;
+    final IconData ico;
+
+    if (running) {
+      bgColor = widget.d ? _dangerDark.withOpacity(0.12) : _dangerLight;
+      textColor = widget.d ? _dangerDark : _danger;
+      lbl = l.t('common_stop');
+      ico = Icons.stop_rounded;
+    } else if (err) {
+      bgColor = widget.d ? _warningDark.withOpacity(0.12) : _warningLight;
+      textColor = widget.d ? _warningDark : _warning;
+      lbl = l.t('common_retry');
+      ico = Icons.refresh_rounded;
+    } else if (loading) {
+      bgColor = widget.d ? _dSurface2 : _lSurface2;
+      textColor = widget.d ? _dTextSub : _lTextSub;
+      lbl = widget.state == _SessionState.connecting
+          ? l.t('common_connecting') : l.t('common_stopping');
+      ico = Icons.hourglass_empty_rounded;
+    } else {
+      bgColor = widget.d ? _primaryDark : _primary;
+      textColor = Colors.white;
+      lbl = l.t('common_start');
+      ico = Icons.videocam_rounded;
+    }
+
+    return Semantics(
+      label: lbl, button: true,
+      child: GestureDetector(
+        onTapDown:   (_) => setState(() => _pressed = true),
+        onTapUp:     (_) {
+          setState(() => _pressed = false);
+          if (!loading) (running ? widget.onStop : widget.onStart)();
+        },
+        onTapCancel: ()  => setState(() => _pressed = false),
+        child: AnimatedScale(scale: _pressed ? 0.97 : 1.0,
+            duration: const Duration(milliseconds: 80),
+            child: Container(
+              height: 48,
+              decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(8),
+                  border: (running || err)
+                      ? Border.all(color: textColor.withOpacity(0.30), width: 1)
+                      : null),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                if (loading)
+                  SizedBox(width: 14, height: 14,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: textColor))
+                else Icon(ico, color: textColor, size: 16),
+                const SizedBox(width: _sp8),
+                Text(lbl, style: _txtLabel(14, textColor, w: FontWeight.w700)),
+              ]),
+            )),
+      ),
+    );
   }
 }
 
-// Mobile lang pill
-class _MobileLangPill extends StatelessWidget {
-  final String value; final List<String> options;
-  final bool d; final void Function(String?) onChanged;
-  const _MobileLangPill({required this.value, required this.options,
+class _LangDropdownMobile extends StatelessWidget {
+  final String value;
+  final List<String> options;
+  final bool d;
+  final void Function(String?) onChanged;
+  const _LangDropdownMobile({required this.value, required this.options,
     required this.d, required this.onChanged});
+
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-    decoration: BoxDecoration(
-      color: _A.surface2(d), borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: _A.sep(d), width: 0.5)),
-    child: DropdownButtonHideUnderline(
-      child: DropdownButton<String>(
-        value: value, isDense: true,
-        dropdownColor: _A.surface(d),
-        style: GoogleFonts.nunito(color: _A.label(d), fontWeight: FontWeight.w600, fontSize: 12),
-        icon: Icon(Icons.keyboard_arrow_down_rounded, color: _A.label2(d), size: 14),
-        items: options.map((l) => DropdownMenuItem(value: l, child: Text(l))).toList(),
-        onChanged: onChanged)));
-}
-
-// Panel tab chip
-class _PanelTab extends StatelessWidget {
-  final String label; final IconData icon;
-  final bool active, d; final VoidCallback onTap; final int badge;
-  const _PanelTab({required this.label, required this.icon,
-    required this.active, required this.d, required this.onTap, this.badge = 0});
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 160),
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: _sp12, vertical: _sp8),
       decoration: BoxDecoration(
-        color: active ? _A.indigo.withOpacity(d ? 0.16 : 0.09) : _A.surface2(d),
-        borderRadius: BorderRadius.circular(9),
-        border: Border.all(
-          color: active ? _A.indigo.withOpacity(0.35) : _A.sep(d), width: 0.5)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 12, color: active ? _A.indigo : _A.label2(d)),
-        const SizedBox(width: 5),
-        Text(label, style: GoogleFonts.nunito(
-          color: active ? _A.indigo : _A.label2(d), fontSize: 11.5,
-          fontWeight: active ? FontWeight.w700 : FontWeight.w500)),
-        if (badge > 0) ...[
-          const SizedBox(width: 5),
-          Container(width: 16, height: 16,
-            decoration: const BoxDecoration(color: _A.indigo, shape: BoxShape.circle),
-            child: Center(child: Text('$badge', style: GoogleFonts.nunito(
-              color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)))),
-        ],
-      ])));
+          color: d ? _dSurface2 : _lSurface2,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: d ? _dBorder : _lBorder, width: 1)),
+      child: DropdownButtonHideUnderline(child: DropdownButton<String>(
+          value: value, isDense: true,
+          dropdownColor: d ? _dSurface2 : _lSurface,
+          style: _body(12, d ? _dText : _lText, w: FontWeight.w600),
+          icon: Icon(Icons.keyboard_arrow_down_rounded,
+              color: d ? _dTextSub : _lTextSub, size: 14),
+          items: options.map((l) => DropdownMenuItem(
+              value: l, child: Text(l))).toList(),
+          onChanged: onChanged)));
 }
 
-// Output tab
+// Mobile output tab
 class _MobileOutputTab extends StatelessWidget {
-  final _MobileBottomPanel widget; final bool d;
+  final _MobileBottomPanel widget;
+  final bool d;
   const _MobileOutputTab({required this.widget, required this.d});
+
   @override
   Widget build(BuildContext context) {
-    final l = widget.l;
+    final l      = widget.l;
     final active = widget.state == _SessionState.running;
-    final confC  = widget.conf > 0.75 ? _A.green : _A.orange;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-      _MobileDetRow(code: 'EN', color: _A.indigo, d: d,
-        text: active ? widget.label : '—',
-        speaking: widget.ttsSpeaking && widget.ttsTag == 'en',
-        onSpeak: active ? () => widget.onSpeak(widget.label, 'en-US', 'en') : null),
-      const SizedBox(height: 8),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, children: [
+      _MobileDetRow(code: 'EN', color: d ? _primaryDark : _primary, d: d,
+          text: active ? widget.label : '—',
+          speaking: widget.ttsSpeaking && widget.ttsTag == 'en',
+          onSpeak: active
+              ? () => widget.onSpeak(widget.label, 'en-US', 'en') : null),
+      const SizedBox(height: _sp8),
       _MobileDetRow(
-        code: widget.selectedLang.substring(0, 2).toUpperCase(),
-        color: _A.green, d: d,
-        text: active ? (widget.regional.isNotEmpty ? widget.regional : '…') : '—',
-        speaking: widget.ttsSpeaking && widget.ttsTag == 'regional',
-        onSpeak: active && widget.regional.isNotEmpty
-          ? () => widget.onSpeak(widget.regional, widget.ttsCode(widget.selectedLang), 'regional') : null),
+          code: widget.selectedLang.substring(0, 2).toUpperCase(),
+          color: d ? _successDark : _success, d: d,
+          text: active
+              ? (widget.regional.isNotEmpty ? widget.regional : '…') : '—',
+          speaking: widget.ttsSpeaking && widget.ttsTag == 'regional',
+          onSpeak: active && widget.regional.isNotEmpty
+              ? () => widget.onSpeak(widget.regional,
+              widget.ttsCode(widget.selectedLang), 'regional') : null),
       if (active) ...[
-        const SizedBox(height: 10),
+        const SizedBox(height: _sp12),
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Text(l.t('obj_page_confidence'), style: GoogleFonts.nunito(
-            fontSize: 10.5, color: _A.label3(d), fontWeight: FontWeight.w600)),
+          Text(l.t('obj_page_confidence').toUpperCase(),
+              style: _txtLabel(10, d ? _dTextMuted : _lTextMuted,
+                  w: FontWeight.w700)),
           Text('${(widget.conf * 100).toStringAsFixed(0)}%',
-            style: GoogleFonts.nunito(fontSize: 12, color: _A.label2(d), fontWeight: FontWeight.w600)),
+              style: _txtLabel(12, d ? _dTextSub : _lTextSub)),
         ]),
-        const SizedBox(height: 4),
-        ClipRRect(borderRadius: BorderRadius.circular(3),
-          child: LinearProgressIndicator(value: widget.conf, minHeight: 3,
-            backgroundColor: _A.sep(d),
-            valueColor: AlwaysStoppedAnimation(confC))),
+        const SizedBox(height: _sp4),
+        _ConfBar(value: widget.conf, d: d),
       ],
-      const SizedBox(height: 6),
+      const SizedBox(height: _sp8),
     ]);
   }
 }
 
 class _MobileDetRow extends StatelessWidget {
-  final String code, text; final Color color;
-  final bool d, speaking; final VoidCallback? onSpeak;
+  final String code, text;
+  final Color color;
+  final bool d, speaking;
+  final VoidCallback? onSpeak;
   const _MobileDetRow({required this.code, required this.text,
-    required this.color, required this.d, required this.speaking, this.onSpeak});
+    required this.color, required this.d, required this.speaking,
+    this.onSpeak});
+
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-    decoration: BoxDecoration(
-      color: _A.surface2(d), borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: _A.sep(d), width: 0.5)),
-    child: Row(children: [
-      Container(padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(5)),
-        child: Text(code, style: GoogleFonts.nunito(
-          fontSize: 9, fontWeight: FontWeight.w900, color: color, letterSpacing: 1.2))),
-      const SizedBox(width: 10),
-      Expanded(child: Text(text, style: GoogleFonts.nunito(
-        fontSize: 17, fontWeight: FontWeight.w700,
-        color: text == '—' ? _A.label3(d) : color, letterSpacing: -0.2))),
-      if (onSpeak != null)
-        GestureDetector(onTap: onSpeak,
-          child: Container(width: 34, height: 34,
-            decoration: BoxDecoration(
-              color: speaking ? color.withOpacity(0.16) : color.withOpacity(0.07),
-              borderRadius: BorderRadius.circular(9),
-              border: Border.all(color: color.withOpacity(speaking ? 0.40 : 0.15))),
-            child: Icon(speaking ? Icons.stop_rounded : Icons.volume_up_rounded,
-              color: color, size: 15))),
-    ]));
+      padding: const EdgeInsets.symmetric(
+          horizontal: _sp12, vertical: _sp12),
+      decoration: BoxDecoration(
+          color: d ? _dSurface2 : _lSurface2,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: d ? _dBorder : _lBorder, width: 1)),
+      child: Row(children: [
+        _LangBadge(code: code, color: color),
+        const SizedBox(width: _sp12),
+        Expanded(child: Text(text, style: _heading(18, color))),
+        if (onSpeak != null)
+          Semantics(
+            label: speaking ? AppLocalizations.of(context).t('common_stop') : AppLocalizations.of(context).t('common_speak'), button: true,
+            child: GestureDetector(
+              onTap: onSpeak,
+              child: Container(width: 36, height: 36,
+                  decoration: BoxDecoration(
+                      color: speaking
+                          ? color.withOpacity(0.15)
+                          : color.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                          color: color.withOpacity(0.25), width: 1)),
+                  child: Icon(
+                      speaking ? Icons.stop_rounded : Icons.volume_up_rounded,
+                      color: color, size: 16)),
+            ),
+          ),
+      ]));
 }
 
-// Builder tab
+// Mobile builder tab
 class _MobileBuilderTab extends StatelessWidget {
-  final _MobileBottomPanel widget; final bool d;
+  final _MobileBottomPanel widget;
+  final bool d;
   const _MobileBuilderTab({required this.widget, required this.d});
+
   @override
   Widget build(BuildContext context) {
-    final l = widget.l;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+    final l      = widget.l;
+    final accent = d ? _purpleDark : _purple;
+    final green  = d ? _successDark : _success;
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, children: [
       if (widget.tokens.isEmpty)
-        Container(width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 14),
-          decoration: BoxDecoration(
-            color: _A.surface2(d), borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _A.sep(d), width: 0.5)),
-          child: Column(children: [
-            Icon(Icons.gesture_rounded, color: _A.label3(d), size: 26),
-            const SizedBox(height: 5),
-            Text(l.t('translate_hold_sign_add'),
-              style: GoogleFonts.nunito(color: _A.label2(d), fontSize: 12)),
-          ]))
+        Container(width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: _sp16),
+            decoration: BoxDecoration(
+                color: d ? _dSurface2 : _lSurface2,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: d ? _dBorder : _lBorder, width: 1)),
+            child: Column(children: [
+              Icon(Icons.gesture_rounded,
+                  color: d ? _dTextMuted : _lTextMuted, size: 26),
+              const SizedBox(height: _sp4),
+              Text(l.t('translate_hold_sign_add'),
+                  style: _body(12, d ? _dTextSub : _lTextSub)),
+            ]))
       else
-        Wrap(spacing: 7, runSpacing: 7,
-          children: widget.tokens.asMap().entries.map((e) => _TokenChip(
-            index: e.key + 1, token: e.value,
-            isLast: e.key == widget.tokens.length - 1,
-            d: d, onRemove: () => widget.onRemoveToken(e.key))).toList()),
+        Wrap(spacing: _sp8, runSpacing: _sp8,
+            children: widget.tokens.asMap().entries.map((e) =>
+                _TokenChip(index: e.key + 1, token: e.value,
+                    isLast: e.key == widget.tokens.length - 1,
+                    d: d, onRemove: () => widget.onRemoveToken(e.key))).toList()),
 
       if (widget.tokens.isNotEmpty) ...[
-        const SizedBox(height: 10),
-        Container(width: double.infinity, padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: _A.purple.withOpacity(d ? 0.10 : 0.06),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _A.purple.withOpacity(0.25))),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Expanded(child: Text(widget.sentence.isNotEmpty ? widget.sentence : '…',
-                style: GoogleFonts.nunito(fontSize: 15, fontWeight: FontWeight.w700,
-                  color: _A.label(d), height: 1.35))),
-              _IconBtn(icon: Icons.copy_outlined, color: _A.label3(d),
-                onTap: () => widget.onCopy(widget.sentence)),
-              const SizedBox(width: 2),
-              _IconBtn(
-                icon: widget.ttsSpeaking && widget.ttsTag == 'sentence_en'
-                  ? Icons.stop_rounded : Icons.volume_up_rounded,
-                color: _A.purple.withOpacity(0.70),
-                onTap: () => widget.onSpeak(widget.sentence, 'en-US', 'sentence_en')),
-            ]),
-            if (widget.sentenceRegional.isNotEmpty) ...[
-              Divider(height: 12, color: _A.sep(d)),
-              Text(widget.sentenceRegional, style: GoogleFonts.nunito(
-                fontSize: 15, fontWeight: FontWeight.w700,
-                color: _A.green, height: 1.35)),
-            ],
-          ])),
-      ],
-      const SizedBox(height: 10),
-      Row(children: [
-        Expanded(child: GestureDetector(onTap: widget.onAddManual,
-          child: Container(padding: const EdgeInsets.symmetric(vertical: 11),
+        const SizedBox(height: _sp12),
+        Container(width: double.infinity, padding: const EdgeInsets.all(_sp12),
             decoration: BoxDecoration(
-              color: _A.indigo.withOpacity(d ? 0.12 : 0.08),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _A.indigo.withOpacity(0.22))),
-            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const Icon(Icons.add_rounded, color: _A.indigo, size: 14),
-              const SizedBox(width: 5),
-              Text(l.t('translate_add_sign'), style: GoogleFonts.nunito(
-                color: _A.indigo, fontSize: 12, fontWeight: FontWeight.w700)),
-            ])))),
+                color: accent.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                    color: accent.withOpacity(0.25), width: 1)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Expanded(child: Text(
+                        widget.sentence.isNotEmpty ? widget.sentence : '…',
+                        style: _heading(15,
+                            d ? _dText : _lText))),
+                    _ActionIconBtn(
+                        icon: Icons.copy_outlined,
+                        color: d ? _dTextMuted : _lTextMuted,
+                      tooltip: l.t('common_copy'),
+                        onTap: () => widget.onCopy(widget.sentence)),
+                    _ActionIconBtn(
+                        icon: widget.ttsSpeaking && widget.ttsTag == 'sentence_en'
+                            ? Icons.stop_rounded : Icons.volume_up_rounded,
+                      color: accent, tooltip: l.t('common_speak'),
+                        onTap: () => widget.onSpeak(
+                            widget.sentence, 'en-US', 'sentence_en')),
+                  ]),
+                  if (widget.sentenceRegional.isNotEmpty) ...[
+                    Divider(height: _sp12, color: d ? _dBorderSub : _lBorderSub),
+                    Text(widget.sentenceRegional, style: _heading(15, green)),
+                  ],
+                ])),
+      ],
+
+      const SizedBox(height: _sp12),
+      Row(children: [
+        Expanded(child: OutlinedButton.icon(
+          onPressed: widget.onAddManual,
+          icon: const Icon(Icons.add_rounded, size: 14),
+          label: Text(l.t('translate_add_sign')),
+          style: OutlinedButton.styleFrom(
+              minimumSize: const Size(0, 44),
+              foregroundColor: d ? _primaryDark : _primary,
+              side: BorderSide(
+                  color: (d ? _primaryDark : _primary).withOpacity(0.35)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8))),
+        )),
         if (widget.tokens.isNotEmpty) ...[
-          const SizedBox(width: 8),
-          Expanded(child: GestureDetector(onTap: widget.onCommit,
-            child: Container(padding: const EdgeInsets.symmetric(vertical: 11),
-              decoration: BoxDecoration(
-                color: _A.green.withOpacity(d ? 0.12 : 0.08),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: _A.green.withOpacity(0.22))),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const Icon(Icons.save_alt_rounded, color: _A.green, size: 14),
-                const SizedBox(width: 5),
-                Text(l.t('common_save'), style: GoogleFonts.nunito(
-                  color: _A.green, fontSize: 12, fontWeight: FontWeight.w700)),
-              ])))),
-          const SizedBox(width: 6),
-          _SmallIconBtn(icon: Icons.backspace_outlined, color: _A.orange,
-            onTap: widget.onRemoveLast),
-          const SizedBox(width: 6),
-          _SmallIconBtn(icon: Icons.delete_sweep_outlined, color: _A.red,
-            onTap: widget.onClearAll),
+          const SizedBox(width: _sp8),
+          Expanded(child: ElevatedButton.icon(
+            onPressed: widget.onCommit,
+            icon: const Icon(Icons.save_alt_rounded, size: 14),
+            label: Text(l.t('common_save')),
+            style: ElevatedButton.styleFrom(
+                minimumSize: const Size(0, 44),
+                backgroundColor: d ? _successDark : _success,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8))),
+          )),
+          const SizedBox(width: _sp8),
+          IconButton(
+              onPressed: widget.onRemoveLast,
+              icon: const Icon(Icons.backspace_outlined),
+              color: d ? _warningDark : _warning,
+              style: IconButton.styleFrom(
+                  backgroundColor:
+                  (d ? _warningDark : _warning).withOpacity(0.10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)))),
+          const SizedBox(width: _sp4),
+          IconButton(
+              onPressed: widget.onClearAll,
+              icon: const Icon(Icons.delete_sweep_outlined),
+              color: d ? _dangerDark : _danger,
+              style: IconButton.styleFrom(
+                  backgroundColor:
+                  (d ? _dangerDark : _danger).withOpacity(0.10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)))),
         ],
       ]),
-      const SizedBox(height: 6),
+      const SizedBox(height: _sp8),
     ]);
   }
 }
 
-// Transcript tab
+// Mobile transcript tab
 class _MobileTranscriptTab extends StatelessWidget {
-  final _MobileBottomPanel widget; final bool d;
+  final _MobileBottomPanel widget;
+  final bool d;
   const _MobileTranscriptTab({required this.widget, required this.d});
+
   @override
-  Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [
+  Widget build(BuildContext context) => Column(
+      mainAxisSize: MainAxisSize.min, children: [
     Container(
-      decoration: BoxDecoration(
-        color: _A.surface2(d), borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _A.sep(d), width: 0.5)),
-      child: TextField(
-        controller: widget.transcriptCtrl, maxLines: 4,
-        style: GoogleFonts.nunito(fontSize: 13.5, color: _A.label(d), height: 1.55),
-        decoration: InputDecoration(
-          hintText: widget.l.t('translate_hint'),
-          hintStyle: GoogleFonts.nunito(color: _A.label3(d), fontSize: 13),
-          contentPadding: const EdgeInsets.all(12), border: InputBorder.none))),
-    const SizedBox(height: 8),
+        decoration: BoxDecoration(
+            color: d ? _dSurface2 : _lSurface2,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+                color: d ? _dBorder : _lBorder, width: 1)),
+        child: TextField(
+          controller: widget.transcriptCtrl, maxLines: 4,
+          style: _body(13.5, d ? _dText : _lText),
+          decoration: InputDecoration(
+              hintText: widget.l.t('translate_hint'),
+              hintStyle: _body(13, d ? _dTextMuted : _lTextMuted),
+              contentPadding: const EdgeInsets.all(_sp12),
+              border: InputBorder.none),
+        )),
+    const SizedBox(height: _sp8),
     Row(children: [
-      GestureDetector(onTap: () => widget.onCopy(widget.transcriptCtrl.text),
-        child: Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: _A.indigo.withOpacity(d ? 0.10 : 0.07),
-            borderRadius: BorderRadius.circular(9),
-            border: Border.all(color: _A.indigo.withOpacity(0.20))),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.copy_outlined, color: _A.indigo, size: 13),
-            const SizedBox(width: 5),
-            Text(widget.l.t('common_copy'), style: GoogleFonts.nunito(
-              color: _A.indigo, fontSize: 12, fontWeight: FontWeight.w700)),
-          ]))),
-      const SizedBox(width: 8),
-      GestureDetector(onTap: widget.transcriptCtrl.clear,
-        child: Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: _A.red.withOpacity(d ? 0.10 : 0.07),
-            borderRadius: BorderRadius.circular(9),
-            border: Border.all(color: _A.red.withOpacity(0.20))),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.delete_outline_rounded, color: _A.red, size: 13),
-            const SizedBox(width: 5),
-            Text(widget.l.t('common_clear'), style: GoogleFonts.nunito(
-              color: _A.red, fontSize: 12, fontWeight: FontWeight.w700)),
-          ]))),
+      OutlinedButton.icon(
+        onPressed: () => widget.onCopy(widget.transcriptCtrl.text),
+        icon: const Icon(Icons.copy_outlined, size: 13),
+        label: Text(widget.l.t('common_copy')),
+        style: OutlinedButton.styleFrom(
+            foregroundColor: d ? _primaryDark : _primary,
+            side: BorderSide(
+                color: (d ? _primaryDark : _primary).withOpacity(0.35)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8))),
+      ),
+      const SizedBox(width: _sp8),
+      OutlinedButton.icon(
+        onPressed: widget.transcriptCtrl.clear,
+        icon: const Icon(Icons.delete_outline_rounded, size: 13),
+        label: Text(widget.l.t('common_clear')),
+        style: OutlinedButton.styleFrom(
+            foregroundColor: d ? _dangerDark : _danger,
+            side: BorderSide(
+                color: (d ? _dangerDark : _danger).withOpacity(0.35)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8))),
+      ),
     ]),
-    const SizedBox(height: 6),
+    const SizedBox(height: _sp8),
   ]);
 }
 
-// ══════════════════════════════════════════════
-//  SHARED / WEB COMPONENTS
-// ══════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════════════
+//  SHARED COMPONENTS
+// ══════════════════════════════════════════════════════════════════════
 
-class _WebCard extends StatelessWidget {
-  final Widget child; final bool d;
-  const _WebCard({required this.child, required this.d});
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      color: _A.surface(d),
-      borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: _A.sep(d), width: 0.5),
-      boxShadow: [if (!d) BoxShadow(
-        color: Colors.black.withOpacity(0.05),
-        blurRadius: 10, offset: const Offset(0, 3))]),
-    child: child);
-}
-
-class _WebIconBadge extends StatelessWidget {
-  final IconData icon; final Color color; final bool d;
-  const _WebIconBadge({required this.icon, required this.color, required this.d});
-  @override
-  Widget build(BuildContext context) => Container(
-    width: 36, height: 36,
-    decoration: BoxDecoration(
-      color: color.withOpacity(d ? 0.16 : 0.09),
-      borderRadius: BorderRadius.circular(10)),
-    child: Icon(icon, color: color, size: 16));
-}
-
-class _WebStatusChip extends StatelessWidget {
-  final _SessionState state; final bool d;
-  const _WebStatusChip({required this.state, required this.d});
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    Color c; String l;
-    switch (state) {
-      case _SessionState.running:    c = _A.green;  l = l10n.t('common_live'); break;
-      case _SessionState.connecting: c = _A.orange; l = l10n.t('common_connecting'); break;
-      case _SessionState.error:      c = _A.red;    l = l10n.t('common_error'); break;
-      default:                       c = _A.label3(this.d); l = l10n.t('common_idle');
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: c.withOpacity(0.10), borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: c.withOpacity(0.25))),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 5, height: 5,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: c)),
-        const SizedBox(width: 5),
-        Text(l, style: GoogleFonts.nunito(fontSize: 11, color: c, fontWeight: FontWeight.w700)),
-      ]));
-  }
-}
-
-class _LangDropdown extends StatelessWidget {
-  final String value; final List<String> options;
-  final bool d; final ValueChanged<String?> onChanged;
-  const _LangDropdown({required this.value, required this.options,
-    required this.d, required this.onChanged});
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-    decoration: BoxDecoration(
-      color: _A.surface2(d), borderRadius: BorderRadius.circular(9),
-      border: Border.all(color: _A.sep(d), width: 0.5)),
-    child: DropdownButtonHideUnderline(
-      child: DropdownButton<String>(
-        value: value, dropdownColor: _A.surface(d),
-        style: GoogleFonts.nunito(color: _A.label(d), fontWeight: FontWeight.w600, fontSize: 12),
-        icon: Icon(Icons.keyboard_arrow_down_rounded, color: _A.label2(d), size: 15),
-        items: options.map((l) => DropdownMenuItem(value: l, child: Text(l))).toList(),
-        onChanged: onChanged)));
-}
-
-class _DetectionCard extends StatelessWidget {
-  final String code, text; final Color color; final bool d, isActive;
-  const _DetectionCard({required this.code, required this.text,
-    required this.color, required this.d, required this.isActive});
-  @override
-  Widget build(BuildContext context) => AnimatedContainer(
-    duration: const Duration(milliseconds: 220),
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-    decoration: BoxDecoration(
-      color: _A.surface2(d), borderRadius: BorderRadius.circular(12),
-      border: Border.all(
-        color: isActive ? color.withOpacity(0.30) : _A.sep(d), width: 0.5)),
-    child: Row(children: [
-      _LangTag(code: code, color: color),
-      const SizedBox(width: 10),
-      Expanded(child: Text(text, style: GoogleFonts.nunito(
-        fontSize: 19, fontWeight: FontWeight.w800,
-        color: isActive ? color : _A.label3(d), letterSpacing: -0.3))),
-    ]));
-}
-
-class _LangTag extends StatelessWidget {
-  final String code; final Color color;
-  const _LangTag({required this.code, required this.color});
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-    decoration: BoxDecoration(
-      color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(5)),
-    child: Text(code, style: GoogleFonts.nunito(
-      fontSize: 9, fontWeight: FontWeight.w900, color: color, letterSpacing: 1.3)));
-}
-
-class _ConfidenceBar extends StatelessWidget {
-  final double value;
-  const _ConfidenceBar({required this.value});
-  @override
-  Widget build(BuildContext context) {
-    final c = value > 0.75 ? _A.green : value > 0.45 ? _A.orange : _A.indigo;
-    return ClipRRect(borderRadius: BorderRadius.circular(3),
-      child: LinearProgressIndicator(value: value, minHeight: 4,
-        backgroundColor: const Color(0x14FFFFFF),
-        valueColor: AlwaysStoppedAnimation(c)));
-  }
-}
-
-class _WebEmptyBuilder extends StatelessWidget {
+class _CamPlaceholder extends StatelessWidget {
   final bool d;
-  const _WebEmptyBuilder({required this.d});
+  final _SessionState state;
+  const _CamPlaceholder({required this.d, required this.state});
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     return Container(
-    width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 20),
-    decoration: BoxDecoration(
-      color: _A.surface2(d), borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: _A.sep(d), width: 0.5)),
-    child: Column(children: [
-      Icon(Icons.gesture_rounded, color: _A.label3(d), size: 28),
-      const SizedBox(height: 7),
-      Text(l.t('translate_hold_sign_build'),
-        style: GoogleFonts.nunito(color: _A.label2(d), fontSize: 12.5)),
-      const SizedBox(height: 3),
-      Text(l.t('translate_builder_info_short'),
-        style: GoogleFonts.nunito(color: _A.label3(d), fontSize: 11.5)),
-    ]));
+      color: const Color(0xFF080810),
+      child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(width: 72, height: 72,
+            decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withOpacity(0.05),
+                border: Border.all(
+                    color: Colors.white.withOpacity(0.10), width: 1)),
+            child: Icon(Icons.videocam_off_rounded,
+                color: Colors.white.withOpacity(0.25), size: 32)),
+        const SizedBox(height: _sp16),
+        Text(state == _SessionState.error
+            ? l.t('translate_camera_error')
+            : l.t('translate_tap_start'),
+            style: _body(14, Colors.white38)),
+      ])),
+    );
   }
-}
-
-class _TokenChip extends StatelessWidget {
-  final int index; final _GestureToken token;
-  final bool isLast, d; final VoidCallback onRemove;
-  const _TokenChip({required this.index, required this.token,
-    required this.isLast, required this.d, required this.onRemove});
-  @override
-  Widget build(BuildContext context) => AnimatedContainer(
-    duration: const Duration(milliseconds: 180),
-    decoration: BoxDecoration(
-      color: isLast ? _A.purple.withOpacity(d ? 0.14 : 0.08) : _A.surface2(d),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(
-        color: isLast ? _A.purple.withOpacity(0.38) : _A.sep(d),
-        width: isLast ? 1.0 : 0.5)),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Padding(padding: const EdgeInsets.only(left: 10, top: 7, bottom: 7),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Text('$index', style: GoogleFonts.nunito(
-            fontSize: 9.5, color: _A.label3(d), fontWeight: FontWeight.w600)),
-          const SizedBox(width: 5),
-          Text(token.label, style: GoogleFonts.nunito(
-            fontSize: 12, fontWeight: FontWeight.w700,
-            color: isLast ? _A.purple : _A.label(d))),
-        ])),
-      GestureDetector(onTap: onRemove,
-        child: Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-          child: Icon(Icons.close_rounded, size: 11,
-            color: isLast ? _A.purple : _A.label3(d)))),
-    ]));
-}
-
-class _TtsButton extends StatelessWidget {
-  final Color color; final bool speaking; final VoidCallback? onTap;
-  const _TtsButton({required this.color, required this.speaking, this.onTap});
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      width: 40, height: 40,
-      decoration: BoxDecoration(
-        color: speaking ? color.withOpacity(0.18) : color.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: speaking ? color.withOpacity(0.55) : color.withOpacity(0.18),
-          width: speaking ? 1.0 : 0.5)),
-      child: Icon(speaking ? Icons.stop_rounded : Icons.volume_up_rounded,
-        color: onTap == null ? color.withOpacity(0.28) : color, size: 16)));
-}
-
-class _IconBtn extends StatelessWidget {
-  final IconData icon; final Color color; final VoidCallback onTap;
-  const _IconBtn({required this.icon, required this.color, required this.onTap});
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Padding(padding: const EdgeInsets.all(5),
-      child: Icon(icon, size: 14, color: color)));
-}
-
-class _SmallIconBtn extends StatelessWidget {
-  final IconData icon; final Color color; final VoidCallback onTap; final String? tooltip;
-  const _SmallIconBtn({required this.icon, required this.color, required this.onTap, this.tooltip});
-  @override
-  Widget build(BuildContext context) {
-    final btn = GestureDetector(
-      onTap: onTap,
-      child: Container(padding: const EdgeInsets.all(9),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(9),
-          border: Border.all(color: color.withOpacity(0.20))),
-        child: Icon(icon, color: color, size: 15)));
-    return tooltip != null ? Tooltip(message: tooltip!, child: btn) : btn;
-  }
-}
-
-class _WebSessionBtn extends StatelessWidget {
-  final _SessionState state; final bool d;
-  final VoidCallback onStart, onStop;
-  const _WebSessionBtn({required this.state, required this.d,
-    required this.onStart, required this.onStop});
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final running = state == _SessionState.running;
-    final loading = state == _SessionState.connecting || state == _SessionState.stopping;
-    final err     = state == _SessionState.error;
-    final c       = running ? _A.red : err ? _A.orange : _A.indigo;
-    final lbl = loading
-      ? (state == _SessionState.connecting ? l10n.t('common_connecting') : l10n.t('common_stopping'))
-      : running ? l10n.t('translate_stop_session') : err ? l10n.t('common_retry') : l10n.t('translate_start_session');
-    final ico = loading ? Icons.hourglass_empty_rounded
-      : running ? Icons.stop_rounded : err ? Icons.refresh_rounded : Icons.play_arrow_rounded;
-    return GestureDetector(
-      onTap: loading ? null : (running ? onStop : onStart),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: c.withOpacity(0.09), borderRadius: BorderRadius.circular(11),
-          border: Border.all(color: c.withOpacity(0.28))),
-        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          if (loading)
-            SizedBox(width: 13, height: 13,
-              child: CircularProgressIndicator(strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation(c)))
-          else Icon(ico, color: c, size: 15),
-          const SizedBox(width: 7),
-          Text(lbl, style: GoogleFonts.nunito(
-            color: c, fontSize: 13, fontWeight: FontWeight.w700)),
-        ])));
-  }
-}
-
-class _WebOutlineBtn extends StatelessWidget {
-  final IconData icon; final String label; final bool d; final VoidCallback onTap;
-  const _WebOutlineBtn({required this.icon, required this.label, required this.d, required this.onTap});
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(11),
-        border: Border.all(color: _A.sep(d))),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 14, color: _A.label2(d)),
-        const SizedBox(width: 6),
-        Text(label, style: GoogleFonts.nunito(
-          fontSize: 13, color: _A.label2(d), fontWeight: FontWeight.w600)),
-      ])));
 }
 
 class _WebCamPlaceholder extends StatelessWidget {
@@ -2177,37 +2187,101 @@ class _WebCamPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return Center(
-    child: Column(mainAxisSize: MainAxisSize.min, children: [
-      Container(padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle, color: Colors.white.withOpacity(0.05)),
-        child: Icon(Icons.videocam_off_rounded, color: Colors.white.withOpacity(0.22), size: 32)),
-      const SizedBox(height: 12),
+    return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Container(padding: const EdgeInsets.all(_sp16),
+          decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white.withOpacity(0.05)),
+          child: Icon(Icons.videocam_off_rounded,
+              color: Colors.white.withOpacity(0.22), size: 28)),
+      const SizedBox(height: _sp12),
       Text(l.t('translate_press_start'),
-        style: GoogleFonts.nunito(color: Colors.white.withOpacity(0.28), fontSize: 13)),
+          style: _body(13, Colors.white38)),
     ]));
+  }
+}
+
+class _LabelOverlay extends StatelessWidget {
+  final String label;
+  final double confidence, stability;
+  final bool d;
+  const _LabelOverlay({required this.label, required this.confidence,
+    required this.stability, required this.d});
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    if (label == '—' || label.isEmpty) return const SizedBox.shrink();
+    final confColor = confidence > 0.75
+        ? _successDark : _warningDark;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: _sp16, vertical: _sp12),
+      decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.60),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+              color: Colors.white.withOpacity(0.10), width: 1)),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Row(mainAxisSize: MainAxisSize.min, children: [
+          Text(label, style: _heading(22, Colors.white)),
+          const SizedBox(width: _sp12),
+          Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: _sp8, vertical: _sp4),
+              decoration: BoxDecoration(
+                  color: confColor.withOpacity(0.25),
+                  borderRadius: BorderRadius.circular(6)),
+              child: Text('${(confidence * 100).toStringAsFixed(0)}%',
+                  style: _txtLabel(11, confColor, w: FontWeight.w700))),
+        ]),
+        if (stability > 0) ...[
+          const SizedBox(height: _sp8),
+          SizedBox(width: 140,
+              child: ClipRRect(borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                      value: stability, minHeight: 3,
+                      backgroundColor: Colors.white.withOpacity(0.15),
+                      valueColor: AlwaysStoppedAnimation(
+                          stability >= 1.0
+                              ? _successDark : Colors.white54)))),
+          const SizedBox(height: _sp4),
+          Text(stability >= 1.0
+              ? l.t('translate_adding')
+              : l.t('translate_hold_steady'),
+              style: _txtLabel(10,
+                  stability >= 1.0 ? _successDark : Colors.white54,
+                  w: FontWeight.w600)),
+        ],
+      ]),
+    );
   }
 }
 
 class _LiveBadge extends StatelessWidget {
   final Animation<double> pulse;
-  const _LiveBadge({required this.pulse});
+  final bool d;
+  const _LiveBadge({required this.pulse, required this.d});
+
   @override
   Widget build(BuildContext context) => AnimatedBuilder(
-    animation: pulse,
-    builder: (_, __) => Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-      decoration: BoxDecoration(
-        color: _A.red.withOpacity(0.90), borderRadius: BorderRadius.circular(7),
-        boxShadow: [BoxShadow(
-          color: _A.red.withOpacity(0.42 * pulse.value), blurRadius: 10)]),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        const CircleAvatar(radius: 2.5, backgroundColor: Colors.white),
-        const SizedBox(width: 5),
-        Text(AppLocalizations.of(context).t('common_live').toUpperCase(), style: GoogleFonts.nunito(
-          color: Colors.white, fontWeight: FontWeight.w900, fontSize: 9, letterSpacing: 1.8)),
-      ])));
+      animation: pulse,
+      builder: (_, __) => Container(
+        padding: const EdgeInsets.symmetric(
+            horizontal: _sp8, vertical: _sp4),
+        decoration: BoxDecoration(
+            color: _danger.withOpacity(0.90),
+            borderRadius: BorderRadius.circular(6),
+            boxShadow: [BoxShadow(
+                color: _danger.withOpacity(0.4 * pulse.value),
+                blurRadius: 8)]),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          const CircleAvatar(radius: 3, backgroundColor: Colors.white),
+          const SizedBox(width: _sp4),
+          Text(AppLocalizations.of(context).t('common_live').toUpperCase(),
+              style: _txtLabel(9, Colors.white, w: FontWeight.w800)),
+        ]),
+      ));
 }
 
 class _ConnectingOverlay extends StatelessWidget {
@@ -2215,14 +2289,15 @@ class _ConnectingOverlay extends StatelessWidget {
   const _ConnectingOverlay({required this.d});
   @override
   Widget build(BuildContext context) => Container(
-    color: Colors.black.withOpacity(0.55),
-    child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const CircularProgressIndicator(
-        valueColor: AlwaysStoppedAnimation<Color>(_A.indigo), strokeWidth: 2),
-      const SizedBox(height: 12),
-      Text(AppLocalizations.of(context).t('translate_establishing_connection'),
-        style: GoogleFonts.nunito(color: _A.indigo, fontWeight: FontWeight.w700, fontSize: 13)),
-    ])));
+      color: Colors.black.withOpacity(0.55),
+      child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(_primary),
+            strokeWidth: 2.5),
+        const SizedBox(height: _sp12),
+        Text(AppLocalizations.of(context).t('translate_establishing_connection'),
+            style: _txtLabel(13, _primaryDark, w: FontWeight.w700)),
+      ])));
 }
 
 class _ErrorOverlay extends StatelessWidget {
@@ -2230,29 +2305,388 @@ class _ErrorOverlay extends StatelessWidget {
   const _ErrorOverlay({required this.d});
   @override
   Widget build(BuildContext context) => Container(
-    color: Colors.black.withOpacity(0.70),
-    child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Icon(Icons.warning_amber_rounded, color: _A.red, size: 32),
-      const SizedBox(height: 8),
-      Text(AppLocalizations.of(context).t('translate_connection_error'), style: GoogleFonts.nunito(
-        color: Colors.white70, fontWeight: FontWeight.w800, fontSize: 15)),
-    ])));
+      color: Colors.black.withOpacity(0.70),
+      child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+        const Icon(Icons.warning_amber_rounded, color: _dangerDark, size: 32),
+        const SizedBox(height: _sp8),
+        Text(AppLocalizations.of(context).t('translate_connection_error'),
+            style: _heading(15, Colors.white70)),
+      ])));
 }
 
 class _ErrorBanner extends StatelessWidget {
-  final String msg; final bool d;
+  final String msg;
+  final bool d;
   const _ErrorBanner({required this.msg, required this.d});
   @override
   Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-    decoration: BoxDecoration(
-      color: _A.red.withOpacity(d ? 0.12 : 0.08),
-      borderRadius: BorderRadius.circular(10),
-      border: Border.all(color: _A.red.withOpacity(0.25))),
-    child: Row(children: [
-      const Icon(Icons.error_outline_rounded, color: _A.red, size: 14),
-      const SizedBox(width: 8),
-      Expanded(child: Text(msg, style: GoogleFonts.nunito(
-        color: _A.red, fontSize: 12.5, fontWeight: FontWeight.w500))),
-    ]));
+      padding: const EdgeInsets.symmetric(
+          horizontal: _sp12, vertical: _sp12),
+      decoration: BoxDecoration(
+          color: d ? _dangerDark.withOpacity(0.12) : _dangerLight,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+              color: d ? _dangerDark.withOpacity(0.30)
+                  : _danger.withOpacity(0.30), width: 1)),
+      child: Row(children: [
+        Icon(Icons.error_outline_rounded,
+            color: d ? _dangerDark : _danger, size: 16),
+        const SizedBox(width: _sp8),
+        Expanded(child: Text(msg,
+            style: _body(12.5, d ? _dangerDark : _danger))),
+      ]));
+}
+
+class _TokenChip extends StatelessWidget {
+  final int index;
+  final _GestureToken token;
+  final bool isLast, d;
+  final VoidCallback onRemove;
+  const _TokenChip({required this.index, required this.token,
+    required this.isLast, required this.d, required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = d ? _purpleDark : _purple;
+    final border = d ? _dBorder    : _lBorder;
+    return Container(
+        decoration: BoxDecoration(
+            color: isLast
+                ? accent.withOpacity(0.10)
+                : (d ? _dSurface2 : _lSurface2),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+                color: isLast ? accent.withOpacity(0.35) : border,
+                width: isLast ? 1.5 : 1.0)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Padding(padding: const EdgeInsets.only(
+              left: _sp12, top: _sp8, bottom: _sp8),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text('$index',
+                    style: _txtLabel(10, d ? _dTextMuted : _lTextMuted,
+                        w: FontWeight.w600)),
+                const SizedBox(width: _sp4),
+                Text(token.label,
+                    style: _txtLabel(12,
+                        isLast ? accent : (d ? _dText : _lText),
+                        w: FontWeight.w700)),
+              ])),
+          Semantics(
+            label: AppLocalizations.of(context).t('translate_remove_token').replaceAll('{token}', token.label), button: true,
+            child: GestureDetector(onTap: onRemove,
+                child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: _sp8, vertical: _sp8),
+                    child: Icon(Icons.close_rounded, size: 12,
+                        color: isLast ? accent : (d ? _dTextMuted : _lTextMuted)))),
+          ),
+        ]));
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+//  SHARED WEB WIDGETS
+// ══════════════════════════════════════════════════════════════════════
+class _UX4GCard extends StatelessWidget {
+  final Widget child;
+  final bool d;
+  const _UX4GCard({required this.child, required this.d});
+  @override
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.all(_sp20),
+      decoration: BoxDecoration(
+          color: d ? _dSurface : _lSurface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: d ? _dBorder : _lBorder, width: 1)),
+      child: child);
+}
+
+class _IconBadge extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final bool d;
+  const _IconBadge({required this.icon, required this.color, required this.d});
+  @override
+  Widget build(BuildContext context) => Container(
+      width: 36, height: 36,
+      decoration: BoxDecoration(
+          color: color.withOpacity(0.10),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: color.withOpacity(0.22), width: 1)),
+      child: Icon(icon, color: color, size: 16));
+}
+
+class _SessionStatusChip extends StatelessWidget {
+  final _SessionState state;
+  final bool d;
+  const _SessionStatusChip({required this.state, required this.d});
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    Color c; String t;
+    switch (state) {
+      case _SessionState.running:    c = d ? _successDark : _success; t = l.t('common_live'); break;
+      case _SessionState.connecting: c = d ? _warningDark : _warning; t = l.t('common_connecting'); break;
+      case _SessionState.error:      c = d ? _dangerDark  : _danger;  t = l.t('common_error'); break;
+      default: c = d ? _dTextMuted : _lTextMuted; t = l.t('common_idle');
+    }
+    final bgClr = c.withOpacity(0.10);
+    return Container(
+        padding: const EdgeInsets.symmetric(horizontal: _sp8, vertical: _sp4),
+        decoration: BoxDecoration(
+            color: bgClr,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: c.withOpacity(0.25), width: 1)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 6, height: 6,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: c)),
+          const SizedBox(width: _sp4),
+          Text(t, style: _txtLabel(11, c, w: FontWeight.w700)),
+        ]));
+  }
+}
+
+class _LangDropdownWeb extends StatelessWidget {
+  final String value;
+  final List<String> options;
+  final bool d;
+  final ValueChanged<String?> onChanged;
+  const _LangDropdownWeb({required this.value, required this.options,
+    required this.d, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: _sp8, vertical: _sp4),
+      decoration: BoxDecoration(
+          color: d ? _dSurface2 : _lSurface2,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: d ? _dBorder : _lBorder, width: 1)),
+      child: DropdownButtonHideUnderline(child: DropdownButton<String>(
+          value: value, dropdownColor: d ? _dSurface2 : _lSurface,
+          style: _body(12, d ? _dText : _lText, w: FontWeight.w600),
+          icon: Icon(Icons.keyboard_arrow_down_rounded,
+              color: d ? _dTextSub : _lTextSub, size: 14),
+          items: options.map((l) => DropdownMenuItem(
+              value: l, child: Text(l))).toList(),
+          onChanged: onChanged)));
+}
+
+class _WebDetectionRow extends StatelessWidget {
+  final String code, text;
+  final Color color;
+  final bool d, isActive, speaking;
+  final VoidCallback? onSpeak;
+  const _WebDetectionRow({required this.code, required this.text,
+    required this.color, required this.d, required this.isActive,
+    required this.speaking, this.onSpeak});
+
+  @override
+  Widget build(BuildContext context) => Row(children: [
+    Expanded(child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        padding: const EdgeInsets.symmetric(
+            horizontal: _sp12, vertical: _sp12),
+        decoration: BoxDecoration(
+            color: d ? _dSurface2 : _lSurface2,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+                color: isActive ? color.withOpacity(0.30)
+                    : (d ? _dBorder : _lBorder), width: 1)),
+        child: Row(children: [
+          _LangBadge(code: code, color: color),
+          const SizedBox(width: _sp12),
+          Expanded(child: Text(text, style: _heading(19, color))),
+        ]))),
+    const SizedBox(width: _sp8),
+    // TTS button
+    Semantics(
+      label: speaking ? AppLocalizations.of(context).t('common_stop') : AppLocalizations.of(context).t('common_speak'), button: true,
+      child: GestureDetector(
+        onTap: onSpeak,
+        child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: 44, height: 44,
+            decoration: BoxDecoration(
+                color: speaking
+                    ? color.withOpacity(0.18) : color.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                    color: speaking
+                        ? color.withOpacity(0.50) : color.withOpacity(0.20),
+                    width: speaking ? 1.5 : 1.0)),
+            child: Icon(
+                speaking ? Icons.stop_rounded : Icons.volume_up_rounded,
+                color: onSpeak == null
+                    ? color.withOpacity(0.30) : color, size: 18)),
+      ),
+    ),
+  ]);
+}
+
+class _WebSessionButton extends StatelessWidget {
+  final _SessionState state;
+  final bool d;
+  final VoidCallback onStart, onStop;
+  const _WebSessionButton({required this.state, required this.d,
+    required this.onStart, required this.onStop});
+
+  @override
+  Widget build(BuildContext context) {
+    final l       = AppLocalizations.of(context);
+    final running = state == _SessionState.running;
+    final loading = state == _SessionState.connecting
+        || state == _SessionState.stopping;
+    final err     = state == _SessionState.error;
+
+    final Color bgColor;
+    final Color fgColor;
+    final String lbl;
+    final IconData ico;
+
+    if (running) {
+      bgColor = (d ? _dangerDark : _danger).withOpacity(0.10);
+      fgColor = d ? _dangerDark : _danger;
+      lbl = l.t('translate_stop_session');
+      ico = Icons.stop_rounded;
+    } else if (err) {
+      bgColor = (d ? _warningDark : _warning).withOpacity(0.10);
+      fgColor = d ? _warningDark : _warning;
+      lbl = l.t('common_retry');
+      ico = Icons.refresh_rounded;
+    } else if (loading) {
+      bgColor = d ? _dSurface2 : _lSurface2;
+      fgColor = d ? _dTextSub : _lTextSub;
+      lbl = state == _SessionState.connecting
+          ? l.t('common_connecting') : l.t('common_stopping');
+      ico = Icons.hourglass_empty_rounded;
+    } else {
+      bgColor = (d ? _primaryDark : _primary).withOpacity(0.10);
+      fgColor = d ? _primaryDark : _primary;
+      lbl = l.t('translate_start_session');
+      ico = Icons.play_arrow_rounded;
+    }
+
+    return GestureDetector(
+      onTap: loading ? null : (running ? onStop : onStart),
+      child: Container(
+          padding: const EdgeInsets.symmetric(vertical: _sp12),
+          decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                  color: fgColor.withOpacity(0.28), width: 1)),
+          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+            if (loading)
+              SizedBox(width: 14, height: 14,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: fgColor))
+            else Icon(ico, color: fgColor, size: 16),
+            const SizedBox(width: _sp8),
+            Text(lbl, style: _txtLabel(13, fgColor, w: FontWeight.w700)),
+          ])),
+    );
+  }
+}
+
+class _EmptyBuilderWeb extends StatelessWidget {
+  final bool d;
+  const _EmptyBuilderWeb({required this.d});
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: _sp20),
+        decoration: BoxDecoration(
+            color: d ? _dSurface2 : _lSurface2,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: d ? _dBorder : _lBorder, width: 1)),
+        child: Column(children: [
+          Icon(Icons.gesture_rounded,
+              color: d ? _dTextMuted : _lTextMuted, size: 26),
+          const SizedBox(height: _sp8),
+          Text(l.t('translate_hold_sign_build'),
+              style: _body(12.5, d ? _dTextSub : _lTextSub)),
+          const SizedBox(height: _sp4),
+          Text(l.t('translate_builder_info_short'),
+              style: _body(11.5, d ? _dTextMuted : _lTextMuted)),
+        ]));
+  }
+}
+
+class _LangBadge extends StatelessWidget {
+  final String code;
+  final Color color;
+  const _LangBadge({required this.code, required this.color});
+  @override
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: _sp8, vertical: _sp4),
+      decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(6)),
+      child: Text(code, style: _txtLabel(9, color, w: FontWeight.w800)));
+}
+
+class _ConfBar extends StatelessWidget {
+  final double value;
+  final bool d;
+  const _ConfBar({required this.value, required this.d});
+  @override
+  Widget build(BuildContext context) {
+    final c = value > 0.75
+        ? (d ? _successDark : _success)
+        : value > 0.45
+        ? (d ? _warningDark : _warning)
+        : (d ? _primaryDark : _primary);
+    return ClipRRect(borderRadius: BorderRadius.circular(2),
+        child: LinearProgressIndicator(
+            value: value, minHeight: 4,
+            backgroundColor: d ? _dBorder : _lBorder,
+            valueColor: AlwaysStoppedAnimation(c)));
+  }
+}
+
+class _ActionIconBtn extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+  final VoidCallback onTap;
+  const _ActionIconBtn({required this.icon, required this.color,
+    required this.tooltip, required this.onTap});
+  @override
+  Widget build(BuildContext context) => Tooltip(
+      message: tooltip,
+      child: Semantics(button: true, label: tooltip,
+          child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(6),
+              child: Padding(padding: const EdgeInsets.all(_sp4),
+                  child: Icon(icon, size: 16, color: color)))));
+}
+
+class _CornerPainter extends CustomPainter {
+  final Color color;
+  const _CornerPainter({required this.color});
+  @override
+  void paint(Canvas canvas, Size size) {
+    final p = Paint()
+      ..color = color
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    const l = 24.0; const m = 16.0;
+    canvas.drawPath(Path()
+      ..moveTo(m, m + l)..lineTo(m, m)..lineTo(m + l, m), p);
+    canvas.drawPath(Path()
+      ..moveTo(size.width - m - l, m)
+      ..lineTo(size.width - m, m)
+      ..lineTo(size.width - m, m + l), p);
+    canvas.drawPath(Path()
+      ..moveTo(m, size.height - m - l)
+      ..lineTo(m, size.height - m)
+      ..lineTo(m + l, size.height - m), p);
+    canvas.drawPath(Path()
+      ..moveTo(size.width - m - l, size.height - m)
+      ..lineTo(size.width - m, size.height - m)
+      ..lineTo(size.width - m, size.height - m - l), p);
+  }
+  @override bool shouldRepaint(_CornerPainter o) => o.color != color;
 }

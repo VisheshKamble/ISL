@@ -6,7 +6,7 @@
 // ║  Applied UX4G Principles:                                          ║
 // ║  • Mobile-first layout with clear information hierarchy            ║
 // ║  • WCAG 2.1 AA contrast on all text/background pairs              ║
-// ║  • Noto Sans (UX4G standard typography)                           ║
+// ║  • Google Sans (UX4G standard typography)                         ║
 // ║  • 8dp baseline grid with generous touch targets (≥48dp)          ║
 // ║  • Semantic color usage (status, actions, categories)             ║
 // ║  • Accessible focus indicators and reduced-motion fallbacks       ║
@@ -89,10 +89,10 @@ const _dTextSub       = Color(0xFFB0BEC5);  // 7.2:1
 const _dTextMuted     = Color(0xFF8B949E);  // 5.1:1
 
 // ─────────────────────────────────────────────────────────────────────
-//  TYPOGRAPHY SCALE — Noto Sans (UX4G standard)
-//  Noto Sans: universal Unicode coverage incl. Devanagari for Hindi/Marathi
+//  TYPOGRAPHY SCALE — Google Sans (UX4G standard)
+//  Google Sans: consistent typography across app
 // ─────────────────────────────────────────────────────────────────────
-const _fontFamily = 'Noto Sans';
+const _fontFamily = 'Google Sans';
 
 // Display / Hero
 TextStyle _display(double size, Color c) => TextStyle(
@@ -408,7 +408,7 @@ class _SkipToMainContent extends StatelessWidget {
   const _SkipToMainContent({required this.isDark});
   @override
   Widget build(BuildContext context) => Semantics(
-      label: 'Skip to main content', button: true, child: const SizedBox.shrink());
+  label: AppLocalizations.of(context).t('home_skip_main_content'), button: true, child: const SizedBox.shrink());
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -624,7 +624,7 @@ class _MobileTopBar extends StatelessWidget {
               const SizedBox(width: _sp8),
               // Live status dot — semantic label for screen readers
               Semantics(
-                label: 'Service active',
+                label: l.t('home_service_active'),
                 child: AnimatedBuilder(
                     animation: pulse,
                     builder: (_, __) => Container(
@@ -784,7 +784,7 @@ class _TopLogoutMenu extends StatelessWidget {
           side: BorderSide(
               color: isDark ? _dBorder : _lBorder, width: 1)),
       color: bg, elevation: 8,
-      tooltip: 'More options',
+      tooltip: l.t('common_more_options'),
       icon: Icon(Icons.more_vert_rounded, color: subClr, size: 20),
       itemBuilder: (_) => [
         PopupMenuItem<String>(
@@ -958,7 +958,7 @@ class _MobileStatsStripState extends State<_MobileStatsStrip>
     ];
 
     return Semantics(
-      label: 'Statistics',
+      label: widget.l.t('common_statistics'),
       child: AnimatedBuilder(
         animation: _anim,
         builder: (_, __) => Container(
@@ -1231,7 +1231,7 @@ class _MobileAssistantCardState extends State<_MobileAssistantCard>
                               decoration: BoxDecoration(
                                   color: accentSurf,
                                   borderRadius: BorderRadius.circular(4)),
-                              child: Text('AI',
+                                  child: Text(l.t('assistant_bullet_ai_title'),
                                   style: _label(10, accent,
                                       w: FontWeight.w700))),
                           const SizedBox(width: _sp8),
@@ -1587,7 +1587,7 @@ class _FeatureDetail extends StatelessWidget {
 
         // Feature bullets — accessible list
         Semantics(
-          label: 'Feature list',
+          label: l.t('common_feature_list'),
           child: Container(
             decoration: BoxDecoration(
                 color: bg,
@@ -2021,7 +2021,7 @@ class _WebStats extends StatelessWidget {
     final sep    = isDark ? _dBorderSub : _lBorderSub;
 
     return Semantics(
-      label: 'Statistics',
+      label: l.t('common_statistics'),
       child: Container(
           decoration: BoxDecoration(
               color: bg,

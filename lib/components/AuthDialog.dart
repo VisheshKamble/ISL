@@ -10,6 +10,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../l10n/AppLocalizations.dart';
 import '../services/SupabaseService.dart';
 import '../services/EmergencyService.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -121,6 +122,7 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _loading = true);
+    final l = AppLocalizations.of(context);
 
     try {
       if (!_authBackendEnabled) {
@@ -131,7 +133,7 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
           widget.onAuthenticated?.call();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('Backend auth is temporarily disabled.'),
+              content: Text(l.t('auth_backend_disabled')),
               backgroundColor: Theme.of(context).colorScheme.primary,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
@@ -152,7 +154,7 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
           password: _passwordCtrl.text.trim(),
         );
         if (response.session == null) {
-          _showError('Login failed — no session returned.');
+          _showError(l.t('auth_login_failed'));
           return;
         }
         final box = Hive.box<EmergencyContact>('emergency_contacts');
@@ -165,7 +167,7 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
           password: _passwordCtrl.text.trim(),
         );
         if (response.session == null) {
-          _showError('Signup failed. Try a different username.');
+          _showError(l.t('auth_signup_failed'));
           return;
         }
         await SupabaseService.instance.upsertUserProfile(
@@ -192,11 +194,11 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
         );
       }
     } on AuthException catch (e) {
-      if (mounted) _showError('Auth error: ${e.message}');
+      if (mounted) _showError('${l.t('auth_error_prefix')}: ${e.message}');
     } on PostgrestException catch (e) {
-      if (mounted) _showError('Database error: ${e.message}');
+      if (mounted) _showError('${l.t('auth_database_error_prefix')}: ${e.message}');
     } catch (e) {
-      if (mounted) _showError('Unexpected error: $e');
+      if (mounted) _showError('${l.t('auth_unexpected_error_prefix')}: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -215,6 +217,7 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     // ── Pull every colour from the same ThemeData defined in main.dart ──────
     final cs = Theme.of(context).colorScheme;
     final accent = cs.primary; // _kAppleBlue / _kAppleBlueDark
@@ -312,14 +315,14 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
                       child: Row(
                         children: [
                           _Tab(
-                            label: 'Login',
+                            label: l.t('auth_tab_login'),
                             selected: _isLogin,
                             accent: accent,
                             onTap: _isLogin ? null : _switchMode,
                             textMuted: textMuted,
                           ),
                           _Tab(
-                            label: 'Sign Up',
+                            label: l.t('auth_tab_signup'),
                             selected: !_isLogin,
                             accent: accent,
                             onTap: _isLogin ? _switchMode : null,
@@ -334,8 +337,8 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
                     // ── Username ──────────────────────────────────────────
                     _Field(
                       controller: _usernameCtrl,
-                      label: 'Username',
-                      hint: 'e.g. rahul123',
+                      label: l.t('auth_username_label'),
+                      hint: l.t('auth_username_hint'),
                       prefixIcon: Icons.alternate_email_rounded,
                       accent: accent,
                       surface: surface,
@@ -344,8 +347,8 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
                       textMuted: textMuted,
                       validator: (v) {
                         if (v == null || v.trim().isEmpty)
-                          return 'Username is required';
-                        if (v.trim().length < 3) return 'At least 3 characters';
+                          return l.t('auth_username_required');
+                        if (v.trim().length < 3) return l.t('auth_min_3_chars');
                         return null;
                       },
                     ),
@@ -356,8 +359,8 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
                     if (!_isLogin) ...[
                       _Field(
                         controller: _nameCtrl,
-                        label: 'Full Name',
-                        hint: 'Your name',
+                        label: l.t('auth_full_name_label'),
+                        hint: l.t('auth_full_name_hint'),
                         prefixIcon: Icons.person_outline_rounded,
                         accent: accent,
                         surface: surface,
@@ -366,15 +369,15 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
                         textMuted: textMuted,
                         validator: (v) {
                           if (v == null || v.trim().isEmpty)
-                            return 'Name is required';
+                            return l.t('auth_name_required');
                           return null;
                         },
                       ),
                       const SizedBox(height: 12),
                       _Field(
                         controller: _phoneCtrl,
-                        label: 'Phone Number',
-                        hint: '+91 98765 43210',
+                        label: l.t('auth_phone_label'),
+                        hint: l.t('auth_phone_hint'),
                         prefixIcon: Icons.phone_outlined,
                         keyboardType: TextInputType.phone,
                         accent: accent,
@@ -384,9 +387,9 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
                         textMuted: textMuted,
                         validator: (v) {
                           if (v == null || v.trim().isEmpty)
-                            return 'Phone number is required';
+                            return l.t('auth_phone_required');
                           if (v.trim().length < 7)
-                            return 'Enter a valid number';
+                            return l.t('auth_phone_invalid');
                           return null;
                         },
                       ),
@@ -396,7 +399,7 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
                     // ── Password ──────────────────────────────────────────
                     _Field(
                       controller: _passwordCtrl,
-                      label: 'Password',
+                      label: l.t('auth_password_label'),
                       hint: '••••••••',
                       prefixIcon: Icons.lock_outline_rounded,
                       obscureText: _obscurePassword,
@@ -418,8 +421,8 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
                         ),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'Required';
-                        if (!_isLogin && v.length < 6) return 'Min 6 chars';
+                        if (v == null || v.isEmpty) return l.t('auth_required');
+                        if (!_isLogin && v.length < 6) return l.t('auth_min_6_chars');
                         return null;
                       },
                     ),
@@ -433,7 +436,7 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
                             /* TODO: forgot password */
                           },
                           child: Text(
-                            'Forgot password?',
+                            l.t('auth_forgot_password'),
                             style: TextStyle(
                               fontSize: 11.5,
                               color: accent,
@@ -473,7 +476,7 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
                                 ),
                               ),
                               child: Text(
-                                _isLogin ? 'Sign In' : 'Create Account',
+                                _isLogin ? l.t('auth_sign_in') : l.t('auth_create_account'),
                                 style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
@@ -488,7 +491,7 @@ class _VaniAuthDialogState extends State<VaniAuthCard>
                     // ── Footer ────────────────────────────────────────────
                     Center(
                       child: Text(
-                        'Built for accuracy. Designed for dignity.',
+                        l.t('auth_footer_tagline'),
                         style: TextStyle(
                           fontSize: 10.5,
                           color: textMuted.withOpacity(0.65),

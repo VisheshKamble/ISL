@@ -2,7 +2,7 @@
 //
 // ╔══════════════════════════════════════════════════════════════════════╗
 // ║  VANI — ISL Assistant Screen  · UX4G Redesign                     ║
-// ║  Font: Noto Sans (UX4G standard, full Devanagari coverage)        ║
+// ║  Font: Google Sans (UX4G standard)                                ║
 // ║  Powered by: Gemini 2.0 Flash API                                 ║
 // ║                                                                    ║
 // ║  UX4G Principles Applied:                                         ║
@@ -31,33 +31,26 @@ import '../l10n/AppLocalizations.dart';
 // ─────────────────────────────────────────────────────────────────────
 //  UX4G DESIGN TOKENS
 // ─────────────────────────────────────────────────────────────────────
-const _fontFamily = 'Noto Sans';
+const _fontFamily = 'Google Sans';
 
 // Brand
 const _primary       = Color(0xFF1A56DB);
 const _primaryDark   = Color(0xFF4A8EFF);
-const _primaryLight  = Color(0xFFE8F0FE);
 
 // Secondary (teal — ISL sign chips)
 const _secondary     = Color(0xFF00796B);
 const _secondaryDark = Color(0xFF26A69A);
-const _secondaryLight = Color(0xFFE0F2F1);
 
 // Assistant accent (purple — consistent with HomeScreen)
 const _purple        = Color(0xFF6200EA);
 const _purpleDark    = Color(0xFF9C6BFF);
-const _purpleSurface = Color(0xFFF3E5F5);
-const _purpleSurfD   = Color(0xFF2A1047);
 
 // Status
 const _danger        = Color(0xFFB71C1C);
 const _dangerDark    = Color(0xFFEF5350);
 const _dangerLight   = Color(0xFFFFEBEE);
-const _success       = Color(0xFF1B7340);
-const _successDark   = Color(0xFF27AE60);
 const _info          = Color(0xFF0D47A1);
 const _infoDark      = Color(0xFF42A5F5);
-const _infoLight     = Color(0xFFE3F2FD);
 
 // Neutral surfaces
 const _lBg           = Color(0xFFF5F7FA);
@@ -700,9 +693,10 @@ class _MsgBubble extends StatelessWidget {
 
     // ISL sign chip color — secondary teal (distinct from purple AI accent)
     final signAccent = isDark ? _secondaryDark : _secondary;
+    final l = AppLocalizations.of(context);
 
     return Semantics(
-      label: '${_isUser ? 'You' : 'Assistant'}: ${msg.text}',
+      label: '${_isUser ? l.t('bridge_hearing_label') : l.t('assistant_title')}: ${msg.text}',
       child: Padding(
         padding: EdgeInsets.only(
             bottom: _sp4,
@@ -734,7 +728,7 @@ class _MsgBubble extends StatelessWidget {
 
             // Bubble — long-press to speak
             Semantics(
-              label: 'Long press to speak aloud',
+              label: l.t('isl_long_press_speak'),
               child: GestureDetector(
                 onLongPress: () => onSpeak(msg.text),
                 child: Container(
@@ -776,7 +770,7 @@ class _MsgBubble extends StatelessWidget {
               Wrap(spacing: _sp8, runSpacing: _sp8,
                   children: msg.islTags.take(5).map((sign) =>
                       Semantics(
-                        label: 'Learn sign: $sign', button: true,
+                        label: l.t('isl_learn_sign').replaceAll('{sign}', sign), button: true,
                         child: GestureDetector(
                           onTap: () => onTapSign(sign),
                           child: Container(
@@ -832,9 +826,10 @@ class _TypingIndicator extends StatelessWidget {
     final accent = isDark ? _purpleDark : _purple;
     final bg     = isDark ? _dSurface2  : _lSurface;
     final border = isDark ? _dBorder    : _lBorder;
+    final l = AppLocalizations.of(context);
 
     return Semantics(
-      label: 'Assistant is typing',
+      label: l.t('isl_typing'),
       child: Padding(
         padding: const EdgeInsets.only(bottom: _sp12),
         child: Row(children: [
@@ -1015,7 +1010,7 @@ class _InputBarState extends State<_InputBar> {
                       strokeWidth: 2.5, color: accent)))
               : Semantics(
             key: const ValueKey('send'),
-            label: 'Send message', button: true,
+            label: AppLocalizations.of(context).t('common_send_message'), button: true,
             child: InkWell(
               borderRadius: BorderRadius.circular(22),
               onTap: () => widget.onSend(widget.controller.text),
@@ -1312,7 +1307,7 @@ class _WebSidebar extends StatelessWidget {
             Divider(height: 1, thickness: 1, color: sep),
             // Clear chat
             Semantics(
-              label: 'Clear conversation', button: true,
+              label: l.t('isl_options_clear_conversation'), button: true,
               child: InkWell(
                 onTap: onClearChat,
                 child: Padding(
@@ -1504,6 +1499,7 @@ class _WebTopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final bg     = isDark ? _dSurface  : _lSurface;
     final border = isDark ? _dBorder   : _lBorder;
     final accent = isDark ? _purpleDark : _purple;
@@ -1564,7 +1560,7 @@ class _WebTopBar extends StatelessWidget {
         ),
         // Clear
         Semantics(
-          label: 'Clear conversation', button: true,
+          label: l.t('isl_options_clear_conversation'), button: true,
           child: InkWell(
             borderRadius: BorderRadius.circular(8),
             onTap: onClearChat,
@@ -1661,7 +1657,7 @@ class _OptionsMenuButton extends StatelessWidget {
     final border  = isDark ? _dBorder    : _lBorder;
 
     return PopupMenuButton<String>(
-      tooltip: 'Options',
+      tooltip: l.t('isl_options_title'),
       color: bg,
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),

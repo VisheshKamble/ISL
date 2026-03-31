@@ -212,7 +212,7 @@ class _DesktopActionsState extends State<_DesktopActions> {
     if (ctx.mounted) {
       ScaffoldMessenger.of(ctx).showSnackBar(
         SnackBar(
-          content: const Text('Signed out.'),
+          content: Text(widget.l.t('menu_signed_out')),
           backgroundColor: Theme.of(ctx).colorScheme.primary,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
@@ -326,7 +326,7 @@ class _DesktopActionsState extends State<_DesktopActions> {
 
         if (_isLoggedIn)
           _NavLink(
-            label: 'LOGOUT',
+            label: widget.l.t('menu_sign_out').toUpperCase(),
             isDark: widget.isDark,
             accent: accent,
             onTap: () => _logout(ctx),

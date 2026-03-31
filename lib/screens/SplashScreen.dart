@@ -173,6 +173,7 @@ class _SplashScreenState extends State<SplashScreen>
       ));
     } catch (e) {
       if (!mounted) return;
+      final l = AppLocalizations.of(context);
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (_) => Scaffold(
@@ -180,7 +181,7 @@ class _SplashScreenState extends State<SplashScreen>
             body: Center(
               child: Padding(
                 padding: const EdgeInsets.all(24),
-                child: Text('Startup failed: $e', textAlign: TextAlign.center),
+                child: Text('${l.t('splash_startup_failed')}: $e', textAlign: TextAlign.center),
               ),
             ),
           ),

@@ -15,6 +15,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:vibration/vibration.dart';
 import 'package:shake/shake.dart';
 
+import '../l10n/AppLocalizations.dart';
 import '../models/EmergencyContact.dart';
 import '../utils/PlatformHelper.dart';
 import '../services/SupabaseService.dart';
@@ -516,6 +517,7 @@ class EmergencyService {
 
   void _showNoContactsDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final l = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (ctx) => _SosDialog(
@@ -528,7 +530,7 @@ class EmergencyService {
         accentColor: const Color(0xFFD97706),
         actions: [
           _SosDialogAction(
-            label: 'OK',
+            label: l.t('common_ok'),
             isPrimary: false,
             onTap: () => Navigator.pop(ctx),
           ),
@@ -1351,7 +1353,7 @@ class _WebSOSModalState extends State<_WebSOSModal> {
                               children: [
                                 Expanded(
                                   child: _ContactActionBtn(
-                                    label: 'WhatsApp',
+                                    label: AppLocalizations.of(context).t('sos_whatsapp'),
                                     icon: Icons.chat_rounded,
                                     color: const Color(0xFF25D366),
                                     onTap: () => _openWhatsApp(contact),
@@ -1360,7 +1362,7 @@ class _WebSOSModalState extends State<_WebSOSModal> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: _ContactActionBtn(
-                                    label: 'Call',
+                                    label: AppLocalizations.of(context).t('sos_call'),
                                     icon: Icons.call_rounded,
                                     color: const Color(0xFF0284C7),
                                     onTap: () => _openTel(contact),
