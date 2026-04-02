@@ -1547,9 +1547,10 @@ class _MessageBubble extends StatelessWidget {
 class _LangSelector extends StatelessWidget {
   final String selectedCode;
   final bool isDark;
+  final bool compact;
   final void Function(String) onChanged;
   const _LangSelector({required this.selectedCode, required this.isDark,
-    required this.onChanged});
+    required this.onChanged, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
@@ -1614,9 +1615,11 @@ class _LangSelector extends StatelessWidget {
                     borderRadius: BorderRadius.circular(4)),
                 child: Center(child: Text(cur.flag,
                     style: _label(9, accent, w: FontWeight.w800)))),
-            const SizedBox(width: _sp8),
-            Text(cur.name, style: _label(12, textClr)),
-            const SizedBox(width: _sp4),
+            if (!compact) ...[
+              const SizedBox(width: _sp8),
+              Text(cur.name, style: _label(12, textClr)),
+              const SizedBox(width: _sp4),
+            ],
             Icon(Icons.keyboard_arrow_down_rounded, size: 14,
                 color: isDark ? _dTextSub : _lTextSub),
           ]),
@@ -1675,6 +1678,7 @@ class _MobileBridgePanelState extends State<_MobileBridgePanel> {
     final micColor = widget.listening
         ? (isDark ? _dangerDark : _danger)
         : (isDark ? _dTextSub : _lTextSub);
+    final narrowLayout = MediaQuery.of(context).size.width < 390;
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
@@ -1695,59 +1699,67 @@ class _MobileBridgePanelState extends State<_MobileBridgePanel> {
           // Tab row + controls
           Padding(
             padding: const EdgeInsets.fromLTRB(_sp16, _sp4, _sp16, _sp8),
-            child: Row(children: [
-              // Conversation tab
-              _MobilePanelTab(
-                  label: l.t('bridge_convo_title'),
-                  icon: Icons.forum_rounded,
-                  active: _tab == 0, isDark: isDark,
-                  badge: widget.messages.length,
-                  onTap: () => setState(() => _tab = 0)),
-              const SizedBox(width: _sp8),
-              // Phrases tab
-              _MobilePanelTab(
-                  label: l.t('bridge_quick_phrases'),
-                  icon: Icons.flash_on_rounded,
-                  active: _tab == 1, isDark: isDark,
-                  onTap: () => setState(() => _tab = 1)),
-              const Spacer(),
-              // Language selector
-              _LangSelector(
-                  selectedCode: widget.selectedLangCode,
-                  isDark: isDark,
-                  onChanged: widget.onLangChanged),
-              const SizedBox(width: _sp8),
-              // Auto-speak toggle
-              Semantics(label: l.t('bridge_auto_speak'), button: true, toggled: widget.autoSpeak,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(8),
-                    onTap: widget.onToggleAutoSpeak,
-                    child: Container(
-                        width: 36, height: 36,
-                        decoration: BoxDecoration(
-                            color: widget.autoSpeak
-                                ? accent.withOpacity(0.10)
-                                : (isDark ? _dSurface2 : _lSurface2),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color: widget.autoSpeak
-                                    ? accent.withOpacity(0.30)
-                                    : border, width: 1)),
-                        child: Icon(
-                            widget.autoSpeak ? Icons.volume_up_rounded
-                                : Icons.volume_off_rounded,
-                            size: 16,
-                            color: widget.autoSpeak ? accent : mutedClr)),
-                  )),
-              if (_tab == 0 && widget.messages.isNotEmpty) ...[
+            child: Column(children: [
+              Row(children: [
+                Expanded(
+                  child: _MobilePanelTab(
+                      label: l.t('bridge_convo_title'),
+                      icon: Icons.forum_rounded,
+                      active: _tab == 0, isDark: isDark,
+                      compact: narrowLayout,
+                      badge: widget.messages.length,
+                      onTap: () => setState(() => _tab = 0)),
+                ),
                 const SizedBox(width: _sp8),
-                Semantics(label: l.t('common_clear'), button: true,
+                Expanded(
+                  child: _MobilePanelTab(
+                      label: l.t('bridge_quick_phrases'),
+                      icon: Icons.flash_on_rounded,
+                      active: _tab == 1, isDark: isDark,
+                      compact: narrowLayout,
+                      onTap: () => setState(() => _tab = 1)),
+                ),
+              ]),
+              const SizedBox(height: _sp8),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                _LangSelector(
+                    selectedCode: widget.selectedLangCode,
+                    isDark: isDark,
+                    compact: narrowLayout,
+                    onChanged: widget.onLangChanged),
+                const SizedBox(width: _sp8),
+                // Auto-speak toggle
+                Semantics(label: l.t('bridge_auto_speak'), button: true, toggled: widget.autoSpeak,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(8),
-                      onTap: widget.onClearChat,
-                      child: Icon(Icons.delete_sweep_rounded, color: mutedClr, size: 18),
+                      onTap: widget.onToggleAutoSpeak,
+                      child: Container(
+                          width: 36, height: 36,
+                          decoration: BoxDecoration(
+                              color: widget.autoSpeak
+                                  ? accent.withOpacity(0.10)
+                                  : (isDark ? _dSurface2 : _lSurface2),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                  color: widget.autoSpeak
+                                      ? accent.withOpacity(0.30)
+                                      : border, width: 1)),
+                          child: Icon(
+                              widget.autoSpeak ? Icons.volume_up_rounded
+                                  : Icons.volume_off_rounded,
+                              size: 16,
+                              color: widget.autoSpeak ? accent : mutedClr)),
                     )),
-              ],
+                if (_tab == 0 && widget.messages.isNotEmpty) ...[
+                  const SizedBox(width: _sp8),
+                  Semantics(label: l.t('common_clear'), button: true,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: widget.onClearChat,
+                        child: Icon(Icons.delete_sweep_rounded, color: mutedClr, size: 18),
+                      )),
+                ],
+              ]),
             ]),
           ),
 
@@ -2006,10 +2018,12 @@ class _MobilePanelTab extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool active, isDark;
+  final bool compact;
   final VoidCallback onTap;
   final int badge;
   const _MobilePanelTab({required this.label, required this.icon,
     required this.active, required this.isDark, required this.onTap,
+    this.compact = false,
     this.badge = 0});
 
   @override
@@ -2032,9 +2046,16 @@ class _MobilePanelTab extends StatelessWidget {
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(icon, size: 13,
                   color: active ? accent : subClr),
-              const SizedBox(width: _sp4),
-              Text(label, style: _label(11, active ? accent : subClr,
-                  w: active ? FontWeight.w700 : FontWeight.w500)),
+              if (!compact) ...[
+                const SizedBox(width: _sp4),
+                Expanded(
+                  child: Text(label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: _label(11, active ? accent : subClr,
+                          w: active ? FontWeight.w700 : FontWeight.w500)),
+                ),
+              ],
               if (badge > 0) ...[
                 const SizedBox(width: _sp4),
                 Container(
