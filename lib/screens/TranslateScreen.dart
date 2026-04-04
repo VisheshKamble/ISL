@@ -114,8 +114,8 @@ TextStyle _txtLabel(double size, Color c, {FontWeight w = FontWeight.w500}) =>
 const String _kRailwayHost  = 'isl-production-57d4.up.railway.app';
 const String _kWsPath       = '/ws';
 const int    _kFrameIntervalMs = 100;
-//const bool _railwayWsEnabled = false; // Set to false to disable WebSocket connection (for testing without backend)
-const bool _railwayWsEnabled = true; // Set to false to disable WebSocket connection (for testing without backend)
+const bool _railwayWsEnabled = false; // Set to false to disable WebSocket connection (for testing without backend)
+//const bool _railwayWsEnabled = true; // Set to false to disable WebSocket connection (for testing without backend)
 
 
 String _getWebSocketUrl() => 'wss://$_kRailwayHost$_kWsPath';

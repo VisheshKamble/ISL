@@ -48,7 +48,7 @@ import '../l10n/AppLocalizations.dart';
 const String _kRailwayHost   = 'isl-production-57d4.up.railway.app';
 const String _kWsPath        = '/ws';
 const int    _kFrameIntervalMs = 100;
-const bool   _railwayWsEnabled = true; // set to false to disable WebSocket connection (for testing without backend)
+const bool   _railwayWsEnabled = false; // set to false to disable WebSocket connection (for testing without backend)
 
 String _getWebSocketUrl() => 'wss://$_kRailwayHost$_kWsPath';
 
