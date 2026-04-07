@@ -17,7 +17,7 @@ import 'package:shake/shake.dart';
 
 import '../l10n/AppLocalizations.dart';
 import '../models/EmergencyContact.dart';
-import '../utils/PlatformHelper.dart';
+import '../Utils/PlatformHelper.dart';
 import '../services/SupabaseService.dart';
 import 'LocationService.dart';
 
