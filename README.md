@@ -220,6 +220,8 @@ WebSocket settings are read from `--dart-define` values or the `.env.*` files:
 - `ISL_WS_HOST`
 - `VANI_CORS_ORIGINS` for backend CORS allow-list, comma-separated
 - `VANI_CORS_ORIGIN_REGEX` as a fallback allow pattern for local dev and Railway web deploys
+- `ISL_API_BASE_URL` optional HTTP/HTTPS API base for general SOS backend calls
+- `ISL_API_MOBILE_BASE_URL` optional mobile-only API base override (LAN/dev)
 
 ## Validation
 

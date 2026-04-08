@@ -421,6 +421,9 @@ class _TwoWayScreenState extends State<TwoWayScreen>
   bool _camReady = false;
   bool _camActive = true;
   int _camIndex = 0;
+  String? _cameraError;
+  bool _cameraTransitioning = false;
+  int _cameraSessionToken = 0;
 
   // ── WebSocket ─────────────────────────────────────────────────────
   WebSocketChannel? _ws;
@@ -429,6 +432,9 @@ class _TwoWayScreenState extends State<TwoWayScreen>
   int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
   static const int _maxReconnectAttempts = 5;
+  static const Duration _wsConnectTimeout = Duration(seconds: 4);
+  String? _backendError;
+  String _lastWsTried = '';
 
   // ── Messages ──────────────────────────────────────────────────────
   final List<_Message> _messages = [];
@@ -584,28 +590,85 @@ class _TwoWayScreenState extends State<TwoWayScreen>
   Future<void> _initCamera() async {
     try {
       _cameras = await availableCameras();
-      if (_cameras.isEmpty) return;
+      if (_cameras.isEmpty) {
+        if (mounted) {
+          setState(() {
+            _camReady = false;
+            _cameraError = 'No camera detected on this device.';
+          });
+        }
+        return;
+      }
       _camIndex = _cameras.indexWhere(
         (c) => c.lensDirection == CameraLensDirection.front,
       );
       if (_camIndex < 0) _camIndex = 0;
       await _startCamera(_camIndex);
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _camReady = false;
+          _cameraError =
+              'Camera initialization failed. Check camera permission.';
+        });
+      }
+      debugPrint('TwoWayScreen _initCamera error: $e');
+    }
   }
 
   Future<void> _startCamera(int idx) async {
-    await _cam?.dispose();
-    _cam = CameraController(
+    if (_cameraTransitioning) return;
+    _cameraTransitioning = true;
+    final token = ++_cameraSessionToken;
+
+    final prev = _cam;
+    _cam = null;
+    try {
+      await prev?.dispose();
+    } catch (_) {}
+
+    if (!mounted || token != _cameraSessionToken) {
+      _cameraTransitioning = false;
+      return;
+    }
+
+    final next = CameraController(
       _cameras[idx],
       ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.jpeg,
     );
+    _cam = next;
+
     try {
-      await _cam!.initialize();
-      if (mounted) setState(() => _camReady = true);
+      await next.initialize();
+      if (!mounted || token != _cameraSessionToken) {
+        try {
+          await next.dispose();
+        } catch (_) {}
+        return;
+      }
+      if (mounted) {
+        setState(() {
+          _camReady = true;
+          _cameraError = null;
+        });
+      }
       _startFrameStream();
-    } catch (_) {}
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _camReady = false;
+          _cameraError =
+              'Unable to start camera. Please allow permission and retry.';
+        });
+      }
+      debugPrint('TwoWayScreen _startCamera error: $e');
+    } finally {
+      if (token == _cameraSessionToken) {
+        _cameraTransitioning = false;
+      }
+    }
   }
 
   void _startFrameStream() {
@@ -624,7 +687,7 @@ class _TwoWayScreenState extends State<TwoWayScreen>
   }
 
   Future<void> _flipCamera() async {
-    if (_cameras.length < 2) return;
+    if (_cameras.length < 2 || _cameraTransitioning) return;
     _camIndex = (_camIndex + 1) % _cameras.length;
     setState(() => _camReady = false);
     await _startCamera(_camIndex);
@@ -638,25 +701,55 @@ class _TwoWayScreenState extends State<TwoWayScreen>
   // ─────────────────────────────────────────────────────────────────
   //  WEBSOCKET
   // ─────────────────────────────────────────────────────────────────
-  void _connectWs() {
+  Future<void> _connectWs() async {
     if (!BackendConfig.websocketEnabled) {
-      setState(() => _wsConnected = false);
+      if (mounted) {
+        setState(() {
+          _wsConnected = false;
+          _backendError = 'Backend connection is disabled in configuration.';
+        });
+      }
       return;
     }
     if (_reconnectAttempts >= _maxReconnectAttempts) return;
-    try {
-      _ws = WebSocketChannel.connect(Uri.parse(BackendConfig.websocketUrl));
-      if (mounted) setState(() => _wsConnected = true);
-      _reconnectAttempts = 0;
-      _ws!.stream.listen(
-        _onSignReceived,
-        onError: (_) => _onWsDisconnected(),
-        onDone: () => _onWsDisconnected(),
-        cancelOnError: true,
-      );
-    } catch (_) {
-      _onWsDisconnected();
+
+    if (mounted) {
+      setState(() => _backendError = null);
     }
+
+    final urls = BackendConfig.websocketCandidates;
+
+    for (final url in urls) {
+      try {
+        final channel = WebSocketChannel.connect(Uri.parse(url));
+        _ws = channel;
+        _lastWsTried = url;
+        await channel.ready.timeout(_wsConnectTimeout);
+
+        if (mounted) {
+          setState(() {
+            _wsConnected = true;
+            _backendError = null;
+          });
+        }
+        _reconnectAttempts = 0;
+        channel.stream.listen(
+          _onSignReceived,
+          onError: (_) => _onWsDisconnected(),
+          onDone: () => _onWsDisconnected(),
+          cancelOnError: true,
+        );
+        return;
+      } catch (e) {
+        debugPrint('TwoWayScreen _connectWs failed for $url: $e');
+        try {
+          await _ws?.sink.close();
+        } catch (_) {}
+        _ws = null;
+      }
+    }
+
+    _onWsDisconnected();
   }
 
   void _onWsDisconnected() {
@@ -667,7 +760,17 @@ class _TwoWayScreenState extends State<TwoWayScreen>
     if (_reconnectAttempts < _maxReconnectAttempts) {
       final delay = Duration(seconds: 1 << (_reconnectAttempts - 1));
       _reconnectTimer?.cancel();
-      _reconnectTimer = Timer(delay, _connectWs);
+      _reconnectTimer = Timer(delay, () {
+        _connectWs();
+      });
+    } else {
+      final wsUrl = _lastWsTried.isNotEmpty
+          ? _lastWsTried
+          : BackendConfig.websocketUrl;
+      setState(() {
+        _backendError =
+            'Backend unreachable at $wsUrl. Try adb reverse tcp:8000 tcp:8000 (Android), or set ISL_WS_MOBILE_URL to your PC LAN URL.';
+      });
     }
   }
 
@@ -850,7 +953,10 @@ class _TwoWayScreenState extends State<TwoWayScreen>
 
   @override
   void dispose() {
-    _cam?.dispose();
+    _cameraSessionToken++;
+    try {
+      _cam?.dispose();
+    } catch (_) {}
     _ws?.sink.close();
     _frameTimer?.cancel();
     _reconnectTimer?.cancel();
@@ -882,7 +988,8 @@ class _TwoWayScreenState extends State<TwoWayScreen>
       body: SafeArea(
         child: Stack(
           children: [
-            if (!isMobile) Positioned.fill(child: _WebBridgeBackdrop(isDark: isDark)),
+            if (!isMobile)
+              Positioned.fill(child: _WebBridgeBackdrop(isDark: isDark)),
             FadeTransition(
               opacity: _entryFade,
               child: SlideTransition(
@@ -983,7 +1090,12 @@ class _TwoWayScreenState extends State<TwoWayScreen>
   Widget _tabletLayout(BuildContext ctx, bool isDark, Size size) {
     final compact = size.width < 860;
     return Padding(
-      padding: EdgeInsets.fromLTRB(compact ? _sp12 : _sp16, 0, compact ? _sp12 : _sp16, _sp16),
+      padding: EdgeInsets.fromLTRB(
+        compact ? _sp12 : _sp16,
+        0,
+        compact ? _sp12 : _sp16,
+        _sp16,
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1043,7 +1155,9 @@ class _TwoWayScreenState extends State<TwoWayScreen>
         Positioned.fill(
           child: CustomPaint(
             painter: _CornerPainter(
-              color: _violet.withValues(alpha: _camActive && _camReady ? 0.6 : 0.22),
+              color: _violet.withValues(
+                alpha: _camActive && _camReady ? 0.6 : 0.22,
+              ),
             ),
           ),
         ),
@@ -1199,7 +1313,10 @@ class _TwoWayScreenState extends State<TwoWayScreen>
           decoration: BoxDecoration(
             color: _violet.withValues(alpha: 0.10),
             shape: BoxShape.circle,
-            border: Border.all(color: _violet.withValues(alpha: 0.20), width: 1),
+            border: Border.all(
+              color: _violet.withValues(alpha: 0.20),
+              width: 1,
+            ),
           ),
           child: const Icon(
             Icons.sign_language_rounded,
@@ -1212,6 +1329,28 @@ class _TwoWayScreenState extends State<TwoWayScreen>
           AppLocalizations.of(context).t('bridge_camera_init'),
           style: _body(13, Colors.white38),
         ),
+        if (_cameraError != null) ...[
+          const SizedBox(height: _sp8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: _sp24),
+            child: Text(
+              _cameraError!,
+              textAlign: TextAlign.center,
+              style: _body(12, _dangerDark),
+            ),
+          ),
+        ],
+        if (_backendError != null) ...[
+          const SizedBox(height: _sp8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: _sp24),
+            child: Text(
+              _backendError!,
+              textAlign: TextAlign.center,
+              style: _body(11, Colors.white54),
+            ),
+          ),
+        ],
       ],
     ),
   );
@@ -1355,6 +1494,28 @@ class _TwoWayScreenState extends State<TwoWayScreen>
                       l.t('bridge_camera_hint'),
                       style: _body(11, isDark ? _dTextMuted : _lTextMuted),
                     ),
+                    if (_cameraError != null) ...[
+                      const SizedBox(height: _sp8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: _sp20),
+                        child: Text(
+                          _cameraError!,
+                          textAlign: TextAlign.center,
+                          style: _body(11, isDark ? _dangerDark : _danger),
+                        ),
+                      ),
+                    ],
+                    if (_backendError != null) ...[
+                      const SizedBox(height: _sp8),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: _sp20),
+                        child: Text(
+                          _backendError!,
+                          textAlign: TextAlign.center,
+                          style: _body(10, subClr),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1736,7 +1897,10 @@ class _TwoWayScreenState extends State<TwoWayScreen>
               decoration: BoxDecoration(
                 color: accent.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: accent.withValues(alpha: 0.22), width: 1),
+                border: Border.all(
+                  color: accent.withValues(alpha: 0.22),
+                  width: 1,
+                ),
               ),
               child: Icon(Icons.keyboard_rounded, color: accent, size: 14),
             ),
@@ -1809,7 +1973,9 @@ class _TwoWayScreenState extends State<TwoWayScreen>
                       color: micBg,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: _listening ? micColor.withValues(alpha: 0.35) : border,
+                        color: _listening
+                            ? micColor.withValues(alpha: 0.35)
+                            : border,
                         width: _listening ? 1.5 : 1.0,
                       ),
                     ),
@@ -1830,7 +1996,9 @@ class _TwoWayScreenState extends State<TwoWayScreen>
                   color: bg,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: _typeFocused ? accent.withValues(alpha: 0.45) : border,
+                    color: _typeFocused
+                        ? accent.withValues(alpha: 0.45)
+                        : border,
                     width: _typeFocused ? 1.5 : 1.0,
                   ),
                 ),
@@ -2098,17 +2266,26 @@ class _WebBridgeBackdrop extends StatelessWidget {
         Positioned(
           top: -220,
           left: -180,
-          child: _AmbientOrb(color: blue.withOpacity(isDark ? 0.18 : 0.12), size: 620),
+          child: _AmbientOrb(
+            color: blue.withOpacity(isDark ? 0.18 : 0.12),
+            size: 620,
+          ),
         ),
         Positioned(
           top: 140,
           right: -140,
-          child: _AmbientOrb(color: violet.withOpacity(isDark ? 0.14 : 0.09), size: 520),
+          child: _AmbientOrb(
+            color: violet.withOpacity(isDark ? 0.14 : 0.09),
+            size: 520,
+          ),
         ),
         Positioned(
           bottom: -160,
           left: 220,
-          child: _AmbientOrb(color: teal.withOpacity(isDark ? 0.14 : 0.08), size: 560),
+          child: _AmbientOrb(
+            color: teal.withOpacity(isDark ? 0.14 : 0.08),
+            size: 560,
+          ),
         ),
         Positioned.fill(
           child: IgnorePointer(
@@ -2157,14 +2334,8 @@ class _WebBridgePanel extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [
-                  _dSurface.withOpacity(0.95),
-                  _dSurface2.withOpacity(0.92),
-                ]
-              : [
-                  _lSurface.withOpacity(0.98),
-                  _lSurface2.withOpacity(0.94),
-                ],
+              ? [_dSurface.withOpacity(0.95), _dSurface2.withOpacity(0.92)]
+              : [_lSurface.withOpacity(0.98), _lSurface2.withOpacity(0.94)],
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
@@ -2901,7 +3072,9 @@ class _MobileChatTab extends StatelessWidget {
                     color: bg,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: typeFocused ? accent.withValues(alpha: 0.45) : border,
+                      color: typeFocused
+                          ? accent.withValues(alpha: 0.45)
+                          : border,
                       width: typeFocused ? 1.5 : 1.0,
                     ),
                   ),
@@ -3072,7 +3245,9 @@ class _MobilePanelTab extends StatelessWidget {
             color: active ? accent.withValues(alpha: 0.10) : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             border: Border.all(
-              color: active ? accent.withValues(alpha: 0.35) : Colors.transparent,
+              color: active
+                  ? accent.withValues(alpha: 0.35)
+                  : Colors.transparent,
               width: active ? 1.5 : 0,
             ),
           ),
@@ -3144,8 +3319,12 @@ class _ConnectionChip extends StatelessWidget {
         ? (dark ? _successDark.withValues(alpha: 0.12) : _successLight)
         : (dark ? _dangerDark.withValues(alpha: 0.12) : _dangerLight);
     final border = connected
-        ? (dark ? _successDark.withValues(alpha: 0.28) : _success.withValues(alpha: 0.28))
-        : (dark ? _dangerDark.withValues(alpha: 0.28) : _danger.withValues(alpha: 0.28));
+        ? (dark
+              ? _successDark.withValues(alpha: 0.28)
+              : _success.withValues(alpha: 0.28))
+        : (dark
+              ? _dangerDark.withValues(alpha: 0.28)
+              : _danger.withValues(alpha: 0.28));
 
     return AnimatedBuilder(
       animation: pulse,
@@ -3401,4 +3580,3 @@ class _CornerPainter extends CustomPainter {
   @override
   bool shouldRepaint(_CornerPainter old) => old.color != color;
 }
-

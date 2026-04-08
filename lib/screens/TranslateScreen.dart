@@ -2462,6 +2462,7 @@ class _TranslateScreenState extends State<TranslateScreen>
       _wsOk = false;
       return false;
     }
+    final urls = BackendConfig.websocketCandidates;
     for (var attempt = 0; attempt < _kWsConnectAttempts; attempt++) {
       try {
         await _wsSub?.cancel();
@@ -2469,34 +2470,35 @@ class _TranslateScreenState extends State<TranslateScreen>
         await _channel?.sink.close();
       } catch (_) {}
 
-      try {
-        final channel = WebSocketChannel.connect(
-          Uri.parse(BackendConfig.websocketUrl),
-        );
-        _channel = channel;
-        await channel.ready.timeout(_kWsConnectTimeout);
-        _wsOk = true;
-        _reconnects = 0;
-        _wsSub = channel.stream.listen(
-          _onMsg,
-          onError: _onErr,
-          onDone: _onDone,
-          cancelOnError: false,
-        );
-        return true;
-      } catch (_) {
-        _wsOk = false;
+      for (final url in urls) {
         try {
-          await _wsSub?.cancel();
-        } catch (_) {}
-        _wsSub = null;
-        try {
-          await _channel?.sink.close();
-        } catch (_) {}
-        _channel = null;
-        if (attempt < _kWsConnectAttempts - 1) {
-          await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
+          final channel = WebSocketChannel.connect(Uri.parse(url));
+          _channel = channel;
+          await channel.ready.timeout(_kWsConnectTimeout);
+          _wsOk = true;
+          _reconnects = 0;
+          _wsSub = channel.stream.listen(
+            _onMsg,
+            onError: _onErr,
+            onDone: _onDone,
+            cancelOnError: false,
+          );
+          return true;
+        } catch (_) {
+          _wsOk = false;
+          try {
+            await _wsSub?.cancel();
+          } catch (_) {}
+          _wsSub = null;
+          try {
+            await _channel?.sink.close();
+          } catch (_) {}
+          _channel = null;
         }
+      }
+
+      if (attempt < _kWsConnectAttempts - 1) {
+        await Future.delayed(Duration(milliseconds: 500 * (attempt + 1)));
       }
     }
     return false;

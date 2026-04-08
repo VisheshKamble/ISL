@@ -407,7 +407,8 @@ class EmergencyService {
     int sent = 0;
     final List<String> errors = [];
 
-    for (final contact in contacts) {
+    for (int i = 0; i < contacts.length; i++) {
+      final contact = contacts[i];
       if (!contact.isValid) {
         errors.add('Skipped ${contact.name}: invalid number.');
         continue;
@@ -420,25 +421,39 @@ class EmergencyService {
       );
 
       try {
-        if (await canLaunchUrl(smsUri)) {
-          await launchUrl(smsUri);
+        bool launched = false;
+        for (final waUri in _buildWhatsAppUris(
+          contact.whatsappDigits,
+          message,
+        )) {
+          try {
+            final launchedNow = await launchUrl(
+              waUri,
+              mode: waUri.scheme == 'whatsapp' || waUri.scheme == 'intent'
+                  ? LaunchMode.externalNonBrowserApplication
+                  : LaunchMode.externalApplication,
+            );
+            if (launchedNow) {
+              launched = true;
+              break;
+            }
+          } catch (_) {}
+        }
+
+        if (launched) {
+          sent++;
+        } else if (await launchUrl(smsUri)) {
           sent++;
         } else {
-          final waUri = Uri.parse(
-            _buildWhatsAppUrl(contact.internationalPhone, message),
+          errors.add(
+            'Could not open WhatsApp/SMS for ${contact.name}. Check number country code.',
           );
-          if (await canLaunchUrl(waUri)) {
-            await launchUrl(waUri, mode: LaunchMode.externalApplication);
-            sent++;
-          } else {
-            errors.add('Could not reach ${contact.name}.');
-          }
         }
       } catch (e) {
         errors.add('Error contacting ${contact.name}: $e');
       }
 
-      if (contacts.indexOf(contact) < contacts.length - 1) {
+      if (i < contacts.length - 1) {
         await Future.delayed(const Duration(milliseconds: 700));
       }
     }
@@ -484,9 +499,7 @@ class EmergencyService {
       orElse: () => contacts.first,
     );
     try {
-      final uri = Uri.parse(
-        _buildWhatsAppUrl(primary.internationalPhone, message),
-      );
+      final uri = Uri.parse(_buildWhatsAppUrl(primary.whatsappDigits, message));
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       }
@@ -501,8 +514,59 @@ class EmergencyService {
 
   // ── Helpers (unchanged) ──────────────────────
 
-  String _buildWhatsAppUrl(String phone, String message) =>
-      'https://wa.me/$phone?text=${Uri.encodeComponent(message)}';
+  String _normalizeWhatsAppPhone(String phone) {
+    var digits = phone.replaceAll(RegExp(r'\D'), '');
+    if (digits.startsWith('00')) {
+      digits = digits.substring(2);
+    }
+    if (digits.startsWith('0') && digits.length == 11) {
+      digits = digits.substring(1);
+    }
+    if (digits.length == 10) {
+      digits = '91$digits';
+    }
+    return digits;
+  }
+
+  List<Uri> _buildWhatsAppUris(String phone, String message) {
+    final candidates = _buildWhatsAppPhoneCandidates(phone);
+    final text = Uri.encodeComponent(message);
+    final uris = <Uri>[];
+
+    for (final normalized in candidates) {
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        uris.add(
+          Uri.parse(
+            'intent://send?phone=$normalized&text=$text#Intent;scheme=whatsapp;package=com.whatsapp;end',
+          ),
+        );
+      }
+
+      uris.add(Uri.parse('whatsapp://send?phone=$normalized&text=$text'));
+      uris.add(Uri.parse('https://wa.me/$normalized?text=$text'));
+    }
+
+    return uris;
+  }
+
+  List<String> _buildWhatsAppPhoneCandidates(String phone) {
+    final normalized = _normalizeWhatsAppPhone(phone);
+    final candidates = <String>[normalized];
+
+    // Keep a local-number fallback to avoid false "Invite" in cases where
+    // a saved country code is wrong for the contact.
+    if (normalized.startsWith('91') && normalized.length == 12) {
+      candidates.add(normalized.substring(2));
+    }
+
+    final seen = <String>{};
+    return candidates.where((c) => c.isNotEmpty && seen.add(c)).toList();
+  }
+
+  String _buildWhatsAppUrl(String phone, String message) {
+    final normalized = _normalizeWhatsAppPhone(phone);
+    return 'https://wa.me/$normalized?text=${Uri.encodeComponent(message)}';
+  }
 
   void _triggerHaptics() {
     if (!PlatformHelper.canVibrate) return;
@@ -1005,7 +1069,9 @@ class _DesktopSOSDialogState extends State<_DesktopSOSDialog> {
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
-                                  _copied ? l.t('sos_copied') : l.t('sos_copy_message'),
+                                  _copied
+                                      ? l.t('sos_copied')
+                                      : l.t('sos_copy_message'),
                                   style: TextStyle(
                                     color: _copied
                                         ? _DT.greenLight
@@ -1228,9 +1294,13 @@ class _WebSOSModalState extends State<_WebSOSModal> {
                           Expanded(
                             child: Text(
                               widget.location.isAvailable
-                                    ? l.t('sos_location_attached').replaceAll(
-                                      '{location}', widget.location.displayString)
-                                    : l.t('sos_location_unavailable'),
+                                  ? l
+                                        .t('sos_location_attached')
+                                        .replaceAll(
+                                          '{location}',
+                                          widget.location.displayString,
+                                        )
+                                  : l.t('sos_location_unavailable'),
                               style: TextStyle(
                                 fontSize: 11.5,
                                 color: widget.location.isAvailable
@@ -1357,7 +1427,9 @@ class _WebSOSModalState extends State<_WebSOSModal> {
                               children: [
                                 Expanded(
                                   child: _ContactActionBtn(
-                                    label: AppLocalizations.of(context).t('sos_whatsapp'),
+                                    label: AppLocalizations.of(
+                                      context,
+                                    ).t('sos_whatsapp'),
                                     icon: Icons.chat_rounded,
                                     color: const Color(0xFF25D366),
                                     onTap: () => _openWhatsApp(contact),
@@ -1366,7 +1438,9 @@ class _WebSOSModalState extends State<_WebSOSModal> {
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: _ContactActionBtn(
-                                    label: AppLocalizations.of(context).t('sos_call'),
+                                    label: AppLocalizations.of(
+                                      context,
+                                    ).t('sos_call'),
                                     icon: Icons.call_rounded,
                                     color: const Color(0xFF0284C7),
                                     onTap: () => _openTel(contact),

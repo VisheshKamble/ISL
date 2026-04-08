@@ -43,6 +43,27 @@ class EmergencyContact extends HiveObject {
 
   String get cleanedPhone => phone.replaceAll(RegExp(r'[\s\-\(\)\+]'), '');
 
+  /// Digits-only phone number optimized for WhatsApp deep links.
+  /// Keeps existing country codes when present and normalizes India local
+  /// numbers to 91XXXXXXXXXX.
+  String get whatsappDigits {
+    var digits = cleanedPhone;
+
+    if (digits.startsWith('00')) {
+      digits = digits.substring(2);
+    }
+
+    if (digits.startsWith('0') && digits.length > 10) {
+      digits = digits.substring(1);
+    }
+
+    if (digits.length == 10) {
+      digits = '91$digits';
+    }
+
+    return digits;
+  }
+
   /// Returns phone with +91 country code for WhatsApp/SMS deep-links.
   String get internationalPhone {
     final cleaned = cleanedPhone;

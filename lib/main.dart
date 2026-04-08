@@ -86,6 +86,8 @@ const _kAppleBlueDark = Color(0xFF0A84FF); // dark-mode system blue
 const _kAppleIndigo = Color(0xFF5856D6);
 const _kAppleTeal = Color(0xFF32ADE6);
 const _kAppleRed = Color(0xFFFF3B30);
+const _kRadiusMd = 16.0;
+const _kRadiusLg = 20.0;
 
 // Light mode surface hierarchy (iOS exact)
 const _lBg = Color(0xFFF2F2F7); // systemGroupedBackground
@@ -192,6 +194,146 @@ class _VaniAppState extends State<VaniApp> {
           ),
           iconTheme: IconThemeData(color: _kAppleBlue, size: 22),
         ),
+        cardTheme: kIsWeb
+            ? null
+            : CardThemeData(
+                elevation: 0,
+                margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+                color: _lSurface,
+                surfaceTintColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(_kRadiusLg),
+                  side: BorderSide(color: _lSeparator.withValues(alpha: 0.22)),
+                ),
+              ),
+        inputDecorationTheme: kIsWeb
+            ? null
+            : InputDecorationTheme(
+                filled: true,
+                fillColor: _lSurface,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                hintStyle: _appTextStyle(
+                  15,
+                  FontWeight.w400,
+                  _lLabel2.withValues(alpha: 0.52),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(_kRadiusMd),
+                  borderSide: BorderSide(
+                    color: _lSeparator.withValues(alpha: 0.34),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(_kRadiusMd),
+                  borderSide: BorderSide(
+                    color: _lSeparator.withValues(alpha: 0.34),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(_kRadiusMd),
+                  borderSide: BorderSide(
+                    color: _kAppleBlue.withValues(alpha: 0.72),
+                    width: 1.6,
+                  ),
+                ),
+              ),
+        elevatedButtonTheme: kIsWeb
+            ? null
+            : ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  elevation: 0,
+                  foregroundColor: Colors.white,
+                  backgroundColor: _kAppleBlue,
+                  minimumSize: const Size(56, 52),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(_kRadiusMd),
+                  ),
+                  textStyle: _appTextStyle(15, FontWeight.w700, Colors.white),
+                ),
+              ),
+        outlinedButtonTheme: kIsWeb
+            ? null
+            : OutlinedButtonThemeData(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _lLabel,
+                  minimumSize: const Size(56, 50),
+                  side: BorderSide(color: _lSeparator.withValues(alpha: 0.42)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(_kRadiusMd),
+                  ),
+                  textStyle: _appTextStyle(15, FontWeight.w600, _lLabel),
+                ),
+              ),
+        filledButtonTheme: kIsWeb
+            ? null
+            : FilledButtonThemeData(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(56, 50),
+                  backgroundColor: _kAppleIndigo,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(_kRadiusMd),
+                  ),
+                  textStyle: _appTextStyle(15, FontWeight.w700, Colors.white),
+                ),
+              ),
+        floatingActionButtonTheme: kIsWeb
+            ? null
+            : const FloatingActionButtonThemeData(
+                foregroundColor: Colors.white,
+                backgroundColor: _kAppleBlue,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(18)),
+                ),
+              ),
+        bottomSheetTheme: kIsWeb
+            ? null
+            : BottomSheetThemeData(
+                backgroundColor: _lSurface,
+                surfaceTintColor: Colors.transparent,
+                modalBackgroundColor: _lSurface,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+              ),
+        dialogTheme: kIsWeb
+            ? null
+            : DialogThemeData(
+                backgroundColor: _lSurface,
+                surfaceTintColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  side: BorderSide(color: _lSeparator.withValues(alpha: 0.2)),
+                ),
+                titleTextStyle: _appTextStyle(18, FontWeight.w700, _lLabel),
+                contentTextStyle: _appTextStyle(
+                  15,
+                  FontWeight.w400,
+                  _lLabel2.withValues(alpha: 0.86),
+                ),
+              ),
+        snackBarTheme: kIsWeb
+            ? null
+            : SnackBarThemeData(
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: const Color(0xFF141720),
+                contentTextStyle: _appTextStyle(
+                  14,
+                  FontWeight.w500,
+                  Colors.white,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
         navigationBarTheme: NavigationBarThemeData(
           backgroundColor: _lSurface.withValues(alpha: 0.92),
           indicatorColor: _kAppleBlue.withValues(alpha: 0.12),
@@ -246,6 +388,146 @@ class _VaniAppState extends State<VaniApp> {
           ),
           iconTheme: IconThemeData(color: _kAppleBlueDark, size: 22),
         ),
+        cardTheme: kIsWeb
+            ? null
+            : CardThemeData(
+                elevation: 0,
+                margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+                color: _dSurface,
+                surfaceTintColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(_kRadiusLg),
+                  side: BorderSide(color: _dSeparator.withValues(alpha: 0.42)),
+                ),
+              ),
+        inputDecorationTheme: kIsWeb
+            ? null
+            : InputDecorationTheme(
+                filled: true,
+                fillColor: _dSurface2,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                hintStyle: _appTextStyle(
+                  15,
+                  FontWeight.w400,
+                  _dLabel2.withValues(alpha: 0.52),
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(_kRadiusMd),
+                  borderSide: BorderSide(
+                    color: _dSeparator.withValues(alpha: 0.58),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(_kRadiusMd),
+                  borderSide: BorderSide(
+                    color: _dSeparator.withValues(alpha: 0.58),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(_kRadiusMd),
+                  borderSide: BorderSide(
+                    color: _kAppleBlueDark.withValues(alpha: 0.78),
+                    width: 1.6,
+                  ),
+                ),
+              ),
+        elevatedButtonTheme: kIsWeb
+            ? null
+            : ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  elevation: 0,
+                  foregroundColor: Colors.white,
+                  backgroundColor: _kAppleBlueDark,
+                  minimumSize: const Size(56, 52),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(_kRadiusMd),
+                  ),
+                  textStyle: _appTextStyle(15, FontWeight.w700, Colors.white),
+                ),
+              ),
+        outlinedButtonTheme: kIsWeb
+            ? null
+            : OutlinedButtonThemeData(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _dLabel,
+                  minimumSize: const Size(56, 50),
+                  side: BorderSide(color: _dSeparator.withValues(alpha: 0.68)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(_kRadiusMd),
+                  ),
+                  textStyle: _appTextStyle(15, FontWeight.w600, _dLabel),
+                ),
+              ),
+        filledButtonTheme: kIsWeb
+            ? null
+            : FilledButtonThemeData(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(56, 50),
+                  backgroundColor: _kAppleIndigo,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(_kRadiusMd),
+                  ),
+                  textStyle: _appTextStyle(15, FontWeight.w700, Colors.white),
+                ),
+              ),
+        floatingActionButtonTheme: kIsWeb
+            ? null
+            : const FloatingActionButtonThemeData(
+                foregroundColor: Colors.white,
+                backgroundColor: _kAppleBlueDark,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(18)),
+                ),
+              ),
+        bottomSheetTheme: kIsWeb
+            ? null
+            : BottomSheetThemeData(
+                backgroundColor: _dSurface,
+                surfaceTintColor: Colors.transparent,
+                modalBackgroundColor: _dSurface,
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                ),
+              ),
+        dialogTheme: kIsWeb
+            ? null
+            : DialogThemeData(
+                backgroundColor: _dSurface,
+                surfaceTintColor: Colors.transparent,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  side: BorderSide(color: _dSeparator.withValues(alpha: 0.42)),
+                ),
+                titleTextStyle: _appTextStyle(18, FontWeight.w700, _dLabel),
+                contentTextStyle: _appTextStyle(
+                  15,
+                  FontWeight.w400,
+                  _dLabel2.withValues(alpha: 0.82),
+                ),
+              ),
+        snackBarTheme: kIsWeb
+            ? null
+            : SnackBarThemeData(
+                behavior: SnackBarBehavior.floating,
+                backgroundColor: const Color(0xFF1F2533),
+                contentTextStyle: _appTextStyle(
+                  14,
+                  FontWeight.w500,
+                  Colors.white,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
         navigationBarTheme: NavigationBarThemeData(
           backgroundColor: _dSurface.withValues(alpha: 0.92),
           indicatorColor: _kAppleBlueDark.withValues(alpha: 0.18),
