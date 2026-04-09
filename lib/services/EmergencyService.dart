@@ -328,9 +328,15 @@ class EmergencyService {
       final contacts = getContacts();
       _triggerHaptics();
 
-      final location = await LocationService.instance.getLocationWithFallback(
-        timeout: const Duration(seconds: 5),
-      );
+      final allowLocation = await _askLocationForThisSOS();
+      final location = allowLocation
+          ? await LocationService.instance.getLocationWithFallback(
+              timeout: const Duration(seconds: 5),
+            )
+          : const LocationResult(
+              isAvailable: false,
+              error: 'Location sharing skipped for this SOS.',
+            );
 
       final now = DateTime.now();
       final timeStr =
@@ -639,6 +645,64 @@ class EmergencyService {
         buildWhatsApp: _buildWhatsAppUrl,
       ),
     );
+  }
+
+  Future<bool> _askLocationForThisSOS() async {
+    if (_context == null) return true;
+    if (!PlatformHelper.isMobile && !PlatformHelper.isWeb) return true;
+
+    final result = await showDialog<bool>(
+      context: _context!,
+      barrierDismissible: false,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        final t = _DT(isDark);
+        return AlertDialog(
+          backgroundColor: t.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: t.border2),
+          ),
+          title: Text(
+            'Share location for SOS?',
+            style: TextStyle(
+              color: t.textPri,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Text(
+            'We request your location each time SOS is triggered so the alert can include your current coordinates.',
+            style: TextStyle(
+              color: t.textSec,
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(
+                'Skip Location',
+                style: TextStyle(color: t.textSec, fontWeight: FontWeight.w600),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text(
+                'Allow',
+                style: TextStyle(
+                  color: Color(0xFF059669),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
   }
 
   void dispose() => stopShakeDetection();
