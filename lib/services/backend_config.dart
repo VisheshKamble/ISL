@@ -14,6 +14,21 @@ class BackendConfig {
     defaultValue: '',
   );
 
+  static const String twilioAccountSid = String.fromEnvironment(
+    'TWILIO_ACCOUNT_SID',
+    defaultValue: '',
+  );
+
+  static const String twilioAuthToken = String.fromEnvironment(
+    'TWILIO_AUTH_TOKEN',
+    defaultValue: '',
+  );
+
+  static const String twilioFromNumber = String.fromEnvironment(
+    'TWILIO_FROM_NUMBER',
+    defaultValue: '',
+  );
+
   static const bool websocketEnabled = bool.fromEnvironment(
     'ISL_WS_ENABLED',
     defaultValue: true,
