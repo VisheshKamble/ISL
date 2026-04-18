@@ -1,31 +1,51 @@
-// lib/services/EmergencyService.dart
-//
-// Changes from original:
-//   • addContact    — also inserts into Supabase, stores returned supabaseId
-//   • updateContact — also updates Supabase row if supabaseId is known
-//   • deleteContact — also deletes Supabase row if supabaseId is known
-//   • syncFromSupabase() — public method, called after login from AuthDialog
-// Everything else (shake, SOS sending, dialogs) is 100% unchanged.
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 import 'package:vibration/vibration.dart';
 import 'package:shake/shake.dart';
 
 import '../l10n/AppLocalizations.dart';
 import '../models/EmergencyContact.dart';
 import '../Utils/PlatformHelper.dart';
-import '../services/SupabaseService.dart';
+import 'backend_config.dart';
 import 'LocationService.dart';
-
-// ─────────────────────────────────────────────
 //  SOS MESSAGE TYPES  (unchanged)
-// ─────────────────────────────────────────────
 
 enum SOSMessageType { generalHelp, medical, police, fire, custom }
+
+String _localizedSosTypeLabel(AppLocalizations l, SOSMessageType type) {
+  switch (type) {
+    case SOSMessageType.generalHelp:
+      return l.t('sos_general_title');
+    case SOSMessageType.medical:
+      return l.t('sos_medical_title');
+    case SOSMessageType.police:
+      return l.t('sos_police_title');
+    case SOSMessageType.fire:
+      return l.t('sos_fire_title');
+    case SOSMessageType.custom:
+      return l.t('sos_label_emergency');
+  }
+}
+
+String _defaultSosTemplateKey(SOSMessageType type) {
+  switch (type) {
+    case SOSMessageType.generalHelp:
+      return 'sos_sms_general_template';
+    case SOSMessageType.medical:
+      return 'sos_sms_medical_template';
+    case SOSMessageType.police:
+      return 'sos_sms_police_template';
+    case SOSMessageType.fire:
+      return 'sos_sms_fire_template';
+    case SOSMessageType.custom:
+      return 'sos_sms_general_template';
+  }
+}
 
 extension SOSMessageTypeExt on SOSMessageType {
   String get label {
@@ -114,10 +134,7 @@ extension SOSMessageTypeExt on SOSMessageType {
     }
   }
 }
-
-// ─────────────────────────────────────────────
 //  EMERGENCY SERVICE  (singleton)
-// ─────────────────────────────────────────────
 
 class EmergencyService {
   static EmergencyService? _instance;
@@ -131,17 +148,10 @@ class EmergencyService {
   bool _isTriggering = false;
   BuildContext? _context;
 
-  // ── Initialisation ──────────────────────────
 
   Future<void> init(BuildContext context) async {
     _context = context;
     await _openBox();
-
-    // If user is already logged in (e.g. app restarted with saved session),
-    // pull their contacts from Supabase right away.
-    if (SupabaseService.instance.isLoggedIn) {
-      await syncFromSupabase();
-    }
 
     _startShakeDetection();
   }
@@ -155,36 +165,15 @@ class EmergencyService {
     }
   }
 
-  // ── Supabase sync (public) ──────────────────
 
-  /// Pull contacts from Supabase → overwrite local Hive box.
-  /// Call after login / signup from AuthDialog.
-  Future<void> syncFromSupabase() async {
-    await SupabaseService.instance.syncContactsToHive();
-  }
+  /// Legacy sync hook kept for backward compatibility.
+  /// No-op in local-only mode.
+  Future<void> syncFromSupabase() async {}
 
-  /// Push local Hive contacts that have no supabaseId up to Supabase.
-  /// Useful when a user adds contacts offline then later logs in.
-  Future<void> pushLocalContactsToSupabase() async {
-    // Push each local contact that has no supabaseId up to Supabase
-    final box = Hive.box<EmergencyContact>('emergency_contacts');
-    for (int i = 0; i < box.length; i++) {
-      final contact = box.getAt(i);
-      if (contact == null) continue;
-      if (contact.supabaseId != null) continue; // already synced
-      try {
-        final row = await SupabaseService.instance.addContactToSupabase(
-          contact,
-        );
-        contact.supabaseId = row['id'] as String?;
-        await contact.save();
-      } catch (e) {
-        debugPrint('[EmergencyService] pushLocalContactsToSupabase error: $e');
-      }
-    }
-  }
+  /// Legacy sync hook kept for backward compatibility.
+  /// No-op in local-only mode.
+  Future<void> pushLocalContactsToSupabase() async {}
 
-  // ── Shake detection (unchanged) ─────────────
 
   void _startShakeDetection() {
     if (!PlatformHelper.supportsShake) return;
@@ -228,13 +217,12 @@ class EmergencyService {
   bool get shakeActive =>
       _shakeDetector != null && PlatformHelper.supportsShake;
 
-  // ── Contact management ───────────────────────
 
   Box<EmergencyContact> get _box => Hive.box<EmergencyContact>(_boxName);
 
   List<EmergencyContact> getContacts() => _box.values.toList();
 
-  /// Add contact to Hive AND Supabase (if logged in).
+  /// Add contact to local Hive storage.
   Future<void> addContact(EmergencyContact contact) async {
     if (_box.length >= 5) {
       throw Exception('Maximum 5 emergency contacts allowed.');
@@ -244,49 +232,18 @@ class EmergencyService {
     }
     if (_box.isEmpty) contact.isPrimary = true;
 
-    if (SupabaseService.instance.isLoggedIn) {
-      // No try/catch here — let the error bubble up to the UI
-      final row = await SupabaseService.instance.addContactToSupabase(contact);
-      contact.supabaseId = row['id'] as String?;
-    }
-
     await _box.add(contact);
   }
 
-  /// Update contact in Hive AND Supabase (if logged in and supabaseId known).
+  /// Update contact in local Hive storage.
   Future<void> updateContact(int index, EmergencyContact updated) async {
     if (!updated.isValid) throw Exception('Invalid phone number.');
-
-    // Preserve the supabaseId from the old record
-    final existing = _box.getAt(index);
-    final sid = existing?.supabaseId ?? updated.supabaseId;
-    updated.supabaseId = sid;
-
-    if (SupabaseService.instance.isLoggedIn && sid != null) {
-      try {
-        await SupabaseService.instance.updateContactInSupabase(sid, updated);
-      } catch (e) {
-        debugPrint('[EmergencyService] Supabase updateContact error: $e');
-      }
-    }
 
     await _box.putAt(index, updated);
   }
 
-  /// Delete contact from Hive AND Supabase (if logged in and supabaseId known).
+  /// Delete contact from local Hive storage.
   Future<void> deleteContact(int index) async {
-    final contact = _box.getAt(index);
-
-    if (SupabaseService.instance.isLoggedIn && contact?.supabaseId != null) {
-      try {
-        await SupabaseService.instance.deleteContactFromSupabase(
-          contact!.supabaseId!,
-        );
-      } catch (e) {
-        debugPrint('[EmergencyService] Supabase deleteContact error: $e');
-      }
-    }
-
     await _box.deleteAt(index);
 
     // Reassign primary if needed
@@ -308,7 +265,6 @@ class EmergencyService {
   bool get hasContacts => _box.isNotEmpty;
   int get contactCount => _box.length;
 
-  // ── Core SOS trigger (unchanged) ─────────────
 
   Future<SOSResult> triggerSOS({
     required SOSMessageType type,
@@ -328,15 +284,17 @@ class EmergencyService {
       final contacts = getContacts();
       _triggerHaptics();
 
-      final allowLocation = await _askLocationForThisSOS();
-      final location = allowLocation
-          ? await LocationService.instance.getLocationWithFallback(
-              timeout: const Duration(seconds: 5),
-            )
-          : const LocationResult(
-              isAvailable: false,
-              error: 'Location sharing skipped for this SOS.',
-            );
+      final location = await _requireLiveLocationForSOS();
+      if (!location.isAvailable) {
+        final l = _context != null ? AppLocalizations.of(_context!) : null;
+        return SOSResult(
+          success: false,
+          reason:
+              l?.t('sos_location_required_reason') ??
+              'Live location is required for SOS.',
+          platform: PlatformHelper.platformName,
+        );
+      }
 
       final now = DateTime.now();
       final timeStr =
@@ -346,19 +304,20 @@ class EmergencyService {
           '${now.hour.toString().padLeft(2, '0')}:'
           '${now.minute.toString().padLeft(2, '0')}';
 
-      final locationBlock = location.isAvailable
-          ? '${location.mapsLink}\n(${location.displayString})'
-          : 'Could not be determined automatically.';
+      final locationBlock = '${location.mapsLink}\n(${location.displayString})';
+
+      final l = _context != null ? AppLocalizations.of(_context!) : null;
+      final resolvedMessage = customMessage ?? l?.t(_defaultSosTemplateKey(type));
 
       String fullMsg;
-      if (customMessage != null &&
-          (customMessage.contains('{LOCATION}') ||
-              customMessage.contains('{TIME}'))) {
-        fullMsg = customMessage
+      if (resolvedMessage != null &&
+          (resolvedMessage.contains('{LOCATION}') ||
+              resolvedMessage.contains('{TIME}'))) {
+        fullMsg = resolvedMessage
             .replaceAll('{LOCATION}', locationBlock)
             .replaceAll('{TIME}', timeStr);
-      } else if (customMessage != null) {
-        fullMsg = customMessage;
+      } else if (resolvedMessage != null) {
+        fullMsg = resolvedMessage;
       } else {
         fullMsg = type._buildBase(locationBlock).replaceAll('{TIME}', timeStr);
       }
@@ -387,14 +346,16 @@ class EmergencyService {
           type: type,
         );
       } else {
-        if (_context != null) {
+        final result = await _sendViaBackendTwilio(
+          contacts: contacts,
+          message: fullMsg,
+          location: location,
+          type: type,
+        );
+        if (_context != null && result.success) {
           _showDesktopSOSDialog(_context!, fullMsg, contacts);
         }
-        return SOSResult(
-          success: true,
-          reason: 'Desktop SOS dialog shown.',
-          platform: PlatformHelper.platformName,
-        );
+        return result;
       }
     } finally {
       await Future.delayed(const Duration(seconds: 3));
@@ -402,7 +363,6 @@ class EmergencyService {
     }
   }
 
-  // ── Mobile SOS (unchanged) ───────────────────
 
   Future<SOSResult> _sendMobileSOS({
     required List<EmergencyContact> contacts,
@@ -410,73 +370,14 @@ class EmergencyService {
     required LocationResult location,
     required SOSMessageType type,
   }) async {
-    int sent = 0;
-    final List<String> errors = [];
-
-    for (int i = 0; i < contacts.length; i++) {
-      final contact = contacts[i];
-      if (!contact.isValid) {
-        errors.add('Skipped ${contact.name}: invalid number.');
-        continue;
-      }
-
-      final smsUri = Uri(
-        scheme: 'sms',
-        path: contact.internationalPhone,
-        queryParameters: {'body': message},
-      );
-
-      try {
-        bool launched = false;
-        for (final waUri in _buildWhatsAppUris(
-          contact.whatsappDigits,
-          message,
-        )) {
-          try {
-            final launchedNow = await launchUrl(
-              waUri,
-              mode: waUri.scheme == 'whatsapp' || waUri.scheme == 'intent'
-                  ? LaunchMode.externalNonBrowserApplication
-                  : LaunchMode.externalApplication,
-            );
-            if (launchedNow) {
-              launched = true;
-              break;
-            }
-          } catch (_) {}
-        }
-
-        if (launched) {
-          sent++;
-        } else if (await launchUrl(smsUri)) {
-          sent++;
-        } else {
-          errors.add(
-            'Could not open WhatsApp/SMS for ${contact.name}. Check number country code.',
-          );
-        }
-      } catch (e) {
-        errors.add('Error contacting ${contact.name}: $e');
-      }
-
-      if (i < contacts.length - 1) {
-        await Future.delayed(const Duration(milliseconds: 700));
-      }
-    }
-
-    return SOSResult(
-      success: sent > 0,
-      sentCount: sent,
-      totalContacts: contacts.length,
-      errors: errors,
-      reason: sent > 0
-          ? 'Alert sent to $sent contact(s).'
-          : 'Failed to send alert.',
-      platform: PlatformHelper.platformName,
+    return _sendViaBackendTwilio(
+      contacts: contacts,
+      message: message,
+      location: location,
+      type: type,
     );
   }
 
-  // ── Web SOS (unchanged) ──────────────────────
 
   Future<SOSResult> _sendWebSOS({
     required List<EmergencyContact> contacts,
@@ -484,94 +385,131 @@ class EmergencyService {
     required LocationResult location,
     required SOSMessageType type,
   }) async {
-    if (_context == null) {
-      return SOSResult(
-        success: false,
-        reason: 'No context for web modal.',
-        platform: PlatformHelper.platformName,
-      );
-    }
-
-    _showWebSOSModal(
-      context: _context!,
+    final result = await _sendViaBackendTwilio(
       contacts: contacts,
       message: message,
       location: location,
       type: type,
     );
 
-    final primary = contacts.firstWhere(
-      (c) => c.isPrimary,
-      orElse: () => contacts.first,
-    );
-    try {
-      final uri = Uri.parse(_buildWhatsAppUrl(primary.whatsappDigits, message));
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (result.success && _context != null) {
+      _showWebSOSModal(
+        context: _context!,
+        contacts: contacts,
+        message: message,
+        location: location,
+        type: type,
+      );
+    }
+
+    return result;
+  }
+
+  Future<SOSResult> _sendViaBackendTwilio({
+    required List<EmergencyContact> contacts,
+    required String message,
+    required LocationResult location,
+    required SOSMessageType type,
+  }) async {
+    final l = _context != null ? AppLocalizations.of(_context!) : null;
+    final validContacts = contacts
+        .where((c) => c.isValid)
+        .take(5)
+        .map(
+          (c) => {
+            'name': c.name,
+            'phone': c.internationalPhone,
+          },
+        )
+        .toList();
+
+    if (validContacts.isEmpty) {
+      return SOSResult(
+        success: false,
+        reason: l?.t('sos_no_contacts_body') ?? 'No emergency contacts configured.',
+        platform: PlatformHelper.platformName,
+      );
+    }
+
+    final payload = {
+      'type': type.name,
+      'message': message,
+      'contacts': validContacts,
+      'location': {
+        'latitude': location.latitude,
+        'longitude': location.longitude,
+        'display': location.displayString,
+        'maps_link': location.mapsLink,
+      },
+      'platform': PlatformHelper.platformName,
+      'sent_at': DateTime.now().toIso8601String(),
+    };
+
+    final errors = <String>[];
+    for (final base in BackendConfig.apiBaseCandidates) {
+      try {
+        final uri = Uri.parse('$base/sos/send');
+        final headers = <String, String>{
+          'Content-Type': 'application/json',
+        };
+        if (BackendConfig.twilioAccountSid.isNotEmpty) {
+          headers['x-twilio-account-sid'] = BackendConfig.twilioAccountSid;
+        }
+        if (BackendConfig.twilioAuthToken.isNotEmpty) {
+          headers['x-twilio-auth-token'] = BackendConfig.twilioAuthToken;
+        }
+        if (BackendConfig.twilioFromNumber.isNotEmpty) {
+          headers['x-twilio-from-number'] = BackendConfig.twilioFromNumber;
+        }
+        final res = await http
+            .post(
+              uri,
+              headers: headers,
+              body: jsonEncode(payload),
+            )
+            .timeout(const Duration(seconds: 15));
+
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          final body = jsonDecode(res.body) as Map<String, dynamic>;
+          final sentCount = (body['sent_count'] as num?)?.toInt() ?? 0;
+          final total =
+              (body['total_contacts'] as num?)?.toInt() ?? validContacts.length;
+          final backendErrors = ((body['errors'] as List?) ?? const [])
+              .map((e) => e.toString())
+              .toList();
+          final success = (body['success'] as bool?) ?? (sentCount > 0);
+          final reason =
+              body['message']?.toString() ??
+              body['reason']?.toString() ??
+              (success
+                  ? l?.t('sos_sent_web') ?? 'SOS dispatched.'
+                  : l?.t('sos_dispatch_failed') ?? 'Failed to dispatch SOS.');
+
+          return SOSResult(
+            success: success,
+            reason: reason,
+            platform: PlatformHelper.platformName,
+            sentCount: sentCount,
+            totalContacts: total,
+            errors: backendErrors,
+          );
+        }
+
+        errors.add('HTTP ${res.statusCode}: ${res.body}');
+      } catch (e) {
+        errors.add('$base -> $e');
       }
-    } catch (_) {}
+    }
 
     return SOSResult(
-      success: true,
-      reason: 'Web SOS panel shown.',
+      success: false,
+      reason:
+          l?.t('sos_backend_unreachable') ??
+          'Could not reach SOS server. Please try again.',
       platform: PlatformHelper.platformName,
+      totalContacts: validContacts.length,
+      errors: errors,
     );
-  }
-
-  // ── Helpers (unchanged) ──────────────────────
-
-  String _normalizeWhatsAppPhone(String phone) {
-    var digits = phone.replaceAll(RegExp(r'\D'), '');
-    if (digits.startsWith('00')) {
-      digits = digits.substring(2);
-    }
-    if (digits.startsWith('0') && digits.length == 11) {
-      digits = digits.substring(1);
-    }
-    if (digits.length == 10) {
-      digits = '91$digits';
-    }
-    return digits;
-  }
-
-  List<Uri> _buildWhatsAppUris(String phone, String message) {
-    final candidates = _buildWhatsAppPhoneCandidates(phone);
-    final text = Uri.encodeComponent(message);
-    final uris = <Uri>[];
-
-    for (final normalized in candidates) {
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        uris.add(
-          Uri.parse(
-            'intent://send?phone=$normalized&text=$text#Intent;scheme=whatsapp;package=com.whatsapp;end',
-          ),
-        );
-      }
-
-      uris.add(Uri.parse('whatsapp://send?phone=$normalized&text=$text'));
-      uris.add(Uri.parse('https://wa.me/$normalized?text=$text'));
-    }
-
-    return uris;
-  }
-
-  List<String> _buildWhatsAppPhoneCandidates(String phone) {
-    final normalized = _normalizeWhatsAppPhone(phone);
-    final candidates = <String>[normalized];
-
-    // Keep a local-number fallback to avoid false "Invite" in cases where
-    // a saved country code is wrong for the contact.
-    if (normalized.startsWith('91') && normalized.length == 12) {
-      candidates.add(normalized.substring(2));
-    }
-
-    final seen = <String>{};
-    return candidates.where((c) => c.isNotEmpty && seen.add(c)).toList();
-  }
-
-  String _buildWhatsAppUrl(String phone, String message) {
-    final normalized = _normalizeWhatsAppPhone(phone);
-    return 'https://wa.me/$normalized?text=${Uri.encodeComponent(message)}';
   }
 
   void _triggerHaptics() {
@@ -583,10 +521,7 @@ class EmergencyService {
       );
     } catch (_) {}
   }
-
-  // ─────────────────────────────────────────────
   //  DIALOGS (all unchanged)
-  // ─────────────────────────────────────────────
 
   void _showNoContactsDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -642,9 +577,39 @@ class EmergencyService {
         location: location,
         type: type,
         onClose: () => Navigator.pop(ctx),
-        buildWhatsApp: _buildWhatsAppUrl,
       ),
     );
+  }
+
+  Future<LocationResult> _requireLiveLocationForSOS() async {
+    final location = await LocationService.instance.getLocationWithFallback(
+      timeout: const Duration(seconds: 8),
+    );
+    if (location.isAvailable) return location;
+
+    if (_context == null || (!PlatformHelper.isMobile && !PlatformHelper.isWeb)) {
+      return location;
+    }
+
+    final allow = await _askLocationForThisSOS();
+    if (!allow) {
+      return const LocationResult(
+        isAvailable: false,
+        error: 'Location permission not granted for SOS.',
+      );
+    }
+
+    while (true) {
+      final retryLocation = await LocationService.instance.getLocationWithFallback(
+        timeout: const Duration(seconds: 10),
+      );
+      if (retryLocation.isAvailable) return retryLocation;
+
+      final shouldRetry = await _showLocationRetryDialog(
+        retryLocation.error,
+      );
+      if (!shouldRetry) return retryLocation;
+    }
   }
 
   Future<bool> _askLocationForThisSOS() async {
@@ -657,6 +622,7 @@ class EmergencyService {
       builder: (ctx) {
         final isDark = Theme.of(ctx).brightness == Brightness.dark;
         final t = _DT(isDark);
+        final l = AppLocalizations.of(ctx);
         return AlertDialog(
           backgroundColor: t.surface,
           shape: RoundedRectangleBorder(
@@ -664,7 +630,7 @@ class EmergencyService {
             side: BorderSide(color: t.border2),
           ),
           title: Text(
-            'Share location for SOS?',
+            l.t('sos_location_required_title'),
             style: TextStyle(
               color: t.textPri,
               fontSize: 16,
@@ -672,7 +638,7 @@ class EmergencyService {
             ),
           ),
           content: Text(
-            'We request your location each time SOS is triggered so the alert can include your current coordinates.',
+            l.t('sos_location_required_body'),
             style: TextStyle(
               color: t.textSec,
               fontSize: 13,
@@ -683,15 +649,78 @@ class EmergencyService {
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
               child: Text(
-                'Skip Location',
+                l.t('common_close'),
                 style: TextStyle(color: t.textSec, fontWeight: FontWeight.w600),
               ),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text(
-                'Allow',
-                style: TextStyle(
+              child: Text(
+                l.t('sos_allow_location'),
+                style: const TextStyle(
+                  color: Color(0xFF059669),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    return result ?? false;
+  }
+
+  Future<bool> _showLocationRetryDialog(String? error) async {
+    if (_context == null) return false;
+
+    final result = await showDialog<bool>(
+      context: _context!,
+      barrierDismissible: false,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        final t = _DT(isDark);
+        final l = AppLocalizations.of(ctx);
+        final body = l.t('sos_location_retry_body').replaceAll(
+          '{error}',
+          (error ?? l.t('sos_location_unavailable')).trim(),
+        );
+
+        return AlertDialog(
+          backgroundColor: t.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+            side: BorderSide(color: t.border2),
+          ),
+          title: Text(
+            l.t('sos_location_required_title'),
+            style: TextStyle(
+              color: t.textPri,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Text(
+            body,
+            style: TextStyle(
+              color: t.textSec,
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: Text(
+                l.t('common_close'),
+                style: TextStyle(color: t.textSec, fontWeight: FontWeight.w600),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: Text(
+                l.t('common_retry'),
+                style: const TextStyle(
                   color: Color(0xFF059669),
                   fontWeight: FontWeight.w700,
                 ),
@@ -707,10 +736,7 @@ class EmergencyService {
 
   void dispose() => stopShakeDetection();
 }
-
-// ─────────────────────────────────────────────
 //  SOS RESULT
-// ─────────────────────────────────────────────
 
 class SOSResult {
   final bool success;
@@ -729,10 +755,7 @@ class SOSResult {
     this.errors = const [],
   });
 }
-
-// ─────────────────────────────────────────────
 //  DESIGN TOKENS
-// ─────────────────────────────────────────────
 
 class _DT {
   final bool d;
@@ -753,10 +776,7 @@ class _DT {
   static const greenLight = Color(0xFF34D399);
   static const amber = Color(0xFFD97706);
 }
-
-// ─────────────────────────────────────────────
 //  GENERIC SOS DIALOG
-// ─────────────────────────────────────────────
 
 class _SosDialogAction {
   final String label;
@@ -917,10 +937,7 @@ class _SosDialog extends StatelessWidget {
     );
   }
 }
-
-// ─────────────────────────────────────────────
 //  DESKTOP SOS DIALOG (unchanged)
-// ─────────────────────────────────────────────
 
 class _DesktopSOSDialog extends StatefulWidget {
   final bool isDark;
@@ -1184,10 +1201,7 @@ class _DesktopSOSDialogState extends State<_DesktopSOSDialog> {
     );
   }
 }
-
-// ─────────────────────────────────────────────
 //  WEB SOS MODAL (unchanged)
-// ─────────────────────────────────────────────
 
 class _WebSOSModal extends StatefulWidget {
   final List<EmergencyContact> contacts;
@@ -1195,14 +1209,12 @@ class _WebSOSModal extends StatefulWidget {
   final LocationResult location;
   final SOSMessageType type;
   final VoidCallback onClose;
-  final String Function(String, String) buildWhatsApp;
   const _WebSOSModal({
     required this.contacts,
     required this.message,
     required this.location,
     required this.type,
     required this.onClose,
-    required this.buildWhatsApp,
   });
   @override
   State<_WebSOSModal> createState() => _WebSOSModalState();
@@ -1210,20 +1222,6 @@ class _WebSOSModal extends StatefulWidget {
 
 class _WebSOSModalState extends State<_WebSOSModal> {
   bool _messageCopied = false;
-
-  Future<void> _openWhatsApp(EmergencyContact c) async {
-    final uri = Uri.parse(
-      widget.buildWhatsApp(c.internationalPhone, widget.message),
-    );
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
-  }
-
-  Future<void> _openTel(EmergencyContact c) async {
-    final uri = Uri(scheme: 'tel', path: c.internationalPhone);
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
-  }
 
   void _copy() {
     Clipboard.setData(ClipboardData(text: widget.message));
@@ -1310,7 +1308,7 @@ class _WebSOSModalState extends State<_WebSOSModal> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                widget.type.label,
+                                _localizedSosTypeLabel(l, widget.type),
                                 style: const TextStyle(
                                   color: _DT.crimsonSoft,
                                   fontSize: 12,
@@ -1487,30 +1485,13 @@ class _WebSOSModalState extends State<_WebSOSModal> {
                               ],
                             ),
                             const SizedBox(height: 10),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _ContactActionBtn(
-                                    label: AppLocalizations.of(
-                                      context,
-                                    ).t('sos_whatsapp'),
-                                    icon: Icons.chat_rounded,
-                                    color: const Color(0xFF25D366),
-                                    onTap: () => _openWhatsApp(contact),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: _ContactActionBtn(
-                                    label: AppLocalizations.of(
-                                      context,
-                                    ).t('sos_call'),
-                                    icon: Icons.call_rounded,
-                                    color: const Color(0xFF0284C7),
-                                    onTap: () => _openTel(contact),
-                                  ),
-                                ),
-                              ],
+                            Text(
+                              l.t('sos_auto_dispatched_contact'),
+                              style: TextStyle(
+                                color: t.textSec,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ],
                         ),
@@ -1590,49 +1571,4 @@ class _WebSOSModalState extends State<_WebSOSModal> {
       ),
     );
   }
-}
-
-// ─────────────────────────────────────────────
-//  CONTACT ACTION BUTTON (unchanged)
-// ─────────────────────────────────────────────
-
-class _ContactActionBtn extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-  const _ContactActionBtn({
-    required this.label,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.28)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: color, size: 14),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
 }
