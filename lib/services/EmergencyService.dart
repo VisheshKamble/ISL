@@ -322,7 +322,7 @@ class EmergencyService {
   /// Opens WhatsApp natively on Android/iOS.
   ///
   /// WHY we do NOT use canLaunchUrl() first:
-  ///   Android 11+ requires a <queries> block in AndroidManifest.xml for the
+  ///   Android 11+ requires a block in AndroidManifest.xml for the
   ///   `whatsapp` URL scheme. Without it canLaunchUrl('whatsapp://...') always
   ///   returns false even when WhatsApp is installed, causing the native deep
   ///   link to be silently skipped on every Android 11+ device.
