@@ -1,19 +1,3 @@
-// lib/components/GlobalNavbar.dart
-//
-// ╔══════════════════════════════════════════════════════════════════════╗
-// ║  VANI — Global Navbar  · Premium Fintech Redesign v4               ║
-// ║                                                                    ║
-// ║  Design: Deep-space glass · Electric Indigo · Formal & Precise     ║
-// ║  Font: Plus Jakarta Sans (UX4G standard)                                ║
-// ║                                                                    ║
-// ║  Key design moves:                                                 ║
-// ║  · Glassmorphism pill with frosted-glass backdrop                 ║
-// ║  · Gradient brand accent line                                     ║
-// ║  · Smooth animated active underline (180ms easeOut)               ║
-// ║  · SOS with dual-ring pulse animation                             ║
-// ║  · Hover: text color + weight change + glow shadow                ║
-// ║  · Min 44dp touch targets, WCAG AA contrast, Semantics()          ║
-// ╚══════════════════════════════════════════════════════════════════════╝
 
 // ignore_for_file: unused_element, unused_local_variable, unused_field
 
@@ -27,15 +11,8 @@ import '../screens/EmergencyScreen.dart';
 import '../screens/TwoWayScreen.dart';
 import '../screens/Islassistantscreen.dart';
 import '../l10n/AppLocalizations.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:async';
-import 'package:hive_flutter/hive_flutter.dart';
-import '../models/EmergencyContact.dart';
 import '../services/web_home_nav.dart';
-
-// ─────────────────────────────────────────────────────────────────────
 //  DESIGN TOKENS
-// ─────────────────────────────────────────────────────────────────────
 const _fontFamily = 'Plus Jakarta Sans';
 
 // Primary accent — electric indigo
@@ -99,10 +76,7 @@ TextStyle _body(double sz, Color c, {FontWeight w = FontWeight.w400}) =>
     );
 
 const double _kDesktopBreak = 750;
-
-// ══════════════════════════════════════════════════════════════════════
 //  GLOBAL NAVBAR
-// ══════════════════════════════════════════════════════════════════════
 class GlobalNavbar extends StatelessWidget {
   final VoidCallback toggleTheme;
   final Function(Locale) setLocale;
@@ -226,10 +200,7 @@ class GlobalNavbar extends StatelessWidget {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  BRAND
-// ══════════════════════════════════════════════════════════════════════
 class _Brand extends StatelessWidget {
   final bool isDark;
   const _Brand({required this.isDark});
@@ -282,10 +253,7 @@ class _Brand extends StatelessWidget {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  DESKTOP ACTIONS
-// ══════════════════════════════════════════════════════════════════════
 class _DesktopActions extends StatefulWidget {
   final String activeRoute;
   final VoidCallback toggleTheme;
@@ -310,22 +278,9 @@ class _DesktopActions extends StatefulWidget {
 }
 
 class _DesktopActionsState extends State<_DesktopActions> {
-  late bool _isLoggedIn;
-  late final StreamSubscription<AuthState> _authSub;
-
   @override
   void initState() {
     super.initState();
-    _isLoggedIn = Supabase.instance.client.auth.currentSession != null;
-    _authSub = Supabase.instance.client.auth.onAuthStateChange.listen((data) {
-      if (mounted) setState(() => _isLoggedIn = data.session != null);
-    });
-  }
-
-  @override
-  void dispose() {
-    _authSub.cancel();
-    super.dispose();
   }
 
   void _push(BuildContext ctx, Widget screen) => Navigator.push(
@@ -341,27 +296,6 @@ class _DesktopActionsState extends State<_DesktopActions> {
     WebHomeNav.request(section);
     if (widget.activeRoute != 'home') {
       Navigator.of(ctx).popUntil((r) => r.isFirst);
-    }
-  }
-
-  Future<void> _logout(BuildContext ctx) async {
-    try {
-      final box = Hive.box<EmergencyContact>('emergency_contacts');
-      await box.clear();
-    } catch (_) {}
-    await Supabase.instance.client.auth.signOut();
-    if (ctx.mounted) {
-      ScaffoldMessenger.of(ctx).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.l.t('menu_signed_out'),
-            style: _body(13, Colors.white, w: FontWeight.w500),
-          ),
-          backgroundColor: widget.isDark ? _dSurface2 : _lText,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        ),
-      );
     }
   }
 
@@ -393,13 +327,6 @@ class _DesktopActionsState extends State<_DesktopActions> {
             accent: accent,
             onTap: () => _goHomeSection(ctx, WebHomeSection.objectives),
           ),
-          if (_isLoggedIn)
-            _NavLink(
-              label: widget.l.t('menu_sign_out').toUpperCase(),
-              isDark: widget.isDark,
-              accent: widget.isDark ? _navDangerD : _navDanger,
-              onTap: () => _logout(ctx),
-            ),
           const SizedBox(width: _sp8),
           _LangDropdown(
             currentLocale: widget.currentLocale,
@@ -510,13 +437,6 @@ class _DesktopActionsState extends State<_DesktopActions> {
             ),
           ),
         ),
-        if (_isLoggedIn)
-          _NavLink(
-            label: widget.l.t('menu_sign_out').toUpperCase(),
-            isDark: widget.isDark,
-            accent: widget.isDark ? _navDangerD : _navDanger,
-            onTap: () => _logout(ctx),
-          ),
         const SizedBox(width: _sp8),
         _LangDropdown(
           currentLocale: widget.currentLocale,
@@ -538,7 +458,6 @@ class _DesktopActionsState extends State<_DesktopActions> {
   }
 }
 
-// ── Desktop nav link ──────────────────────────────────────────────────
 class _NavLink extends StatefulWidget {
   final String label;
   final bool isDark, isActive;
@@ -621,7 +540,6 @@ class _NavLinkState extends State<_NavLink> {
   }
 }
 
-// ── SOS nav link ──────────────────────────────────────────────────────
 class _SOSNavLink extends StatefulWidget {
   final String label;
   final bool isDark, isActive;
@@ -740,10 +658,7 @@ class _SOSNavLinkState extends State<_SOSNavLink>
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  MOBILE ACTIONS
-// ══════════════════════════════════════════════════════════════════════
 class _MobileActions extends StatelessWidget {
   final String activeRoute;
   final VoidCallback toggleTheme;
@@ -831,10 +746,7 @@ class _MobileActions extends StatelessWidget {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  SHARED COMPONENTS
-// ══════════════════════════════════════════════════════════════════════
 
 class _ThemeToggle extends StatelessWidget {
   final bool isDark;
