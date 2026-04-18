@@ -1,5 +1,6 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel, Field
 import cv2
 import numpy as np
 import base64
@@ -9,8 +10,10 @@ import time
 import logging
 from collections import deque
 from urllib.request import urlopen
+from typing import Any
 import gdown
 from ultralytics import YOLO
+from twilio.rest import Client
 
 # ─────────────────────────────────────────────
 # LOGGING SETUP
@@ -26,6 +29,10 @@ log = logging.getLogger("vani")
 # FASTAPI CONFIG
 # ─────────────────────────────────────────────
 app = FastAPI(title="VANI ISL Backend", version="2.2.0")
+
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID", "")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN", "")
+TWILIO_FROM_NUMBER = os.getenv("TWILIO_FROM_NUMBER", "")
 
 
 def _parse_csv_env(name: str) -> list[str]:
@@ -143,6 +150,49 @@ class PredictionSmoother:
     def reset(self):
         self._buf.clear()
 
+
+class SOSContact(BaseModel):
+    name: str = Field(min_length=1, max_length=100)
+    phone: str = Field(min_length=5, max_length=24)
+
+
+class SOSLocation(BaseModel):
+    latitude: float | None = None
+    longitude: float | None = None
+    display: str | None = None
+    maps_link: str | None = None
+
+
+class SOSDispatchRequest(BaseModel):
+    type: str = Field(min_length=1, max_length=40)
+    message: str = Field(min_length=5, max_length=4000)
+    contacts: list[SOSContact]
+    location: SOSLocation | None = None
+    platform: str | None = None
+    sent_at: str | None = None
+
+
+def _normalize_phone(phone: str) -> str:
+    digits = "".join(ch for ch in phone if ch.isdigit())
+    if digits.startswith("00"):
+        digits = digits[2:]
+    if digits.startswith("0") and len(digits) == 11:
+        digits = digits[1:]
+    if len(digits) == 10:
+        digits = "91" + digits
+    if not digits.startswith("+"):
+        digits = "+" + digits
+    return digits
+
+
+def _twilio_client_or_raise(account_sid: str, auth_token: str, from_number: str) -> Client:
+    if not account_sid or not auth_token or not from_number:
+        raise HTTPException(
+            status_code=503,
+            detail="Twilio is not configured on the server.",
+        )
+    return Client(account_sid, auth_token)
+
 # ─────────────────────────────────────────────
 # WEBSOCKET ENDPOINT
 # ─────────────────────────────────────────────
@@ -241,6 +291,49 @@ def health_check():
         "status": "online",
         "model_loaded": model is not None,
         "engine": "YOLOv11-CPU"
+    }
+
+
+@app.post("/sos/send")
+def send_sos(payload: SOSDispatchRequest, request: Request) -> dict[str, Any]:
+    account_sid = TWILIO_ACCOUNT_SID or request.headers.get("x-twilio-account-sid", "")
+    auth_token = TWILIO_AUTH_TOKEN or request.headers.get("x-twilio-auth-token", "")
+    from_number = TWILIO_FROM_NUMBER or request.headers.get("x-twilio-from-number", "")
+    client = _twilio_client_or_raise(account_sid, auth_token, from_number)
+
+    contacts = payload.contacts[:5]
+    if not contacts:
+        raise HTTPException(status_code=400, detail="No contacts provided.")
+
+    sent_count = 0
+    errors: list[str] = []
+
+    for c in contacts:
+        try:
+            to_number = _normalize_phone(c.phone)
+            msg = client.messages.create(
+                body=payload.message,
+                from_=from_number,
+                to=to_number,
+            )
+            sent_count += 1
+            log.info("SOS SMS sent to %s (%s) sid=%s", c.name, to_number, msg.sid)
+        except Exception as e:
+            err = f"{c.name}: {e}"
+            errors.append(err)
+            log.error("SOS SMS failed for %s: %s", c.name, e)
+
+    success = sent_count > 0
+    return {
+        "success": success,
+        "sent_count": sent_count,
+        "total_contacts": len(contacts),
+        "errors": errors,
+        "message": (
+            f"Alert sent to {sent_count} contact(s)."
+            if success
+            else "Failed to send alert via Twilio."
+        ),
     }
 
 if __name__ == "__main__":
