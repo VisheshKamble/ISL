@@ -1,10 +1,3 @@
-// lib/screens/EmergencySetupScreen.dart
-//
-// ╔══════════════════════════════════════════════════════════════════════╗
-// ║  VANI — Emergency Setup  · Apple-Minimal Redesign                  ║
-// ║  Aesthetic: Refined minimal, SF-inspired depth, frosted surfaces   ║
-// ║  Fixes: Keyboard avoidance, dialog overflow, form scroll           ║
-// ╚══════════════════════════════════════════════════════════════════════╝
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -14,10 +7,6 @@ import '../l10n/AppLocalizations.dart';
 import '../models/EmergencyContact.dart';
 import '../services/EmergencyService.dart';
 import '../Utils/PlatformHelper.dart';
-
-// ─────────────────────────────────────────────────────────────────────
-//  DESIGN TOKENS — Apple-inspired refined palette
-// ─────────────────────────────────────────────────────────────────────
 const _fontFamily = 'Plus Jakarta Sans';
 
 // Semantic
@@ -81,7 +70,6 @@ const _sp24 = 24.0;
 const _sp32 = 32.0;
 const _sp48 = 48.0;
 
-// ── Type helpers ──────────────────────────────────────────────────────
 TextStyle _largeTitle(Color c) => TextStyle(
   fontFamily: _fontFamily,
   fontSize: 34,
@@ -172,7 +160,6 @@ TextStyle _caption(Color c, {FontWeight w = FontWeight.w400}) => TextStyle(
   letterSpacing: 0.0,
 );
 
-// ── Relation helpers ──────────────────────────────────────────────────
 Color _accentFor(String r, bool dark) {
   final pair = _relColors[r] ?? _relColors['Other']!;
   return dark ? pair[1] : pair[0];
@@ -200,10 +187,7 @@ String _relationLabel(AppLocalizations l, String code) {
       return code;
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  SCREEN
-// ══════════════════════════════════════════════════════════════════════
 class EmergencySetupScreen extends StatefulWidget {
   final VoidCallback toggleTheme;
   final Function(Locale) setLocale;
@@ -254,10 +238,7 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
         ? _buildWeb(context, contacts, isDark, w > 1100)
         : _buildMobile(context, contacts, isDark);
   }
-
-  // ════════════════════════════════════════════════════════════════════
   //  MOBILE
-  // ════════════════════════════════════════════════════════════════════
   Widget _buildMobile(
     BuildContext ctx,
     List<EmergencyContact> contacts,
@@ -365,10 +346,7 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
       ),
     );
   }
-
-  // ════════════════════════════════════════════════════════════════════
   //  WEB / TABLET
-  // ════════════════════════════════════════════════════════════════════
   Widget _buildWeb(
     BuildContext ctx,
     List<EmergencyContact> contacts,
@@ -470,7 +448,6 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
     ],
   );
 
-  // ── Actions ───────────────────────────────────────────────────────
   void _confirmDelete(int index) {
     final l = AppLocalizations.of(context);
     showCupertinoStyleDialog(
@@ -555,7 +532,6 @@ class _EmergencySetupScreenState extends State<EmergencySetupScreen>
   }
 }
 
-// ── Cupertino-style dialog ────────────────────────────────────────────
 void showCupertinoStyleDialog({
   required BuildContext context,
   required bool isDark,
@@ -658,10 +634,7 @@ void showCupertinoStyleDialog({
     ),
   );
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  APPLE NAV BAR
-// ══════════════════════════════════════════════════════════════════════
 class _AppleNavBar extends StatelessWidget {
   final bool isDark;
   final String title;
@@ -724,7 +697,6 @@ class _AppleNavBar extends StatelessWidget {
   }
 }
 
-// ── Pill badge ────────────────────────────────────────────────────────
 class _PillBadge extends StatelessWidget {
   final String label;
   final Color color;
@@ -750,7 +722,6 @@ class _PillBadge extends StatelessWidget {
 // Helper
 const _sp10 = 10.0;
 
-// ── Section header ────────────────────────────────────────────────────
 class _SectionHeader extends StatelessWidget {
   final String title;
   final Widget? trailing;
@@ -779,7 +750,6 @@ class _SectionHeader extends StatelessWidget {
   );
 }
 
-// ── Inline warning ────────────────────────────────────────────────────
 class _InlineWarning extends StatelessWidget {
   final String label;
   final bool isDark;
@@ -799,7 +769,6 @@ class _InlineWarning extends StatelessWidget {
   }
 }
 
-// ── Empty state ───────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   final bool isDark;
   const _EmptyState({required this.isDark});
@@ -853,7 +822,6 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// ── Contact list (grouped, iOS-style) ────────────────────────────────
 class _ContactList extends StatelessWidget {
   final List<EmergencyContact> contacts;
   final bool isDark;
@@ -1150,7 +1118,6 @@ class _ContactCellState extends State<_ContactCell> {
   }
 }
 
-// ── Sheet action row ──────────────────────────────────────────────────
 class _SheetAction extends StatefulWidget {
   final String label;
   final IconData? icon;
@@ -1223,7 +1190,6 @@ class _SheetActionState extends State<_SheetAction> {
   }
 }
 
-// ── Micro chip ────────────────────────────────────────────────────────
 class _MicroChip extends StatelessWidget {
   final String label;
   final Color color;
@@ -1246,7 +1212,6 @@ class _MicroChip extends StatelessWidget {
   );
 }
 
-// ── Add button ────────────────────────────────────────────────────────
 class _AddButton extends StatefulWidget {
   final bool isDark;
   final VoidCallback onTap;
@@ -1309,7 +1274,6 @@ class _AddButtonState extends State<_AddButton> {
   }
 }
 
-// ── Tap target helper ─────────────────────────────────────────────────
 class _TapTarget extends StatelessWidget {
   final Widget child;
   final VoidCallback onTap;
@@ -1323,7 +1287,6 @@ class _TapTarget extends StatelessWidget {
   );
 }
 
-// ── Capabilities card ─────────────────────────────────────────────────
 class _CapabilitiesCard extends StatelessWidget {
   final bool isDark;
   const _CapabilitiesCard({required this.isDark});
@@ -1478,7 +1441,6 @@ class _CapabilitiesCard extends StatelessWidget {
   }
 }
 
-// ── Shake card ────────────────────────────────────────────────────────
 class _ShakeInfoCard extends StatelessWidget {
   final bool isDark;
   const _ShakeInfoCard({required this.isDark});
@@ -1536,10 +1498,7 @@ class _ShakeInfoCard extends StatelessWidget {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  WEB COMPONENTS
-// ══════════════════════════════════════════════════════════════════════
 class _WebPageHeader extends StatelessWidget {
   final bool isDark;
   final VoidCallback onBack;
@@ -1715,12 +1674,9 @@ class _WebAddButtonState extends State<_WebAddButton> {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  CONTACT FORM — Bottom Sheet (fixes keyboard overflow)
 //  Key: uses Padding + MediaQuery.viewInsets for keyboard avoidance
 //  All content scrollable so nothing overflows
-// ══════════════════════════════════════════════════════════════════════
 class _ContactFormSheet extends StatefulWidget {
   final EmergencyContact? existing;
   final bool isDark;
@@ -1786,7 +1742,6 @@ class _ContactFormSheetState extends State<_ContactFormSheet> {
     final accent = isDark ? _infoD : _info;
     final isEdit = widget.existing != null;
 
-    // ── KEY FIX: use viewInsets to push content above keyboard ──────
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     final safeBottom = MediaQuery.of(context).padding.bottom;
 
@@ -2041,7 +1996,6 @@ class _ContactFormSheetState extends State<_ContactFormSheet> {
 
 const _sp28 = 28.0;
 
-// ── Form label ────────────────────────────────────────────────────────
 class _FormLabel extends StatelessWidget {
   final String text;
   final bool isDark;
@@ -2053,7 +2007,6 @@ class _FormLabel extends StatelessWidget {
   );
 }
 
-// ── Apple text field ──────────────────────────────────────────────────
 class _AppleTextField extends StatelessWidget {
   final TextEditingController controller;
   final FocusNode? focusNode;
@@ -2136,7 +2089,6 @@ class _AppleTextField extends StatelessWidget {
   }
 }
 
-// ── Outline button ────────────────────────────────────────────────────
 class _OutlineBtn extends StatefulWidget {
   final String label;
   final VoidCallback onTap;
@@ -2179,7 +2131,6 @@ class _OutlineBtnState extends State<_OutlineBtn> {
   }
 }
 
-// ── Filled button ─────────────────────────────────────────────────────
 class _FilledBtn extends StatefulWidget {
   final String label;
   final Color color;
