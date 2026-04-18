@@ -1,11 +1,3 @@
-// lib/screens/ISLAssistantScreen.dart
-//
-// ╔══════════════════════════════════════════════════════════════════════╗
-// ║  VANI — ISL Assistant Screen  · Premium Redesign v2               ║
-// ║  Font: Plus Jakarta Sans (UX4G standard)                                ║
-// ║  Powered by: Gemini 2.0 Flash API                                 ║
-// ║  Languages: 10 Indian Languages                                   ║
-// ╚══════════════════════════════════════════════════════════════════════╝
 
 import 'dart:convert';
 import 'dart:math' as math;
@@ -18,10 +10,7 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../components/GlobalNavbar.dart';
 import '../l10n/AppLocalizations.dart';
-
-// ─────────────────────────────────────────────────────────────────────
 //  DESIGN TOKENS
-// ─────────────────────────────────────────────────────────────────────
 const _fontFamily = 'Plus Jakarta Sans';
 
 // Brand
@@ -75,7 +64,6 @@ const _sp20 = 20.0;
 const _sp24 = 24.0;
 const _sp32 = 32.0;
 
-// ── Type helpers ─────────────────────────────────────────────────────
 TextStyle _display(double size, Color c) => TextStyle(
   fontFamily: _fontFamily,
   fontSize: size,
@@ -113,10 +101,7 @@ TextStyle _label(double size, Color c, {FontWeight w = FontWeight.w500}) =>
       height: 1.4,
       letterSpacing: 0.1,
     );
-
-// ─────────────────────────────────────────────────────────────────────
 //  GEMINI CONFIG
-// ─────────────────────────────────────────────────────────────────────
 const String _geminiKey = String.fromEnvironment(
   'GEMINI_API_KEY',
   defaultValue: '',
@@ -126,10 +111,7 @@ const bool _geminiBackendEnabled = true;
 String get _kUrl =>
     'https://generativelanguage.googleapis.com/v1beta/models/'
     '$_kModel:generateContent?key=$_geminiKey';
-
-// ─────────────────────────────────────────────────────────────────────
 //  ISL SYSTEM PROMPT
-// ─────────────────────────────────────────────────────────────────────
 const _kSystemPrompt = r'''
 You are VANI, an AI assistant specialised in Indian Sign Language (ISL)
 and accessibility for India's deaf and mute community.
@@ -182,10 +164,7 @@ TONE:
 • Use bullet points and numbered steps for clarity
 • Celebrate learning — a simple "Great question!" or "बिल्कुल!" works well
 ''';
-
-// ─────────────────────────────────────────────────────────────────────
 //  QUICK PROMPTS
-// ─────────────────────────────────────────────────────────────────────
 const _kQuickPromptKeys = [
   ('isl_quick_1', Icons.waving_hand_rounded),
   ('isl_quick_2', Icons.front_hand_rounded),
@@ -310,10 +289,7 @@ List<(String, IconData)> _quickPromptsForLang(String lang, AppLocalizations l) {
     (i) => (localized[i], _kQuickPromptKeys[i].$2),
   );
 }
-
-// ─────────────────────────────────────────────────────────────────────
 //  10 INDIAN LANGUAGES
-// ─────────────────────────────────────────────────────────────────────
 const _kLangs = [
   ('en', 'EN', 'English', '🇬🇧', 'en_IN', 'en-IN'),
   ('hi', 'हि', 'हिंदी', '🇮🇳', 'hi_IN', 'hi-IN'),
@@ -326,10 +302,7 @@ const _kLangs = [
   ('gu', 'ગુ', 'ગુજરાતી', '🇮🇳', 'gu_IN', 'gu-IN'),
   ('pa', 'ਪੰ', 'ਪੰਜਾਬੀ', '🇮🇳', 'pa_IN', 'pa-IN'),
 ];
-
-// ─────────────────────────────────────────────────────────────────────
 //  DATA MODELS
-// ─────────────────────────────────────────────────────────────────────
 enum _Role { user, assistant }
 
 enum _MsgStatus { sent, error }
@@ -350,10 +323,7 @@ class _Msg {
     DateTime? time,
   }) : time = time ?? DateTime.now();
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  ISL ASSISTANT SCREEN
-// ══════════════════════════════════════════════════════════════════════
 class ISLAssistantScreen extends StatefulWidget {
   final VoidCallback toggleTheme;
   final Function(Locale) setLocale;
@@ -672,10 +642,7 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
   String _askMoreSignPrompt(String sign) => AppLocalizations.of(
     context,
   ).t('isl_ask_more_sign').replaceAll('{sign}', sign);
-
-  // ════════════════════════════════════════════════════════════════════
   //  BUILD
-  // ════════════════════════════════════════════════════════════════════
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -684,10 +651,7 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
         ? _buildWeb(context, isDark, w)
         : _buildMobile(context, isDark);
   }
-
-  // ════════════════════════════════════════════════════════════════════
   //  MOBILE
-  // ════════════════════════════════════════════════════════════════════
   Widget _buildMobile(BuildContext ctx, bool isDark) {
     final l = AppLocalizations.of(ctx);
     final bg = isDark ? _dBg : _lBg;
@@ -750,7 +714,6 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
             ),
             Column(
               children: [
-                // ── Refined mobile nav bar ───────────────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(_sp10, _sp8, _sp10, _sp6),
                   child: ClipRRect(
@@ -956,7 +919,6 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
                   ),
                 ),
 
-                // ── Language selector (scrollable pill row) ──────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(_sp10, 0, _sp10, _sp6),
                   child: _LangPillRow(
@@ -966,7 +928,6 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
                   ),
                 ),
 
-                // ── Messages ─────────────────────────────────────────────────
                 Expanded(
                   child: GestureDetector(
                     onTap: () => FocusScope.of(ctx).unfocus(),
@@ -1032,10 +993,7 @@ class _ISLAssistantScreenState extends State<ISLAssistantScreen>
       ),
     );
   }
-
-  // ════════════════════════════════════════════════════════════════════
   //  WEB / DESKTOP — Premium layout
-  // ════════════════════════════════════════════════════════════════════
   Widget _buildWeb(BuildContext ctx, bool isDark, double w) {
     final isDesktop = w > 1100;
     final bg = isDark ? _dBg : _lBg;
@@ -1399,10 +1357,7 @@ class _AssistantRing extends StatelessWidget {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  LANGUAGE PILL ROW (mobile) — scrollable, 10 languages
-// ══════════════════════════════════════════════════════════════════════
 class _LangPillRow extends StatelessWidget {
   final String selected;
   final bool isDark;
@@ -1527,10 +1482,6 @@ class _LangPillRow extends StatelessWidget {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
-//  MESSAGE BUBBLE — Premium redesign
-// ══════════════════════════════════════════════════════════════════════
 class _MsgBubble extends StatelessWidget {
   final _Msg msg;
   final bool isDark;
@@ -1769,10 +1720,7 @@ class _MsgBubble extends StatelessWidget {
   String _fmtTime(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  TYPING INDICATOR — refined
-// ══════════════════════════════════════════════════════════════════════
 class _TypingIndicator extends StatelessWidget {
   final bool isDark;
   final Animation<double> anim;
@@ -1857,10 +1805,7 @@ class _TypingIndicator extends StatelessWidget {
 }
 
 const _sp5 = 5.0;
-
-// ══════════════════════════════════════════════════════════════════════
 //  INPUT BAR — Premium glass-style
-// ══════════════════════════════════════════════════════════════════════
 class _InputBar extends StatefulWidget {
   final TextEditingController controller;
   final bool isDark, isLoading, isListening, speechOk;
@@ -2100,10 +2045,7 @@ class _InputBarState extends State<_InputBar> {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  QUICK PROMPTS ROW
-// ══════════════════════════════════════════════════════════════════════
 class _QuickPromptsRow extends StatelessWidget {
   final bool isDark;
   final String selectedLang;
@@ -2179,10 +2121,7 @@ class _QuickPromptsRow extends StatelessWidget {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  EMPTY STATE — Premium centered design
-// ══════════════════════════════════════════════════════════════════════
 class _EmptyState extends StatelessWidget {
   final bool isDark;
   final bool compact;
@@ -2321,10 +2260,6 @@ class _EmptyState extends StatelessWidget {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
-//  WEB SIDEBAR — Premium redesign
-// ══════════════════════════════════════════════════════════════════════
 class _WebSidebar extends StatelessWidget {
   final bool isDark, ttsEnabled;
   final String selectedLang;
@@ -2381,7 +2316,6 @@ class _WebSidebar extends StatelessWidget {
         padding: EdgeInsets.zero,
         physics: const BouncingScrollPhysics(),
         children: [
-          // ── Header with gradient accent bar ────────────────────────
           Container(
             decoration: BoxDecoration(
               border: Border(
@@ -2452,7 +2386,6 @@ class _WebSidebar extends StatelessWidget {
             ),
           ),
 
-          // ── Language section ────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(_sp16, _sp14, _sp16, _sp8),
             child: Text(
@@ -2536,7 +2469,6 @@ class _WebSidebar extends StatelessWidget {
             ),
           ),
 
-          // ── Settings ────────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(_sp16, 0, _sp16, _sp8),
             child: Text(
@@ -2568,7 +2500,6 @@ class _WebSidebar extends StatelessWidget {
             ),
           ),
 
-          // ── Quick prompts ───────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(_sp16, 0, _sp16, _sp8),
             child: Text(
@@ -2815,10 +2746,7 @@ class _SidebarPromptBtnState extends State<_SidebarPromptBtn> {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  WEB CHAT PANE — Premium
-// ══════════════════════════════════════════════════════════════════════
 class _WebChatPane extends StatelessWidget {
   final List<_Msg> msgs;
   final String selectedLang;
@@ -2935,10 +2863,7 @@ class _WebChatPane extends StatelessWidget {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  WEB TOP BAR (tablet) — refined
-// ══════════════════════════════════════════════════════════════════════
 class _WebTopBar extends StatelessWidget {
   final bool isDark, ttsEnabled;
   final String selectedLang;
@@ -3088,10 +3013,7 @@ class _WebTopBar extends StatelessWidget {
     );
   }
 }
-
-// ══════════════════════════════════════════════════════════════════════
 //  OPTIONS MENU BUTTON (mobile 3-dot) — refined
-// ══════════════════════════════════════════════════════════════════════
 class _OptionsMenuButton extends StatelessWidget {
   final bool isDark;
   final VoidCallback onClear;
