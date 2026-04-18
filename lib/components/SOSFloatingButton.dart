@@ -1,4 +1,3 @@
-// lib/components/SOSFloatingButton.dart
 // Persistent SOS floating action button.
 // Tap → expand quick-action menu.
 // Long-press → immediate General Help alert.
@@ -87,7 +86,6 @@ class _SOSFloatingButtonState extends State<SOSFloatingButton>
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
 
-          // ── Quick-action menu (shown when expanded) ────────
           AnimatedSize(
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutCubic,
@@ -104,7 +102,6 @@ class _SOSFloatingButtonState extends State<SOSFloatingButton>
 
           if (_expanded) const SizedBox(height: 10),
 
-          // ── Main SOS button ────────────────────────────────
           AnimatedBuilder(
             animation: _pulseAnim,
             builder: (_, child) => Transform.scale(
@@ -172,11 +169,8 @@ class _SOSFloatingButtonState extends State<SOSFloatingButton>
     );
   }
 }
-
-// ─────────────────────────────────────────────
 //  QUICK MENU  (expands above the main button)
 //  No emojis — Material icons only.
-// ─────────────────────────────────────────────
 
 class _QuickMenu extends StatelessWidget {
   final AppLocalizations l;
