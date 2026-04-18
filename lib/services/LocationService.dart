@@ -1,4 +1,3 @@
-// lib/services/LocationService.dart
 // Since both mobile and web now use geolocator (which handles its own
 // platform differences internally), we no longer need a conditional import.
 // One file. One API. Works on Android, iOS, and Web.
