@@ -1,5 +1,6 @@
 ﻿// lib/screens/TranslateScreen.dart
 
+
 import 'dart:convert';
 import 'dart:async';
 import 'dart:math' as math;
@@ -14,9 +15,9 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_tts/flutter_tts.dart';
 import '../services/backend_config.dart';
 
-// ─────────────────────────────────────────────────────────────────────
+
 //  UX4G DESIGN TOKENS
-// ─────────────────────────────────────────────────────────────────────
+
 const _fontFamily = 'Plus Jakarta Sans';
 
 const _primary = Color(0xFF1A56DB);
@@ -112,16 +113,16 @@ TextStyle _txtLabel(double size, Color c, {FontWeight w = FontWeight.w500}) =>
       letterSpacing: 0.1,
     );
 
-// ─────────────────────────────────────────────────────────────────────
+
 //  WEBSOCKET CONFIG
-// ─────────────────────────────────────────────────────────────────────
+
 const int _kFrameIntervalMs = 100;
 const int _kWsConnectAttempts = 3;
 const Duration _kWsConnectTimeout = Duration(seconds: 4);
 
-// ─────────────────────────────────────────────────────────────────────
+
 //  25 MODEL WORDS
-// ─────────────────────────────────────────────────────────────────────
+
 const Set<String> _kModelWords = {
   'hello',
   'how are you',
@@ -150,9 +151,9 @@ const Set<String> _kModelWords = {
   'water',
 };
 
-// ─────────────────────────────────────────────────────────────────────
+
 //  SENTENCE BUILDER (all patterns preserved exactly)
-// ─────────────────────────────────────────────────────────────────────
+
 class SentenceBuilder {
   static const Map<String, String> _solo = {
     'hello': 'Hello!',
@@ -289,7 +290,7 @@ class SentenceBuilder {
     'i|thankyou|good': 'I am thankful. Everything is good.',
     'namaste|how are you|good': 'Namaste! How are you? Good.',
   };
-
+  // Patterns are preserved exactly as above. No reordering or changes to keys/values.
   static String build(List<String> words) {
     if (words.isEmpty) return '';
     if (words.length >= 3) {
@@ -334,9 +335,9 @@ class SentenceBuilder {
       s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
 }
 
-// ─────────────────────────────────────────────────────────────────────
-//  AUTO-ADD ENGINE (unchanged logic)
-// ─────────────────────────────────────────────────────────────────────
+
+//  AUTO-ADD ENGINE 
+
 class _AutoAddEngine {
   static const int _stabilityMs = 800;
   static const int _sameWordCooldown = 3000;
@@ -374,7 +375,7 @@ class _AutoAddEngine {
     }
     return null;
   }
-
+// Resets the engine state, clearing stable label and cooldowns.
   void reset() {
     _stableLabel = '';
     _stableStart = DateTime(0);
@@ -390,9 +391,9 @@ class _AutoAddEngine {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────
+
 //  MODELS
-// ─────────────────────────────────────────────────────────────────────
+
 enum _SessionState { idle, connecting, running, stopping, error }
 
 class _GestureToken {
@@ -401,9 +402,9 @@ class _GestureToken {
   _GestureToken({required this.label, required this.confidence});
 }
 
-// ═════════════════════════════════════════════════════════════════════
-//  AMBIENT BLOB PAINTER — matches VANI homepage circles/semicircles
-// ═════════════════════════════════════════════════════════════════════
+
+//  AMBIENT BLOB PAINTER circles/semicircles
+
 class _AmbientBlobPainter extends CustomPainter {
   final bool dark;
   final double animValue; // 0.0–1.0 for subtle float
@@ -526,9 +527,9 @@ class _BlobDef {
   });
 }
 
-// ─────────────────────────────────────────────────────────────────────
-//  ATMOSPHERIC BACKGROUND PAINTER
-// ─────────────────────────────────────────────────────────────────────
+
+//  ATMOSPHERIC BACKGROUND LAYER — subtle orbs and rings, like homepage but more sparse and muted
+
 class _AtmosphericBg extends StatelessWidget {
   final bool d;
   const _AtmosphericBg({required this.d});
@@ -662,9 +663,9 @@ class _AtmosphericPainter extends CustomPainter {
   bool shouldRepaint(_AtmosphericPainter o) => o.dark != dark;
 }
 
-// ─────────────────────────────────────────────────────────────────────
+
 //  ONBOARDING FLOW — premium fullscreen layout
-// ─────────────────────────────────────────────────────────────────────
+
 class _OnboardingFlow extends StatefulWidget {
   final bool d;
   final VoidCallback onComplete;
@@ -2944,9 +2945,9 @@ class _TranslateScreenState extends State<TranslateScreen>
     );
   }
 
-  // ════════════════════════════════════════════════════════════════════
+ 
   //  WEB — card layout with GlobalNavbar
-  // ════════════════════════════════════════════════════════════════════
+
   Widget _buildWeb(BuildContext context, bool d, bool wide) {
     final compactWeb = MediaQuery.of(context).size.width < 700;
     final horizontalPad = compactWeb ? _sp12 : _sp24;
@@ -5374,7 +5375,7 @@ class _CornerPainter extends CustomPainter {
       p,
     );
   }
-
+// This painter draws corner accents around the webcam feed when active
   @override
   bool shouldRepaint(_CornerPainter o) => o.color != color;
 }
