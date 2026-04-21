@@ -12,9 +12,9 @@ import '../models/EmergencyContact.dart';
 import '../Utils/PlatformHelper.dart';
 import 'LocationService.dart';
 
-// ─────────────────────────────────────────────
+
 //  SOS MESSAGE TYPES
-// ─────────────────────────────────────────────
+
 
 enum SOSMessageType { generalHelp, medical, police, fire, custom }
 
@@ -64,9 +64,9 @@ String _defaultSosTemplateFallback(SOSMessageType type) {
   }
 }
 
-// ─────────────────────────────────────────────
+
 //  SOS RESULT
-// ─────────────────────────────────────────────
+
 
 class SOSResult {
   final bool success;
@@ -86,9 +86,8 @@ class SOSResult {
   });
 }
 
-// ─────────────────────────────────────────────
 //  EMERGENCY SERVICE  (singleton)
-// ─────────────────────────────────────────────
+
 
 class EmergencyService {
   static EmergencyService? _instance;
@@ -102,7 +101,7 @@ class EmergencyService {
   bool _isTriggering = false;
   BuildContext? _context;
 
-  // ── Lifecycle ──────────────────────────────
+  // Lifecycle
 
   Future<void> init(BuildContext context) async {
     _context = context;
@@ -119,12 +118,12 @@ class EmergencyService {
     }
   }
 
-  // ── Legacy no-op stubs ─────────────────────
+  //  Legacy no-op stubs 
 
   Future<void> syncFromSupabase() async {}
   Future<void> pushLocalContactsToSupabase() async {}
 
-  // ── Shake Detection ────────────────────────
+  // Shake Detection 
 
   void _startShakeDetection() {
     if (!PlatformHelper.supportsShake) return;
@@ -167,7 +166,7 @@ class EmergencyService {
 
   bool get shakeActive => _shakeDetector != null && PlatformHelper.supportsShake;
 
-  // ── Hive Contact Storage ───────────────────
+  //  Hive Contact Storage 
 
   Box<EmergencyContact> get _box => Hive.box<EmergencyContact>(_boxName);
 
@@ -205,9 +204,9 @@ class EmergencyService {
   bool get hasContacts => _box.isNotEmpty;
   int get contactCount => _box.length;
 
-  // ─────────────────────────────────────────────
+  
   //  CORE SOS TRIGGER
-  // ─────────────────────────────────────────────
+ 
 
   Future<SOSResult> triggerSOS({
     required SOSMessageType type,
@@ -239,9 +238,9 @@ class EmergencyService {
       // Immediate haptic feedback so the user knows SOS fired
       _triggerHaptics();
 
-      // ── Location strategy: web keeps strict requirement, mobile is lenient ──
+      // Location strategy: web keeps strict requirement, mobile is lenient
       // On mobile, GPS can time out or be temporarily unavailable. We must never
-      // block the SOS entirely because of location — send the message with whatever
+      // block the SOS entirely because of location  send the message with whatever
       // location we have (or none), rather than silently failing.
       final LocationResult location;
       if (kIsWeb) {
@@ -261,7 +260,7 @@ class EmergencyService {
         location = await _getMobileLocationBestEffort();
       }
 
-      // ── Build full pre-filled message ──
+      //  Build full pre-filled message 
       final fullMsg = _buildSOSMessage(
         type: type,
         customMessage: customMessage,
@@ -289,9 +288,9 @@ class EmergencyService {
     }
   }
 
-  // ─────────────────────────────────────────────
+
   //  MOBILE LOCATION — best-effort, never blocks SOS
-  // ─────────────────────────────────────────────
+
 
   /// Gets location for mobile SOS. Tries fast (6s) then falls back to last
   /// known position. If neither is available the SOS still sends — the message
@@ -313,9 +312,9 @@ class EmergencyService {
     );
   }
 
-  // ─────────────────────────────────────────────
+
   //  MESSAGE BUILDER
-  // ─────────────────────────────────────────────
+ 
 
   String _buildSOSMessage({
     required SOSMessageType type,
@@ -355,15 +354,15 @@ class EmergencyService {
         .replaceAll('{TIME}', timeStr);
   }
 
-  // ─────────────────────────────────────────────
+
   //  MOBILE WHATSAPP SENDER
-  // ─────────────────────────────────────────────
+
 
   /// Opens WhatsApp natively on Android/iOS with the pre-filled message.
   ///
   /// Launch strategy:
   ///   1. intent:// URI on Android — bypasses Android 11+ package-visibility
-  ///      restrictions entirely. Does not require <queries> in AndroidManifest.
+  ///      restrictions entirely. Does not require queries in AndroidManifest.
   ///      Opens WhatsApp directly to the pre-filled chat.
   ///   2. whatsapp:// scheme — works on iOS and older Android.
   ///   3. wa.me HTTPS fallback — last resort, opens browser or WhatsApp Web.
@@ -386,7 +385,7 @@ class EmergencyService {
       final encodedMsg = Uri.encodeComponent(message);
       bool launched = false;
 
-      // ── Attempt 1: Android intent URI ──────────────────────────────────────
+      //  Attempt 1: Android intent URI 
       // Uses Android ACTION_VIEW intent directed at WhatsApp's package.
       // This bypasses the Android 11+ package-visibility restriction (no need
       // for <queries> block) and opens directly to a chat with the pre-filled
@@ -412,7 +411,7 @@ class EmergencyService {
         }
       }
 
-      // ── Attempt 2: whatsapp:// deep-link scheme ─────────────────────────────
+      // Attempt 2: whatsapp:// deep-link scheme
       // Works on iOS and Android when WhatsApp is installed. Opens a chat with
       // the contact and pre-fills the message body. This is NOT an invite link.
       if (!launched) {
@@ -429,7 +428,7 @@ class EmergencyService {
         }
       }
 
-      // ── Attempt 3: wa.me HTTPS fallback ────────────────────────────────────
+      // Attempt 3: wa.me HTTPS fallback
       // wa.me?phone=&text= opens a chat with the pre-filled message when
       // WhatsApp is installed, or WhatsApp Web in a browser if not.
       // This is the correct URL format — NOT wa.me/<phone> alone (which shows
@@ -450,7 +449,7 @@ class EmergencyService {
 
       if (launched) sentCount++;
 
-      // Delay between contacts only — never after the last one
+      // Delay between contacts only never after the last one
       if (i < total - 1) {
         await Future.delayed(const Duration(milliseconds: 800));
       }
@@ -477,9 +476,8 @@ class EmergencyService {
     );
   }
 
-  // ─────────────────────────────────────────────
-  //  WEB WHATSAPP SENDER  (UNCHANGED)
-  // ─────────────────────────────────────────────
+  
+  //  WEB WHATSAPP SENDER 
 
   /// Opens wa.me links from the Flutter web app.
   ///
@@ -548,9 +546,8 @@ class EmergencyService {
     );
   }
 
-  // ─────────────────────────────────────────────
   //  HAPTICS
-  // ─────────────────────────────────────────────
+
 
   void _triggerHaptics() {
     if (!PlatformHelper.canVibrate) return;
@@ -564,9 +561,9 @@ class EmergencyService {
     }
   }
 
-  // ─────────────────────────────────────────────
+
   //  LOCATION FLOW — web only (strict, with full UI)
-  // ─────────────────────────────────────────────
+
 
   /// Used by web only. Obtains a FRESH GPS fix every time SOS fires.
   /// Shows appropriate UI dialogs for each failure mode.
@@ -619,7 +616,7 @@ class EmergencyService {
     }
   }
 
-  // ── Location permission dialogs ─────────────
+  //  Location permission dialogs 
 
   /// Shown when location is transiently denied — asks user to grant it.
   Future<bool> _showAllowLocationDialog() async {
@@ -766,7 +763,7 @@ class EmergencyService {
     return result ?? false;
   }
 
-  // ── Other dialogs ───────────────────────────
+  //  Other dialogs 
 
   void _showNoContactsDialog(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -812,9 +809,9 @@ class EmergencyService {
   void dispose() => stopShakeDetection();
 }
 
-// ─────────────────────────────────────────────
+// 
 //  DESIGN TOKENS
-// ─────────────────────────────────────────────
+// 
 
 class _DT {
   final bool d;
@@ -835,9 +832,9 @@ class _DT {
   static const amber = Color(0xFFD97706);
 }
 
-// ─────────────────────────────────────────────
+// 
 //  GENERIC SOS DIALOG
-// ─────────────────────────────────────────────
+//
 
 class _SosDialogAction {
   final String label;
@@ -988,9 +985,8 @@ class _SosDialog extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────
-//  WEB SOS MODAL  (UNCHANGED)
-// ─────────────────────────────────────────────
+
+//  WEB SOS MODAL  
 
 class _WebSOSModal extends StatefulWidget {
   final List<EmergencyContact> contacts;
@@ -1119,7 +1115,7 @@ class _WebSOSModalState extends State<_WebSOSModal> {
 
                     const SizedBox(height: 16),
 
-                    // ── Location banner ──────────────────────────
+                    //  Location banner 
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 10),
