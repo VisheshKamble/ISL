@@ -2389,7 +2389,7 @@ class _TranslateScreenState extends State<TranslateScreen>
       _stopSession();
     }
   }
-
+// Clean up resources on dispose. Disposes camera, WebSocket, timers, and TTS.
   Future<String> _translate(String text, String code) async {
     try {
       final url =
@@ -2426,7 +2426,7 @@ class _TranslateScreenState extends State<TranslateScreen>
       return false;
     }
   }
-
+// Cleanly disposes camera resources. Stops image stream if active and handles any errors silently.
   Future<void> _disposeCamera() async {
     final c = _cam;
     _cam = null;
@@ -2440,7 +2440,7 @@ class _TranslateScreenState extends State<TranslateScreen>
       await c?.dispose();
     } catch (_) {}
   }
-
+// WebSocket connection with retries. Tries multiple URLs and handles connection errors gracefully.
   Future<bool> _connectWs() async {
     if (!BackendConfig.websocketEnabled) {
       _wsOk = false;
@@ -2487,7 +2487,7 @@ class _TranslateScreenState extends State<TranslateScreen>
     }
     return false;
   }
-
+// WebSocket message handler. Parses messages and updates state accordingly. Handles 'ping', 'error', and 'prediction' types.
   void _onMsg(dynamic raw) {
     if (!mounted) return;
     try {
@@ -2531,7 +2531,7 @@ class _TranslateScreenState extends State<TranslateScreen>
     _wsOk = false;
     if (_state == _SessionState.running) _tryReconnect();
   }
-
+// Reconnection logic with exponential backoff and max attempts. Shows error if all attempts fail.
   void _tryReconnect() {
     if (_reconnects >= _kMaxReconnects) {
       final l = AppLocalizations.of(context);
@@ -2563,7 +2563,7 @@ class _TranslateScreenState extends State<TranslateScreen>
     _channel = null;
     _wsOk = false;
   }
-
+// Starts the frame capture timer. Captures frames at regular intervals and sends them to the backend via WebSocket. Ensures only one capture at a time.
   void _startFrameTimer() {
     _frameTimer?.cancel();
     _capturing = false;
@@ -2585,13 +2585,13 @@ class _TranslateScreenState extends State<TranslateScreen>
       _capturing = false;
     }
   }
-
+// Stops the frame capture timer and resets capturing state.
   void _stopFrameTimer() {
     _frameTimer?.cancel();
     _frameTimer = null;
     _capturing = false;
   }
-
+// Starts the stability timer. Periodically checks the stability progress from the engine and updates state. Cancels any existing timer before starting a new one.
   void _startStabilityTimer() {
     _stabilityTimer?.cancel();
     _stabilityTimer = Timer.periodic(const Duration(milliseconds: 16), (_) {
@@ -2607,7 +2607,7 @@ class _TranslateScreenState extends State<TranslateScreen>
     _stabilityTimer = null;
     _stability = 0;
   }
-
+// Starts a translation session. Initializes camera and WebSocket connection, resets engine, and starts timers. Handles errors gracefully and updates state accordingly.
   Future<void> _startSession() async {
     final l = AppLocalizations.of(context);
     if (_state != _SessionState.idle && _state != _SessionState.error) return;
@@ -2638,7 +2638,7 @@ class _TranslateScreenState extends State<TranslateScreen>
     _startStabilityTimer();
     setState(() => _state = _SessionState.running);
   }
-
+// Stops the translation session. Stops timers, WebSocket connection, and disposes camera resources. Resets state to idle and clears labels and confidence.
   Future<void> _stopSession() async {
     if (_state == _SessionState.idle || _state == _SessionState.stopping)
       return;
