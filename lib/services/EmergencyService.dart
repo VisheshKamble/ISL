@@ -6,7 +6,6 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:vibration/vibration.dart';
 import 'package:shake/shake.dart';
-
 import '../l10n/AppLocalizations.dart';
 import '../models/EmergencyContact.dart';
 import '../Utils/PlatformHelper.dart';
