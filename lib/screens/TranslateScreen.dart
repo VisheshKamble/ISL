@@ -114,14 +114,14 @@ TextStyle _txtLabel(double size, Color c, {FontWeight w = FontWeight.w500}) =>
     );
 
 
-//  WEBSOCKET CONFIG
+// websocket and frame capture settings
 
 const int _kFrameIntervalMs = 100;
 const int _kWsConnectAttempts = 3;
 const Duration _kWsConnectTimeout = Duration(seconds: 4);
 
 
-//  25 MODEL WORDS
+
 
 const Set<String> _kModelWords = {
   'hello',
