@@ -1,21 +1,4 @@
 ﻿// lib/screens/TranslateScreen.dart
-//
-// ╔══════════════════════════════════════════════════════════════════════╗
-// ║  VANI — Translate Screen  · UX4G Redesign                         ║
-// ║  Font: Plus Jakarta Sans (UX4G standard)                                ║
-// ║                                                                    ║
-// ║  ALL functional logic preserved exactly:                           ║
-// ║  • SentenceBuilder (25 model words, all patterns)                 ║
-// ║  • AutoAddEngine (stability + cooldown)                           ║
-// ║  • WebSocket connection + frame capture                           ║
-// ║  • TTS, translation, transcript                                   ║
-// ║  • Onboarding flow                                                ║
-// ║                                                                    ║
-// ║  UI REFRESH:                                                       ║
-// ║  • Loader: floating blobs + semicircles matching homepage          ║
-// ║  • Onboarding: glass-tinted cards with blob backgrounds            ║
-// ║  • Translate screen: ambient circles & patches on all panels      ║
-// ╚══════════════════════════════════════════════════════════════════════╝
 
 import 'dart:convert';
 import 'dart:async';
