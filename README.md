@@ -449,4 +449,5 @@ docker run -p 8000:8000 vani-backend
 
 ---
 
-If you want, the next upgrade can be centralizing backend host config into one shared environment/config file so you update it once for all screens.
+### Final Year Project 2025 - 2026 Diploma in Computer Engineering
+
