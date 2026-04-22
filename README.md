@@ -450,4 +450,6 @@ docker run -p 8000:8000 vani-backend
 ---
 
 ### Final Year Project 2025 - 2026 Diploma in Computer Engineering
+## Contributors
 
+[<img src="https://github.com/VisheshKamble.png" width="50" />](https://github.com/VisheshKamble)
