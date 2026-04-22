@@ -453,3 +453,4 @@ docker run -p 8000:8000 vani-backend
 ## Contributors
 
 [<img src="https://github.com/VisheshKamble.png" width="50" />](https://github.com/VisheshKamble)
+[<img src="https://github.com/maarvijoshi.png" width="50" />](https://github.com/maarvijoshi)
